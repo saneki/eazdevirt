@@ -50,6 +50,8 @@
     <Compile Include="EazCryptoStream.cs" />
     <Compile Include="EazModule.cs" />
     <Compile Include="EazPosition.cs" />
+    <Compile Include="EazVirtualInstruction.cs" />
+    <Compile Include="EazVirtualInstruction.Detection.cs" />
     <Compile Include="EazVirtualizedMethod.cs" />
     <Compile Include="Helpers.cs" />
     <Compile Include="Options.cs" />

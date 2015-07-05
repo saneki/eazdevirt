@@ -5,7 +5,7 @@ namespace eazdevirt
 {
 	public class BaseOptions
 	{
-		[Value(0)]
+		[Value(0, Required = true)]
 		public String AssemblyPath { get; set; }
 	}
 
@@ -14,6 +14,9 @@ namespace eazdevirt
 
 	[Verb("find-methods", HelpText = "Find virtualized methods")]
 	public class FindMethodsSubOptions : BaseOptions { }
+
+	[Verb("instructions", HelpText = "Extract all virtual instruction information")]
+	public class InstructionsSubOptions : BaseOptions { }
 
 	[Verb("position", HelpText = "Get the position specified by a position string of length 10")]
 	public class PositionSubOptions

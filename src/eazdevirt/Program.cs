@@ -13,6 +13,7 @@ namespace eazdevirt
 			var result = CommandLine.Parser.Default.ParseArguments
 				<FindMethodsSubOptions,
 				 GetKeySubOptions,
+				 InstructionsSubOptions,
 				 PositionSubOptions>(args);
 
 			if (!result.Errors.Any())
@@ -21,9 +22,13 @@ namespace eazdevirt
 				{
 					DoFindMethods((FindMethodsSubOptions)result.Value);
 				}
-				else if(result.Value is GetKeySubOptions)
+				else if (result.Value is GetKeySubOptions)
 				{
 					DoGetKey((GetKeySubOptions)result.Value);
+				}
+				else if (result.Value is InstructionsSubOptions)
+				{
+					DoInstructions((InstructionsSubOptions)result.Value);
 				}
 				else if (result.Value is PositionSubOptions)
 				{
@@ -68,6 +73,36 @@ namespace eazdevirt
 
 			EazVirtualizedMethod method = module.FindFirstVirtualizedMethod();
 			Console.WriteLine("Key: {0}", method.ResourceCryptoKey);
+		}
+
+		static void DoInstructions(InstructionsSubOptions options)
+		{
+			EazModule module;
+			if (!TryLoadModule(options.AssemblyPath, out module))
+				return;
+
+			EazVirtualizedMethod method = module.FindFirstVirtualizedMethod();
+			if(method == null)
+			{
+				Console.WriteLine("No methods in assembly seem to be virtualized");
+				return;
+			}
+
+			// The virtual-call-method should belong to the main virtualization type
+			TypeDef virtualizationType = method.VirtualCallMethod.DeclaringType;
+			var vInstructions = EazVirtualInstruction.FindAllInstructions(virtualizationType);
+
+			if (vInstructions.Length > 0)
+			{
+				Console.WriteLine("Virtual instruction types found: {0}", vInstructions.Length);
+				foreach (var vInstr in vInstructions)
+				{
+					Console.WriteLine("Instruction: {0}", vInstr.VirtualOpCode);
+					Console.WriteLine("  Operand type: {0}", vInstr.OperandType);
+					Console.WriteLine("  Delegate method: {0}", vInstr.DelegateMethod.FullName);
+				}
+			}
+			else Console.WriteLine("No virtual instructions found?");
 		}
 
 		/// <summary>
