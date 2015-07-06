@@ -126,6 +126,9 @@ namespace eazdevirt
 				Console.WriteLine("{0}/{1} instruction types identified ({2})",
 					identified, vInstructions.Count, percentIdentified);
 
+				if(!options.ExtraOutput)
+					Console.WriteLine();
+
 				// If only showing identified instructions, remove all non-identified and sort by name
 				if(options.OnlyIdentified)
 				{

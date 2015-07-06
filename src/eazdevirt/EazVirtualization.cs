@@ -22,6 +22,11 @@ namespace eazdevirt
 		/// </summary>
 		public FieldDef ArgumentsField { get; private set; }
 
+		/// <summary>
+		/// The field used to store local variables.
+		/// </summary>
+		public FieldDef LocalsField { get; private set; }
+
 		public EazVirtualization(EazModule module)
 		{
 			if (module == null)
@@ -37,6 +42,7 @@ namespace eazdevirt
 			this.VirtualizationType = vmethod.VirtualCallMethod.DeclaringType;
 
 			this.InitializeArgumentsField(); // Set ArgumentsField
+			this.InitializeLocalsField();    // Set LocalsField
 		}
 
 		/// <summary>
@@ -83,6 +89,24 @@ namespace eazdevirt
 
 			if (this.ArgumentsField == null)
 				throw new Exception("Unable to find arguments field");
+		}
+
+		private void InitializeLocalsField()
+		{
+			// Locals field is the same type as arguments field
+			var fields = this.VirtualizationType.Fields;
+			foreach(var field in fields)
+			{
+				if(field.FieldType.FullName.Equals(this.ArgumentsField.FieldType.FullName)
+				&& field.MDToken != this.ArgumentsField.MDToken)
+				{
+					this.LocalsField = field;
+					break;
+				}
+			}
+
+			if (this.LocalsField == null)
+				throw new Exception("Unable to find locals field");
 		}
 	}
 }
