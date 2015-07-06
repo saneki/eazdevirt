@@ -2,14 +2,20 @@
 using System.Collections.Generic;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using de4dot.blocks;
 
 namespace eazdevirt
 {
 	/// <summary>
 	/// Contains information about a specific virtual instruction.
 	/// </summary>
-	public class EazVirtualInstruction
+	public partial class EazVirtualInstruction
 	{
+		/// <summary>
+		/// Parent module.
+		/// </summary>
+		public EazModule Module { get; private set; }
+
 		/// <summary>
 		/// The container type that holds all instruction fields.
 		/// </summary>
@@ -42,6 +48,18 @@ namespace eazdevirt
 		public MethodDef DelegateMethod { get; private set; }
 
 		/// <summary>
+		/// Whether or not the virtual opcode was successfully extracted from the container .ctor method.
+		/// </summary>
+		public Boolean HasVirtualOpCode { get; private set; }
+
+		/// <summary>
+		/// Whether or not the virtual instruction was identified with a legitimate CIL opcode.
+		/// </summary>
+		public Boolean IsIdentified { get; private set; }
+
+		public Code OpCode { get; private set; }
+
+		/// <summary>
 		/// OpCode pattern seen per dictionary add in the dictionary method.
 		/// </summary>
 		public static readonly Code[] DictionaryAddPattern = new Code[] {
@@ -67,11 +85,12 @@ namespace eazdevirt
 		/// <summary>
 		/// Find all virtual instructions given the main virtualization type.
 		/// </summary>
+		/// <param name="module">Module</param>
 		/// <param name="virtualizationType">Main virtualization type (class)</param>
 		/// <returns>All found virtualization instructions</returns>
-		public static EazVirtualInstruction[] FindAllInstructions(TypeDef virtualizationType)
+		public static EazVirtualInstruction[] FindAllInstructions(EazModule module, TypeDef virtualizationType)
 		{
-			if (virtualizationType == null)
+			if (module == null || virtualizationType == null)
 				throw new ArgumentNullException();
 
 			// Find dictionary method
@@ -129,6 +148,7 @@ namespace eazdevirt
 				FieldDef instructionField = ((FieldDef)instrs[3].Operand); // ldfld
 				MethodDef delegateMethod = ((MethodDef)instrs[9].Operand); // ldftn
 
+				vInstruction.Module = module;
 				vInstruction.DictionaryMethod = dictMethod;
 				vInstruction.ContainerType = containerType;
 				vInstruction.InstructionField = instructionField;
@@ -164,8 +184,11 @@ namespace eazdevirt
 			if (containerCtor.Body.Instructions.Count < (vInstructions.Count * 5))
 				throw new Exception("Container .ctor not large enough for all virtual instructions");
 
+			// 5 instructions per sequence, with 3 trailing instructions
+			int subsequenceCount = (containerCtor.Body.Instructions.Count - 3) / 5;
+
 			// This makes a bit of an assumption..
-			for(int i = 0; i < vInstructions.Count; i++)
+			for(int i = 0; i < subsequenceCount; i++)
 			{
 				// Grab the subsequence
 				List<Instruction> subsequence = new List<Instruction>();
@@ -184,41 +207,16 @@ namespace eazdevirt
 				{
 					if(vInstr.InstructionField.MDToken == instructionField.MDToken)
 					{
+						vInstr.HasVirtualOpCode = true;
 						vInstr.VirtualOpCode = virtualOpCode;
 						vInstr.OperandType = operandType;
+						vInstr.TrySetIdentify(); // Try to identify and set original opcode
 						break;
 					}
 				}
 			}
 
 			return vInstructions.ToArray();
-		}
-
-		/// <summary>
-		/// Check if the delegate method's body contains the given pattern.
-		/// </summary>
-		/// <param name="codePattern">Pattern to check for</param>
-		/// <returns>true if match, false if not</returns>
-		public Boolean Matches(Code[] codePattern)
-		{
-			if(this.DelegateMethod == null)
-				throw new Exception("Cannot check for delegate method match, delegate method is null");
-
-			return (Helpers.FindOpCodePatterns(this.DelegateMethod.Body.Instructions, codePattern).Count > 0);
-		}
-
-		public Boolean MatchesIndirect(Code[] codePattern)
-		{
-			if (this.DelegateMethod == null)
-				throw new Exception("Cannot check for delegate method match, delegate method is null");
-
-			// Get the method right before ret
-			// (unsure how well this will work with obfuscation, probably not well at all)
-			MethodDef retMethod = Helpers.GetRetMethod(this.DelegateMethod);
-
-			if (retMethod != null)
-				return (Helpers.FindOpCodePatterns(retMethod.Body.Instructions, codePattern).Count > 0);
-			else return false;
 		}
 	}
 }
