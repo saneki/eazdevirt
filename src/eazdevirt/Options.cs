@@ -5,18 +5,24 @@ namespace eazdevirt
 {
 	public class BaseOptions
 	{
+		[Option('L', "no-logo", DefaultValue = false, HelpText = "Don't output the ascii logo")]
+		public Boolean NoLogo { get; set; }
+	}
+
+	public class BaseAssemblyOptions : BaseOptions
+	{
 		[Value(0, Required = true)]
 		public String AssemblyPath { get; set; }
 	}
 
 	[Verb("find-methods", HelpText = "Find virtualized methods")]
-	public class FindMethodsSubOptions : BaseOptions { }
+	public class FindMethodsSubOptions : BaseAssemblyOptions { }
 
 	[Verb("get-key", HelpText = "Extract the integer used for stream crypto")]
-	public class GetKeySubOptions : BaseOptions { }
+	public class GetKeySubOptions : BaseAssemblyOptions { }
 
 	[Verb("instructions", HelpText = "Extract all virtual instruction information")]
-	public class InstructionsSubOptions : BaseOptions
+	public class InstructionsSubOptions : BaseAssemblyOptions
 	{
 		[Option('i', "only-identified", DefaultValue = false,
 			HelpText = "Only print instructions with identified original opcodes")]
@@ -31,7 +37,7 @@ namespace eazdevirt
 	}
 
 	[Verb("position", HelpText = "Get the position specified by a position string of length 10")]
-	public class PositionSubOptions
+	public class PositionSubOptions : BaseOptions
 	{
 		[Value(0, Required = true)]
 		public String PositionString { get; set; }

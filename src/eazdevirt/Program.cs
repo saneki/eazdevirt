@@ -20,6 +20,11 @@ namespace eazdevirt
 
 			if (!result.Errors.Any())
 			{
+				BaseOptions options = (BaseOptions)result.Value;
+
+				if(!options.NoLogo)
+					WriteAsciiLogo();
+
 				if (result.Value is FindMethodsSubOptions)
 				{
 					DoFindMethods((FindMethodsSubOptions)result.Value);
@@ -56,10 +61,11 @@ namespace eazdevirt
 
 			foreach(var method in methods)
 			{
+				Console.WriteLine();
 				Console.WriteLine(method.Method.FullName);
-				Console.WriteLine("  Position string: {0}", method.PositionString);
-				Console.WriteLine("  Resource: {0}", method.ResourceStringId);
-				Console.WriteLine("  Crypto key: {0}", method.ResourceCryptoKey);
+				Console.WriteLine("--> Position string: {0}", method.PositionString);
+				Console.WriteLine("--> Resource: {0}", method.ResourceStringId);
+				Console.WriteLine("--> Crypto key: {0}", method.ResourceCryptoKey);
 			}
 		}
 
@@ -243,6 +249,21 @@ namespace eazdevirt
 			}
 
 			return true;
+		}
+
+		static void WriteAsciiLogo()
+		{
+			String logo =
+@"
+                         .___          .__         __   
+  ____ _____  ________ __| _/_______  _|__|_______/  |_ 
+_/ __ \\__  \ \___   // __ |/ __ \  \/ /  \_  __ \   __\
+\  ___/ / __ \_/    // /_/ \  ___/\   /|  ||  | \/|  |  
+ \___  >____  /_____ \____ |\___  >\_/ |__||__|   |__|  
+     \/     \/      \/    \/    \/                      
+";
+			Console.WriteLine(logo);
+			Console.WriteLine();
 		}
 	}
 }
