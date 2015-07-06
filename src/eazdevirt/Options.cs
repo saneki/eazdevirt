@@ -25,6 +25,9 @@ namespace eazdevirt
 		[Option('o', "operands", DefaultValue = false,
 			HelpText = "Print information about operand types")]
 		public Boolean Operands { get; set; }
+
+		[Option('e', "extra-output", DefaultValue = false, HelpText = "Extra output")]
+		public Boolean ExtraOutput { get; set; }
 	}
 
 	[Verb("position", HelpText = "Get the position specified by a position string of length 10")]

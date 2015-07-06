@@ -98,7 +98,7 @@ namespace eazdevirt
 			TypeDef virtualizationType = method.VirtualCallMethod.DeclaringType;
 			var vInstructions = EazVirtualInstruction.FindAllInstructions(module, virtualizationType);
 
-			if (vInstructions.Length > 0)
+			if (vInstructions.Count > 0)
 			{
 				// Get # of identified instructions
 				Int32 identified = 0;
@@ -109,28 +109,55 @@ namespace eazdevirt
 				String percentIdentified;
 				if (identified == 0)
 					percentIdentified = "0%";
-				else if (identified == vInstructions.Length)
+				else if (identified == vInstructions.Count)
 					percentIdentified = "100%";
 				else
 					percentIdentified = Math.Floor(
-						(((double)identified) / ((double)vInstructions.Length)) * 100d
+						(((double)identified) / ((double)vInstructions.Count)) * 100d
 					) + "%";
 
-				Console.WriteLine("Virtual instruction types found: {0}", vInstructions.Length);
+				Console.WriteLine("Virtual instruction types found: {0}", vInstructions.Count);
 				Console.WriteLine("{0}/{1} instruction types identified ({2})",
-					identified, vInstructions.Length, percentIdentified);
+					identified, vInstructions.Count, percentIdentified);
+
+				// If only showing identified instructions, remove all non-identified and sort by name
+				if(options.OnlyIdentified)
+				{
+					vInstructions = new List<EazVirtualInstruction>(vInstructions
+						.Where((instruction) => { return instruction.IsIdentified; })
+						.OrderBy((instruction) => { return instruction.OpCode.ToString(); }));
+				}
 
 				foreach (var v in vInstructions)
 				{
-					if(v.IsIdentified)
-						Console.WriteLine("Instruction: {0} (virtual opcode = {1})", v.OpCode, v.VirtualOpCode);
-					else if(!options.OnlyIdentified)
-						Console.WriteLine("Instruction: {0}", v.VirtualOpCode);
-
-					if (v.IsIdentified || !options.OnlyIdentified)
+					if (!options.ExtraOutput) // Simple output
 					{
-						Console.WriteLine("  Operand type: {0}", v.OperandType);
-						Console.WriteLine("  Delegate method: {0}", v.DelegateMethod.FullName);
+						if (v.IsIdentified)
+							Console.WriteLine("Instruction: {0}, Method: {1}", v.OpCode, v.DelegateMethod.FullName);
+						else
+							Console.WriteLine("Instruction: Unknown, Method: {0}", v.DelegateMethod.FullName);
+					}
+					else // Not-Simple output?
+					{
+						Console.WriteLine();
+
+						if (v.IsIdentified)
+							Console.WriteLine("Instruction: {0}", v.OpCode);
+						else
+							Console.WriteLine("Instruction: Unknown");
+
+						if (v.IsIdentified || !options.OnlyIdentified)
+						{
+							if (v.HasVirtualOpCode)
+							{
+								Console.WriteLine("--> Virtual OpCode:  {0} ({0:X8})", v.VirtualOpCode);
+								Console.WriteLine("--> Operand type:    {0}", v.OperandType);
+							}
+
+							{
+								Console.WriteLine("--> Delegate method: {0}", v.DelegateMethod.FullName);
+							}
+						}
 					}
 				}
 

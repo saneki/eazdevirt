@@ -59,6 +59,8 @@ namespace eazdevirt
 
 		public Code OpCode { get; private set; }
 
+		public EazVirtualization Virtualization { get { return this.Module.Virtualization; } }
+
 		/// <summary>
 		/// OpCode pattern seen per dictionary add in the dictionary method.
 		/// </summary>
@@ -88,7 +90,7 @@ namespace eazdevirt
 		/// <param name="module">Module</param>
 		/// <param name="virtualizationType">Main virtualization type (class)</param>
 		/// <returns>All found virtualization instructions</returns>
-		public static EazVirtualInstruction[] FindAllInstructions(EazModule module, TypeDef virtualizationType)
+		public static IList<EazVirtualInstruction> FindAllInstructions(EazModule module, TypeDef virtualizationType)
 		{
 			if (module == null || virtualizationType == null)
 				throw new ArgumentNullException();

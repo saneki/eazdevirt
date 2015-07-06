@@ -11,6 +11,8 @@ namespace eazdevirt
 	{
 		public ModuleDefMD Module { get; private set; }
 
+		public EazVirtualization Virtualization { get; private set; }
+
 		/// <summary>
 		/// Construct an EazModule from a filepath.
 		/// </summary>
@@ -27,6 +29,12 @@ namespace eazdevirt
 		public EazModule(ModuleDefMD module)
 		{
 			this.Module = module;
+			this.Initialize();
+		}
+
+		private void Initialize()
+		{
+			this.Virtualization = new EazVirtualization(this);
 		}
 
 		/// <summary>

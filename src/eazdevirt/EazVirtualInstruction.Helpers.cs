@@ -3,6 +3,7 @@ using System.Linq;
 using de4dot.blocks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using System.Collections.Generic;
 
 namespace eazdevirt
 {
@@ -31,10 +32,22 @@ namespace eazdevirt
 		/// </summary>
 		/// <param name="codePattern">Pattern to check for</param>
 		/// <returns>true if match, false if not</returns>
-		public Boolean Matches(Code[] codePattern)
+		public Boolean Matches(IList<Code> codePattern)
 		{
 			this.CheckDelegateMethod();
 			return (Helpers.FindOpCodePatterns(this.DelegateMethod.Body.Instructions, codePattern).Count > 0);
+		}
+
+		/// <summary>
+		/// Check if the delegate's method body entirely matches the given pattern.
+		/// </summary>
+		/// <param name="codePattern">Pattern to check against</param>
+		/// <returns>true if match, false if not</returns>
+		public Boolean MatchesEntire(IList<Code> codePattern)
+		{
+			this.CheckDelegateMethod();
+			var instructions = Helpers.FindOpCodePatterns(this.DelegateMethod.Body.Instructions, codePattern);
+			return (instructions.Count == 1 && instructions[0].Length == this.DelegateMethod.Body.Instructions.Count);
 		}
 
 		/// <summary>
@@ -151,6 +164,51 @@ namespace eazdevirt
 			}
 
 			return false;
+		}
+
+		public IList<Instruction> Find(IList<Code> pattern)
+		{
+			var result = Helpers.FindOpCodePatterns(this.DelegateMethod.Body.Instructions, pattern);
+			if (result.Count == 0)
+				return null;
+			else return result[0];
+		}
+
+		/// <summary>
+		/// Get all methods that are called in the delegate method.
+		/// </summary>
+		/// <returns>All called methods</returns>
+		public IList<MethodDef> GetCalledMethods()
+		{
+			List<MethodDef> methods = new List<MethodDef>();
+
+			var enumerator = DotNetUtils.GetCalledMethods(this.Module.Module, this.DelegateMethod);
+			foreach(MethodDef method in enumerator)
+			{
+				methods.Add(method);
+			}
+
+			return methods;
+		}
+
+		/// <summary>
+		/// Copy a given OpCode pattern, and return a modified pattern where all instances of
+		/// the specified "old" code are replaced with a "new" code.
+		/// </summary>
+		/// <param name="pattern">OpCode pattern</param>
+		/// <param name="oldCode">Code to replace</param>
+		/// <param name="newCode">Code to replace with</param>
+		/// <returns>Copied and modified pattern</returns>
+		public IList<Code> ModifyPattern(IList<Code> pattern, Code oldCode, Code newCode)
+		{
+			Code[] result = new Code[pattern.Count];
+			for (Int32 i = 0; i < result.Length; i++)
+			{
+				if (pattern[i] == oldCode)
+					result[i] = newCode;
+				else result[i] = pattern[i];
+			}
+			return result;
 		}
 
 		/// <summary>

@@ -48,6 +48,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EazVirtualInstruction.Helpers.cs" />
+    <Compile Include="EazVirtualization.cs" />
     <Compile Include="OriginalOpcodeUnknownException.cs" />
     <Compile Include="Util\DotNetUtils.cs" />
     <Compile Include="EazCryptoStream.cs" />
