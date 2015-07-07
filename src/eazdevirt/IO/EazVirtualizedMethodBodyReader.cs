@@ -57,12 +57,23 @@ namespace eazdevirt.IO
 		/// </summary>
 		public Boolean HasInstructions { get { return this.Instructions != null; } }
 
+		/// <summary>
+		/// Whether or not all instructions in this virtual method have been successfully read.
+		/// Only set after reading the last instruction.
+		/// </summary>
+		public Boolean FullyRead { get; private set; }
+
 		public VirtualizedMethodInfo Info { get; private set; }
 
 		/// <summary>
-		/// Current offset into the method body (byte-wise).
+		/// Current IL offset into the method body (byte-wise).
 		/// </summary>
-		public UInt32 CurrentOffset { get; private set; }
+		public UInt32 CurrentILOffset { get; private set; }
+
+		/// <summary>
+		/// Current virtual offset into the method body (byte-wise).
+		/// </summary>
+		public UInt32 CurrentVirtualOffset { get; private set; }
 
 		/// <summary>
 		/// The last-read virtual opcode.
@@ -140,13 +151,15 @@ namespace eazdevirt.IO
 		/// <param name="codeSize">Size of region in bytes</param>
 		protected void ReadInstructionsNumBytes(Int32 codeSize)
 		{
-			List<Instruction> instructions = new List<Instruction>();
+			// List<Instruction> instructions = new List<Instruction>();
+			this.Instructions = new List<Instruction>();
 
 			Int64 finalPosition = this.Stream.Position + codeSize;
 			while(this.Stream.Position < finalPosition)
-				instructions.Add(this.ReadOneInstruction());
+				this.Instructions.Add(this.ReadOneInstruction());
 
-			this.Instructions = instructions;
+			//this.Instructions = instructions;
+			this.FullyRead = true;
 		}
 
 		/// <summary>
@@ -166,17 +179,19 @@ namespace eazdevirt.IO
 			OpCode opcode = virtualInstruction.OpCode.ToOpCode();
 
 			Instruction instruction = new Instruction(opcode);
-			instruction.Offset = this.CurrentOffset;
+			instruction.Offset = this.CurrentILOffset;
 			instruction.OpCode = opcode;
 			instruction.Operand = this.ReadOperand(instruction);
 
 			if (instruction.OpCode.Code == Code.Switch)
 			{
 				var targets = (IList<UInt32>)instruction.Operand;
-				this.CurrentOffset += (UInt32)(instruction.OpCode.Size + 4 + 4 * targets.Count);
+				this.CurrentILOffset += (UInt32)(instruction.OpCode.Size + 4 + 4 * targets.Count);
+				this.CurrentVirtualOffset += (UInt32)(instruction.OpCode.Size + 4 + 4 * targets.Count);
 			}
 			else
-				this.CurrentOffset += (UInt32)virtualInstruction.GetSize(instruction.Operand);
+				this.CurrentILOffset += (UInt32)instruction.GetSize();
+				this.CurrentVirtualOffset += (UInt32)virtualInstruction.GetSize(instruction.Operand);
 				// Doesn't apply, all virtual opcodes are size 4:
 				// this.CurrentOffset += (UInt32)instruction.GetSize();
 

@@ -106,13 +106,16 @@ namespace eazdevirt
 								EazVirtualInstruction v = matches[0];
 								Console.WriteLine("--> Not yet devirtualizable (contains unknown virtual instruction)");
 								Console.WriteLine("-----> Virtual OpCode = {0} @ [{1}] (0x{2:X8})",
-									reader.LastVirtualOpCode, reader.CurrentInstructionOffset, reader.CurrentOffset);
+									reader.LastVirtualOpCode, reader.CurrentInstructionOffset, reader.CurrentVirtualOffset);
 								Console.WriteLine("-----> Delegate method: {0}", v.DelegateMethod.FullName);
+
+								if (reader.CurrentInstructionOffset > 0)
+									WritePartiallyDevirtualizedMethod(reader);
 							}
 							else
 							{
 								Console.WriteLine("--> Not yet devirtualizable (contains unexpected virtual instruction @ [{0}] (0x{1:X8}))",
-									reader.CurrentInstructionOffset, reader.CurrentOffset);
+									reader.CurrentInstructionOffset, reader.CurrentVirtualOffset);
 							}
 
 						}
@@ -306,6 +309,16 @@ namespace eazdevirt
 			}
 
 			return true;
+		}
+
+		static void WritePartiallyDevirtualizedMethod(EazVirtualizedMethodBodyReader reader)
+		{
+			Console.WriteLine();
+			foreach(var instruction in reader.Instructions)
+			{
+				Console.WriteLine("{0}", instruction.ToString());
+			}
+			Console.WriteLine();
 		}
 
 		static void WriteAsciiLogo()
