@@ -39,8 +39,6 @@ namespace eazdevirt
 				return Code.Ckfinite;
 			else if (ins.Is_Clt())
 				return Code.Clt;
-			else if (ins.Is_Conv_R8())
-				return Code.Conv_R8;
 			else if (ins.Is_Div())
 				return Code.Div;
 			else if (ins.Is_Div_Un())
@@ -293,29 +291,6 @@ namespace eazdevirt
 		public static Boolean Is_Div_Un(this EazVirtualInstruction ins)
 		{
 			return ins.MatchesIndirectWithBoolean(true, Pattern_Div);
-		}
-
-		/// <remarks>Unsure</remarks>
-		public static Boolean Is_Conv_R8(this EazVirtualInstruction ins)
-		{
-			// This *might* not be Conv_R8
-
-			// This doesn't get the System.Double methods, probably because they're in
-			// a different module?
-			IList<MethodDef> called = ins.GetCalledMethods();
-
-			Boolean isNaNCalled = called.Any((method) => {
-				return method.FullName.Contains("System.Double::IsNaN");
-			}), isInfinityCalled = called.Any((method) => {
-				return method.FullName.Contains("System.Double::IsInfinity");
-			});
-
-			// This detects correctly, but the Code sequence is rather generic and seems
-			// likely to be accidentally found elsewhere
-			return /* isNaNCalled && isInfinityCalled && */ ins.Matches(new Code[] {
-				Code.Ldloc_0, Code.Callvirt, Code.Call, Code.Brtrue_S,
-				Code.Ldloc_0, Code.Callvirt, Code.Call, Code.Brfalse_S
-			});
 		}
 
 		/// <summary>

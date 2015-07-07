@@ -175,17 +175,28 @@ namespace eazdevirt
 		}
 
 		/// <summary>
-		/// Get all methods that are called in the delegate method.
+		/// Get all method references that are called in the delegate method.
 		/// </summary>
-		/// <returns>All called methods</returns>
-		public IList<MethodDef> GetCalledMethods()
+		/// <returns>All called method references</returns>
+		/// <remarks>Partially copied from DotNetUtils.GetCalledMethods()</remarks>
+		public IList<IMethod> GetCalledMethods()
 		{
-			List<MethodDef> methods = new List<MethodDef>();
+			ModuleDefMD module = this.Module.Module;
+			MethodDef method = this.DelegateMethod;
 
-			var enumerator = DotNetUtils.GetCalledMethods(this.Module.Module, this.DelegateMethod);
-			foreach(MethodDef method in enumerator)
+			List<IMethod> methods = new List<IMethod>();
+
+			if (method != null && method.HasBody)
 			{
-				methods.Add(method);
+				foreach (var call in method.Body.Instructions)
+				{
+					if (call.OpCode.Code != Code.Call && call.OpCode.Code != Code.Callvirt)
+						continue;
+					var methodRef = call.Operand as IMethod;
+					if (methodRef == null)
+						continue;
+					methods.Add(methodRef);
+				}
 			}
 
 			return methods;
