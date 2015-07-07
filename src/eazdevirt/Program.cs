@@ -5,6 +5,7 @@ using dnlib.DotNet;
 using System.IO;
 using dnlib.DotNet.Emit;
 using System.Collections.Generic;
+using eazdevirt.IO;
 
 namespace eazdevirt
 {
@@ -66,6 +67,59 @@ namespace eazdevirt
 				Console.WriteLine("--> Position string: {0}", method.PositionString);
 				Console.WriteLine("--> Resource: {0}", method.ResourceStringId);
 				Console.WriteLine("--> Crypto key: {0}", method.ResourceCryptoKey);
+
+				if(options.ExtraOutput)
+				{
+					var reader = new EazVirtualizedMethodBodyReader(method);
+					Boolean threwUnknownOpcodeException = false, threwException = false;
+
+					try
+					{
+						reader.Read(); // Read method
+					}
+					catch (OriginalOpcodeUnknownException)
+					{
+						// This is almost guaranteed to happen at this point
+						threwUnknownOpcodeException = true;
+					}
+					catch (Exception)
+					{
+						// ...
+						threwException = true;
+					}
+
+					if (reader.Info != null)
+					{
+						Console.WriteLine("--> Locals count: {0}", reader.Info.Locals.Length);
+						Console.WriteLine("--> Actual method size: {0} (0x{0:X8})", reader.CodeSize);
+
+						if (!threwUnknownOpcodeException && !threwException)
+							Console.WriteLine("--> Potentially devirtualizable");
+						else if (threwUnknownOpcodeException)
+						{
+							var matches = module.VirtualInstructions
+								.Where((instr) => { return instr.VirtualOpCode == reader.LastVirtualOpCode; })
+								.ToArray();
+
+							if(matches.Length > 0)
+							{
+								EazVirtualInstruction v = matches[0];
+								Console.WriteLine("--> Not yet devirtualizable (contains unknown virtual instruction)");
+								Console.WriteLine("-----> Virtual OpCode = {0} @ [{1}] (0x{2:X8})",
+									reader.LastVirtualOpCode, reader.CurrentInstructionOffset, reader.CurrentOffset);
+								Console.WriteLine("-----> Delegate method: {0}", v.DelegateMethod.FullName);
+							}
+							else
+							{
+								Console.WriteLine("--> Not yet devirtualizable (contains unexpected virtual instruction @ [{0}] (0x{1:X8}))",
+									reader.CurrentInstructionOffset, reader.CurrentOffset);
+							}
+
+						}
+						else if (threwException)
+							Console.WriteLine("--> Not yet devirtualizable (threw exception)");
+					}
+				}
 			}
 		}
 
@@ -102,7 +156,7 @@ namespace eazdevirt
 
 			// The virtual-call-method should belong to the main virtualization type
 			TypeDef virtualizationType = method.VirtualCallMethod.DeclaringType;
-			var vInstructions = EazVirtualInstruction.FindAllInstructions(module, virtualizationType);
+			var vInstructions = module.VirtualInstructions;
 
 			if (vInstructions.Count > 0)
 			{

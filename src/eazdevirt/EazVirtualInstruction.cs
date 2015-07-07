@@ -220,5 +220,22 @@ namespace eazdevirt
 
 			return vInstructions.ToArray();
 		}
+
+		/// <summary>
+		/// Get the size of this virtual instruction. Requires that the instruction be identified
+		/// with a CIL opcode.
+		/// </summary>
+		/// <param name="operand">Instruction operand</param>
+		/// <returns>Size of instruction when serialized</returns>
+		/// <exception cref="System.Exception">Thrown if virtual instruction not identified</exception>
+		public Int32 GetSize(Object operand)
+		{
+			if (!this.IsIdentified)
+				throw new Exception("Cannot get a virtual instruction's size if not identified");
+
+			Instruction instruction = this.OpCode.ToOpCode().ToInstruction();
+			instruction.Operand = operand;
+			return (instruction.GetSize() - instruction.OpCode.Size) + 4;
+		}
 	}
 }

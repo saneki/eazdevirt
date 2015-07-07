@@ -16,7 +16,12 @@ namespace eazdevirt
 	}
 
 	[Verb("find-methods", HelpText = "Find virtualized methods")]
-	public class FindMethodsSubOptions : BaseAssemblyOptions { }
+	public class FindMethodsSubOptions : BaseAssemblyOptions
+	{
+		[Option('e', "extra-output", DefaultValue = false,
+			HelpText = "Extra output, excluding the method body")]
+		public Boolean ExtraOutput { get; set; }
+	}
 
 	[Verb("get-key", HelpText = "Extract the integer used for stream crypto")]
 	public class GetKeySubOptions : BaseAssemblyOptions { }

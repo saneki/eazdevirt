@@ -1,6 +1,7 @@
 ﻿using System;
-using dnlib.DotNet;
+using System.Collections.Generic;
 using de4dot.blocks;
+using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
 namespace eazdevirt

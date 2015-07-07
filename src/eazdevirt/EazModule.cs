@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using dnlib.DotNet;
 
 namespace eazdevirt
@@ -12,6 +13,14 @@ namespace eazdevirt
 		public ModuleDefMD Module { get; private set; }
 
 		public EazVirtualization Virtualization { get; private set; }
+
+		public IList<EazVirtualInstruction> VirtualInstructions { get; private set; }
+
+		/// <summary>
+		/// Dictionary containing all identified instruction types (opcodes).
+		/// Maps virtual opcode (int) to virtual instruction containing the actual opcode.
+		/// </summary>
+		public Dictionary<Int32, EazVirtualInstruction> IdentifiedOpCodes;
 
 		/// <summary>
 		/// Construct an EazModule from a filepath.
@@ -35,6 +44,7 @@ namespace eazdevirt
 		private void Initialize()
 		{
 			this.Virtualization = new EazVirtualization(this);
+			this.InitializeIdentifiedOpCodes();
 		}
 
 		/// <summary>
@@ -151,6 +161,33 @@ namespace eazdevirt
 			}
 
 			return hasLdstr && hasMethodCall;
+		}
+
+		/// <summary>
+		/// Find all virtual instructions and attempt to identify them.
+		/// </summary>
+		private void InitializeIdentifiedOpCodes()
+		{
+			this.IdentifiedOpCodes = new Dictionary<Int32, EazVirtualInstruction>();
+
+			this.VirtualInstructions = EazVirtualInstruction.FindAllInstructions(this, this.Virtualization.VirtualizationType);
+			var identified = this.VirtualInstructions.Where((instruction) => { return instruction.IsIdentified; });
+
+			foreach (var instruction in identified)
+			{
+				Boolean containsVirtual = this.IdentifiedOpCodes.ContainsKey(instruction.VirtualOpCode);
+				Boolean containsActual = this.IdentifiedOpCodes.ContainsValue(instruction);
+
+				if (containsVirtual)
+					Console.WriteLine("WARNING: Multiple instruction types with the same virtual opcode detected ({0})",
+						instruction.VirtualOpCode);
+
+				if (containsActual)
+					Console.WriteLine("WARNING: Multiple virtual opcodes map to the same actual opcode ({0})",
+						instruction.OpCode.ToString());
+
+				this.IdentifiedOpCodes.Add(instruction.VirtualOpCode, instruction);
+			}
 		}
 
 		/// <summary>
