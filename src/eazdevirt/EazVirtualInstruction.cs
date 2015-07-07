@@ -34,7 +34,7 @@ namespace eazdevirt
 		/// <summary>
 		/// The operand type, set when the instruction field is constructed.
 		/// </summary>
-		public Int32 OperandType { get; private set; }
+		public Int32 VirtualOperandType { get; private set; }
 
 		/// <summary>
 		/// The dictionary method used by the main virtualization class, which returns a dictionary
@@ -211,7 +211,7 @@ namespace eazdevirt
 					{
 						vInstr.HasVirtualOpCode = true;
 						vInstr.VirtualOpCode = virtualOpCode;
-						vInstr.OperandType = operandType;
+						vInstr.VirtualOperandType = operandType;
 						vInstr.TrySetIdentify(); // Try to identify and set original opcode
 						break;
 					}
@@ -233,9 +233,50 @@ namespace eazdevirt
 			if (!this.IsIdentified)
 				throw new Exception("Cannot get a virtual instruction's size if not identified");
 
-			Instruction instruction = this.OpCode.ToOpCode().ToInstruction();
-			instruction.Operand = operand;
+			// Instruction instruction = this.OpCode.ToOpCode().ToInstruction();
+			Instruction instruction = new Instruction(this.OpCode.ToOpCode(), operand);
 			return (instruction.GetSize() - instruction.OpCode.Size) + 4;
+		}
+
+		/// <summary>
+		/// Assume the CIL operand type based on the virtual operand type.
+		/// </summary>
+		/// <returns>CIL operand type</returns>
+		public OperandType GetOperandType()
+		{
+			switch(this.VirtualOperandType)
+			{
+				case 0: return OperandType.InlineBrTarget;
+				case 2: return OperandType.InlineI;
+				case 3: return OperandType.InlineI8;
+				case 5: return OperandType.InlineNone;
+				case 7: return OperandType.InlineR;
+				case 11: return OperandType.InlineSwitch;
+				case 14: return OperandType.InlineVar;
+				case 16: return OperandType.ShortInlineI;
+				case 17: return OperandType.ShortInlineR;
+				case 18: return OperandType.ShortInlineVar;
+				default: throw new Exception("Unknown virtual operand type");
+			}
+		}
+
+		/// <summary>
+		/// Try and assume the CIL operand type based on the virtual operand type.
+		/// </summary>
+		/// <param name="operandType">Operand type</param>
+		/// <returns>true if successful, false if not</returns>
+		public Boolean TryGetOperandType(out OperandType operandType)
+		{
+			try
+			{
+				operandType = this.GetOperandType();
+				return true;
+			}
+			catch(Exception)
+			{
+				operandType = OperandType.NOT_USED_8;
+				return false;
+			}
 		}
 	}
 }

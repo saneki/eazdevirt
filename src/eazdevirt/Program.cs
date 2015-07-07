@@ -17,7 +17,8 @@ namespace eazdevirt
 				<FindMethodsSubOptions,
 				 GetKeySubOptions,
 				 InstructionsSubOptions,
-				 PositionSubOptions>(args);
+				 PositionSubOptions,
+				 ResourceSubOptions>(args);
 
 			if (!result.Errors.Any())
 			{
@@ -42,6 +43,10 @@ namespace eazdevirt
 				{
 					DoPosition((PositionSubOptions)result.Value);
 				}
+				else if (result.Value is ResourceSubOptions)
+				{
+					DoResource((ResourceSubOptions)result.Value);
+				}
 			}
 		}
 
@@ -65,6 +70,7 @@ namespace eazdevirt
 				Console.WriteLine();
 				Console.WriteLine(method.Method.FullName);
 				Console.WriteLine("--> Position string: {0}", method.PositionString);
+				Console.WriteLine("--> Position: {0} (0x{0:X8})", method.Position);
 				Console.WriteLine("--> Resource: {0}", method.ResourceStringId);
 				Console.WriteLine("--> Crypto key: {0}", method.ResourceCryptoKey);
 
@@ -72,6 +78,7 @@ namespace eazdevirt
 				{
 					var reader = new EazVirtualizedMethodBodyReader(method);
 					Boolean threwUnknownOpcodeException = false, threwException = false;
+					Exception exception = null;
 
 					try
 					{
@@ -82,10 +89,11 @@ namespace eazdevirt
 						// This is almost guaranteed to happen at this point
 						threwUnknownOpcodeException = true;
 					}
-					catch (Exception)
+					catch (Exception e)
 					{
 						// ...
 						threwException = true;
+						exception = e;
 					}
 
 					if (reader.Info != null)
@@ -120,7 +128,11 @@ namespace eazdevirt
 
 						}
 						else if (threwException)
+						{
 							Console.WriteLine("--> Not yet devirtualizable (threw exception)");
+							Console.WriteLine();
+							Console.Write(exception);
+						}
 					}
 				}
 			}
@@ -194,6 +206,15 @@ namespace eazdevirt
 						.OrderBy((instruction) => { return instruction.OpCode.ToString(); }));
 				}
 
+				// If only showing instructions with specific virtual operand types, filter
+				if(options.OperandTypeWhitelist != Int32.MinValue)
+				{
+					vInstructions = new List<EazVirtualInstruction>(vInstructions
+						.Where((instruction) => {
+							return options.OperandTypeWhitelist == instruction.VirtualOperandType;
+						}));
+				}
+
 				foreach (var v in vInstructions)
 				{
 					if (!options.ExtraOutput) // Simple output
@@ -217,7 +238,7 @@ namespace eazdevirt
 							if (v.HasVirtualOpCode)
 							{
 								Console.WriteLine("--> Virtual OpCode:  {0} ({0:X8})", v.VirtualOpCode);
-								Console.WriteLine("--> Operand type:    {0}", v.OperandType);
+								Console.WriteLine("--> Operand type:    {0}", v.VirtualOperandType);
 							}
 
 							{
@@ -233,7 +254,7 @@ namespace eazdevirt
 					var operandTypeDict = new Dictionary<Int32, Int32>();
 					foreach (var vInstr in vInstructions)
 					{
-						var type = vInstr.OperandType;
+						var type = vInstr.VirtualOperandType;
 						if (operandTypeDict.ContainsKey(type))
 							operandTypeDict[type] = (operandTypeDict[type] + 1);
 						else operandTypeDict.Add(type, 1);
@@ -295,6 +316,50 @@ namespace eazdevirt
 			Console.WriteLine("{0} => {1:X8}", options.PositionString, position);
 		}
 
+		static void DoResource(ResourceSubOptions options)
+		{
+			EazModule module;
+			if (!TryLoadModule(options.AssemblyPath, out module))
+				return;
+
+			// If no action set, set the default action (extract)
+			if (!options.Extract)
+				options.Extract = true;
+
+			EazVirtualizedMethod method = module.FindFirstVirtualizedMethod();
+			if(method != null)
+			{
+				if (options.Extract)
+				{
+					String outputPath = options.OutputPath;
+					if (outputPath == null || outputPath.Equals(""))
+						outputPath = method.ResourceStringId;
+
+					FileMode fileMode = FileMode.CreateNew;
+					if (options.OverwriteExisting)
+						fileMode = FileMode.Create;
+
+					using (Stream resourceStream = module.GetResourceStream(options.KeepEncrypted))
+					{
+						try
+						{
+							using (FileStream fileStream = new FileStream(outputPath, fileMode, FileAccess.Write))
+							{
+								resourceStream.CopyTo(fileStream);
+							}
+						}
+						catch(IOException e)
+						{
+							Console.Write(e);
+						}
+					}
+
+					Console.WriteLine("Extracted {0} resource to {1}",
+						options.KeepEncrypted ? "encrypted" : "decrypted", outputPath);
+				}
+			}
+		}
+
 		static Boolean TryLoadModule(String path, out EazModule module)
 		{
 			try
@@ -303,7 +368,8 @@ namespace eazdevirt
 			}
 			catch (IOException e)
 			{
-				Console.WriteLine(e.Message);
+				// Console.WriteLine(e.Message);
+				Console.Write(e);
 				module = null;
 				return false;
 			}

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using dnlib.DotNet;
+using System.IO;
 
 namespace eazdevirt
 {
@@ -21,6 +22,16 @@ namespace eazdevirt
 		/// Maps virtual opcode (int) to virtual instruction containing the actual opcode.
 		/// </summary>
 		public Dictionary<Int32, EazVirtualInstruction> IdentifiedOpCodes;
+
+		/// <summary>
+		/// Embedded resource string identifier.
+		/// </summary>
+		public String ResourceStringId { get; private set; }
+
+		/// <summary>
+		/// Embedded resource crypto key.
+		/// </summary>
+		public Int32 ResourceCryptoKey { get; private set; }
 
 		/// <summary>
 		/// Construct an EazModule from a filepath.
@@ -45,6 +56,37 @@ namespace eazdevirt
 		{
 			this.Virtualization = new EazVirtualization(this);
 			this.InitializeIdentifiedOpCodes();
+		}
+
+		/// <summary>
+		/// Get the resource with virtualized method data as a Stream.
+		/// </summary>
+		/// <param name="cryptoStream">
+		/// Whether or not to return a raw stream that doesn't automatically handle crypto
+		/// </param>
+		/// <returns>Stream</returns>
+		public Stream GetResourceStream(Boolean rawStream = false)
+		{
+			if (this.ResourceStringId == null)
+			{
+				var vmethod = this.FindFirstVirtualizedMethod();
+				if (vmethod != null)
+				{
+					this.ResourceStringId = vmethod.ResourceStringId;
+					this.ResourceCryptoKey = vmethod.ResourceCryptoKey;
+				}
+				else
+					throw new Exception("Unable to find any virtualized methods");
+			}
+
+			var resource = this.Module.Resources.FindEmbeddedResource(this.ResourceStringId);
+			if (resource == null)
+				throw new Exception("Unable to find resource");
+
+			if (!rawStream)
+				return new EazCryptoStream(resource.GetResourceStream(), this.ResourceCryptoKey);
+			else
+				return resource.GetResourceStream();
 		}
 
 		/// <summary>

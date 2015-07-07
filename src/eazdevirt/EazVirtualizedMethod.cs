@@ -32,6 +32,8 @@ namespace eazdevirt
 		/// </summary>
 		public String PositionString { get; private set; }
 
+		public Int64 Position { get; private set; }
+
 		/// <summary>
 		/// String identifier of the ManifestResource which contains encrypted
 		/// virtualized method info.
@@ -119,6 +121,9 @@ namespace eazdevirt
 
 			// Get the crypto key
 			this.ResourceCryptoKey = FindResourceCryptoKey(this.VirtualCallMethod);
+
+			// Set position from position string + crypto key
+			this.Position = EazPosition.FromString(this.PositionString, this.ResourceCryptoKey);
 		}
 
 		/// <summary>

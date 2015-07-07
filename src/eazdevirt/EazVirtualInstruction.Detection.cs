@@ -35,6 +35,8 @@ namespace eazdevirt
 				return Code.Blt;
 			else if (ins.Is_Cgt())
 				return Code.Cgt;
+			else if (ins.Is_Ckfinite())
+				return Code.Ckfinite;
 			else if (ins.Is_Clt())
 				return Code.Clt;
 			else if (ins.Is_Conv_R8())
@@ -59,6 +61,10 @@ namespace eazdevirt
 				return Code.Ldarg_2;
 			else if (ins.Is_Ldarg_3())
 				return Code.Ldarg_3;
+			else if (ins.Is_Ldc_I4())
+				return Code.Ldc_I4;
+			else if (ins.Is_Ldc_I4_S())
+				return Code.Ldc_I4_S;
 			else if (ins.Is_Ldc_I4_0())
 				return Code.Ldc_I4_0;
 			else if (ins.Is_Ldc_I4_1())
@@ -79,6 +85,12 @@ namespace eazdevirt
 				return Code.Ldc_I4_8;
 			else if (ins.Is_Ldc_I4_M1())
 				return Code.Ldc_I4_M1;
+			else if (ins.Is_Ldc_I8())
+				return Code.Ldc_I8;
+			else if (ins.Is_Ldc_R4())
+				return Code.Ldc_R4;
+			else if (ins.Is_Ldc_R8())
+				return Code.Ldc_R8;
 			else if (ins.Is_Ldloc())
 				return Code.Ldloc;
 			else if (ins.Is_Ldloc_S())
@@ -97,6 +109,8 @@ namespace eazdevirt
 				return Code.Rem;
 			else if (ins.Is_Rem_Un())
 				return Code.Rem_Un;
+			else if (ins.Is_Rethrow())
+				return Code.Rethrow;
 			else if (ins.Is_Shl())
 				return Code.Shl;
 			else if (ins.Is_Shr())
@@ -125,6 +139,8 @@ namespace eazdevirt
 				return Code.Sub_Ovf;
 			else if (ins.Is_Sub_Ovf_Un())
 				return Code.Sub_Ovf_Un;
+			else if (ins.Is_Throw())
+				return Code.Throw;
 			else if (ins.Is_Xor())
 				return Code.Xor;
 
@@ -533,6 +549,46 @@ namespace eazdevirt
 		}
 
 		/// <summary>
+		/// OpCode pattern seen in the Ldc_I4, Ldc_I4_S, Ldc_I8, Ldc_R4, Ldc_R8 delegate methods.
+		/// </summary>
+		public static readonly Code[] Pattern_Ldc = new Code[] {
+			Code.Ldarg_0, Code.Ldarg_1, Code.Call, Code.Ret
+		};
+
+		public static Boolean _Is_Ldc(EazVirtualInstruction ins, OperandType expectedOperandType)
+		{
+			OperandType operandType;
+			return ins.MatchesEntire(Pattern_Ldc)
+				&& ins.TryGetOperandType(out operandType)
+				&& operandType == expectedOperandType;
+		}
+
+		public static Boolean Is_Ldc_I4(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldc(ins, OperandType.InlineI);
+		}
+
+		public static Boolean Is_Ldc_I4_S(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldc(ins, OperandType.ShortInlineI);
+		}
+
+		public static Boolean Is_Ldc_I8(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldc(ins, OperandType.InlineI8);
+		}
+
+		public static Boolean Is_Ldc_R4(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldc(ins, OperandType.ShortInlineR);
+		}
+
+		public static Boolean Is_Ldc_R8(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldc(ins, OperandType.InlineR);
+		}
+
+		/// <summary>
 		/// OpCode pattern seen in the Ldloc_C delegate methods.
 		/// </summary>
 		private static readonly Code[] Pattern_Ldloc_C = new Code[] {
@@ -660,6 +716,53 @@ namespace eazdevirt
 		public static Boolean Is_Stloc_S(this EazVirtualInstruction ins)
 		{
 			return _Is_Stloc(ins, "System.Byte");
+		}
+
+		/// <summary>
+		/// OpCode pattern seen in the Throw, Rethrow helper methods.
+		/// </summary>
+		public static readonly Code[] Pattern_Throw = new Code[] {
+			Code.Ldarg_0, Code.Isinst, Code.Stloc_0, Code.Ldloc_0,
+			Code.Call, Code.Ldarg_0, Code.Call, Code.Ret
+		};
+
+		public static Boolean _Is_Throw(EazVirtualInstruction ins, MethodDef helper)
+		{
+			var matches = Helpers.FindOpCodePatterns(helper.Body.Instructions, Pattern_Throw);
+			return matches.Count == 1 && matches[0].Length == Pattern_Throw.Length;
+		}
+
+		/// <remarks>Unsure</remarks>
+		public static Boolean Is_Throw(this EazVirtualInstruction ins)
+		{
+			return ins.MatchesEntire(new Code[] {
+				Code.Ldarg_0, Code.Call, Code.Stloc_0, Code.Ldloc_0,
+				Code.Callvirt, Code.Call, Code.Ret
+			}) && _Is_Throw(ins, ((MethodDef)ins.DelegateMethod.Body.Instructions[5].Operand));
+		}
+
+		/// <remarks>Unsure</remarks>
+		public static Boolean Is_Rethrow(this EazVirtualInstruction ins)
+		{
+			var sub = ins.Find(new Code[] {
+				Code.Newobj, Code.Throw, Code.Ldarg_0, Code.Ldarg_0, Code.Ldfld,
+				Code.Callvirt, Code.Callvirt, Code.Stfld, Code.Ldarg_0, Code.Ldfld,
+				Code.Call, Code.Ret
+			});
+			return sub != null && _Is_Throw(ins, ((MethodDef)sub[10].Operand));
+		}
+
+		public static Boolean Is_Ckfinite(this EazVirtualInstruction ins)
+		{
+			var sub = ins.Find(new Code[] {
+				Code.Ldloc_0, Code.Callvirt, Code.Call, Code.Brtrue_S,
+				Code.Ldloc_0, Code.Callvirt, Code.Call, Code.Brfalse_S,
+				Code.Ldstr, Code.Newobj, Code.Throw
+			});
+
+			return sub != null
+				&& ((IMethod)sub[2].Operand).FullName.Contains("System.Double::IsNaN")
+				&& ((IMethod)sub[6].Operand).FullName.Contains("System.Double::IsInfinity");
 		}
 	}
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using CommandLine;
+using System.Collections.Generic;
 
 namespace eazdevirt
 {
@@ -37,6 +38,12 @@ namespace eazdevirt
 			HelpText = "Print information about operand types")]
 		public Boolean Operands { get; set; }
 
+		// Command Line Parser Library refuses to work with IEnumerable, Arrays, etc.
+		// Only allow single operand type for now
+		[Option('z', "operand-type", DefaultValue = Int32.MinValue,
+			HelpText = "Only show instructions with specified virtual operand type")]
+		public Int32 OperandTypeWhitelist { get; set; }
+
 		[Option('e', "extra-output", DefaultValue = false, HelpText = "Extra output")]
 		public Boolean ExtraOutput { get; set; }
 	}
@@ -52,5 +59,23 @@ namespace eazdevirt
 
 		[Option('k', "key", HelpText = "Integer key used for crypto")]
 		public Nullable<Int32> Key { get; set; }
+	}
+
+	[Verb("resource", HelpText = "Extract the embedded resource")]
+	public class ResourceSubOptions : BaseAssemblyOptions
+	{
+		[Option('o', "destination")]
+		public String OutputPath { get; set; }
+
+		[Option('f', "force", DefaultValue = false, HelpText = "Overwrite existing file")]
+		public Boolean OverwriteExisting { get; set; }
+
+		[Option('x', "extract", DefaultValue = false,
+			HelpText = "Extract the embedded resource to a file")]
+		public Boolean Extract { get; set; }
+
+		[Option('D', "keep-encrypted", DefaultValue = false,
+			HelpText = "Don't decrypt the embedded resource when extracting")]
+		public Boolean KeepEncrypted { get; set; }
 	}
 }
