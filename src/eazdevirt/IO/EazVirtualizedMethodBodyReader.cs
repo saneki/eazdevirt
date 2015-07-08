@@ -1,38 +1,18 @@
 ﻿using System;
+using System.IO;
+using System.Collections.Generic;
 using de4dot.blocks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
-using System.IO;
-using System.Collections.Generic;
 
 namespace eazdevirt.IO
 {
-	public class EazVirtualizedMethodBodyReader
+	public class EazVirtualizedMethodBodyReader : EazResourceReader
 	{
 		/// <summary>
 		/// Virtualized method.
 		/// </summary>
 		public EazVirtualizedMethod Method { get; private set; }
-
-		/// <summary>
-		/// Embedded resource stream.
-		/// </summary>
-		public EazCryptoStream Stream { get; private set; }
-
-		/// <summary>
-		/// Embedded Resource reader.
-		/// </summary>
-		public BinaryReader Reader { get; private set; }
-
-		/// <summary>
-		/// Parent module.
-		/// </summary>
-		public EazModule Module { get { return this.Method.Module; } }
-
-		/// <summary>
-		/// Embedded resource.
-		/// </summary>
-		public EmbeddedResource Resource { get; private set; }
 
 		/// <summary>
 		/// Size of the method body in bytes.
@@ -86,10 +66,16 @@ namespace eazdevirt.IO
 		public UInt32 CurrentInstructionOffset { get; private set; }
 
 		/// <summary>
+		/// Resolver.
+		/// </summary>
+		public EazResolver Resolver { get; private set; }
+
+		/// <summary>
 		/// Construct a method body reader given a virtualized method.
 		/// </summary>
 		/// <param name="method">Virtualized method</param>
 		public EazVirtualizedMethodBodyReader(EazVirtualizedMethod method)
+			: base((method != null ? method.Module : null))
 		{
 			if (method == null)
 				throw new ArgumentNullException();
@@ -101,6 +87,7 @@ namespace eazdevirt.IO
 
 		private void Initialize()
 		{
+			/*
 			var moduleDef = this.Module.Module;
 			this.Resource = moduleDef.Resources.FindEmbeddedResource(this.Method.ResourceStringId);
 
@@ -112,6 +99,10 @@ namespace eazdevirt.IO
 			DnBinaryReader reader = new DnBinaryReader(this.Stream);
 			this.Reader = reader; // BinaryReader
 			this.Stream.Position = this.InitialPosition;
+			*/
+
+			this.Stream.Position = this.InitialPosition;
+			this.Resolver = new EazResolver(this.Parent);
 		}
 
 		public void Read()
@@ -172,7 +163,7 @@ namespace eazdevirt.IO
 			this.LastVirtualOpCode = virtualOpcode;
 
 			EazVirtualInstruction virtualInstruction;
-			if (!this.Module.IdentifiedOpCodes.TryGetValue(virtualOpcode, out virtualInstruction))
+			if (!this.Parent.IdentifiedOpCodes.TryGetValue(virtualOpcode, out virtualInstruction))
 				//throw new Exception(String.Format("Unknown virtual opcode: {0}", virtualOpcode));
 				throw new OriginalOpcodeUnknownException(virtualInstruction);
 
@@ -222,7 +213,7 @@ namespace eazdevirt.IO
 		protected Object ReadOperand(Instruction instr)
 		{
 			BinaryReader reader = this.Reader;
-			ModuleDefMD module = this.Module.Module;
+			ModuleDefMD module = this.Module;
 
 			// Todo: Fix some of these to factor in current offset
 			switch(instr.OpCode.OperandType)
@@ -259,20 +250,56 @@ namespace eazdevirt.IO
 
 				// Resolving
 				case OperandType.InlineMethod:
-					return module.ResolveMethod(reader.ReadUInt32());
+					return this.ReadInlineMethod(instr);
+				case OperandType.InlineType:
+					return this.ReadInlineType(instr);
 				case OperandType.InlineField:
-					return module.ResolveField(reader.ReadUInt32());
+					//return module.ResolveField(reader.ReadUInt32());
+					return this.ReadInlineField(instr);
 				case OperandType.InlineSig:
 					// Supposed to return a MethodSig...?
-					return module.ResolveStandAloneSig(reader.ReadUInt32());
+					//return module.ResolveStandAloneSig(reader.ReadUInt32());
+					return this.ReadInlineSig(instr);
 				case OperandType.InlineTok:
 					// Todo: GenericParamContext support, see ReadInlineTok of MethodBodyReader
-					return module.ResolveToken(reader.ReadInt32()) as ITokenOperand;
+					//return module.ResolveToken(reader.ReadInt32()) as ITokenOperand;
+					return this.ReadInlineTok(instr);
 				case OperandType.InlineString:
-					return module.ReadUserString(reader.ReadUInt32());
+					//return module.ReadUserString(reader.ReadUInt32());
+					return this.ReadInlineString(instr);
 			}
 
 			return null;
+		}
+
+		protected virtual IMethod ReadInlineField(Instruction instruction)
+		{
+			throw new NotSupportedException();
+		}
+
+		protected virtual IMethod ReadInlineSig(Instruction instruction)
+		{
+			throw new NotSupportedException();
+		}
+
+		protected virtual IMethod ReadInlineTok(Instruction instruction)
+		{
+			throw new NotSupportedException();
+		}
+
+		protected virtual IMethod ReadInlineMethod(Instruction instruction)
+		{
+			return this.Resolver.ResolveMethod(this.Reader.ReadInt32());
+		}
+
+		protected virtual ITypeDefOrRef ReadInlineType(Instruction instruction)
+		{
+			return this.Resolver.ResolveType(this.Reader.ReadInt32());
+		}
+
+		protected virtual String ReadInlineString(Instruction instruction)
+		{
+			return this.Resolver.ResolveString(this.Reader.ReadInt32());
 		}
 
 		/// <summary>

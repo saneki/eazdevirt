@@ -4,6 +4,7 @@ using System.Linq;
 using de4dot.blocks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using eazdevirt.Util;
 
 namespace eazdevirt
 {
@@ -33,6 +34,8 @@ namespace eazdevirt
 				return Code.Bge;
 			else if (ins.Is_Blt())
 				return Code.Blt;
+			else if (ins.Is_Call())
+				return Code.Call;
 			else if (ins.Is_Cgt())
 				return Code.Cgt;
 			else if (ins.Is_Ckfinite())
@@ -101,12 +104,18 @@ namespace eazdevirt
 				return Code.Ldloc_2;
 			else if (ins.Is_Ldloc_3())
 				return Code.Ldloc_3;
+			else if (ins.Is_Ldnull())
+				return Code.Ldnull;
+			else if (ins.Is_Ldstr())
+				return Code.Ldstr;
 			else if (ins.Is_Or())
 				return Code.Or;
 			else if (ins.Is_Rem())
 				return Code.Rem;
 			else if (ins.Is_Rem_Un())
 				return Code.Rem_Un;
+			else if (ins.Is_Ret())
+				return Code.Ret;
 			else if (ins.Is_Rethrow())
 				return Code.Rethrow;
 			else if (ins.Is_Shl())
@@ -738,6 +747,42 @@ namespace eazdevirt
 			return sub != null
 				&& ((IMethod)sub[2].Operand).FullName.Contains("System.Double::IsNaN")
 				&& ((IMethod)sub[6].Operand).FullName.Contains("System.Double::IsInfinity");
+		}
+
+		public static Boolean Is_Call(this EazVirtualInstruction ins)
+		{
+			return ins.MatchesEntire(new Code[] {
+				Code.Ldarg_1, Code.Castclass, Code.Stloc_0, Code.Ldarg_0, Code.Ldloc_0,
+				Code.Callvirt, Code.Call, Code.Stloc_1, Code.Ldarg_0, Code.Ldloc_1,
+				Code.Ldc_I4_0, Code.Call, Code.Ret
+			});
+		}
+
+		public static Boolean Is_Ldstr(this EazVirtualInstruction ins)
+		{
+			return ins.MatchesEntire(new Code[] {
+				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_0, Code.Ldarg_0,
+				Code.Ldloc_0, Code.Call, Code.Stloc_1, Code.Ldarg_0, Code.Newobj,
+				Code.Stloc_2, Code.Ldloc_2, Code.Ldloc_1, Code.Callvirt, Code.Ldloc_2,
+				Code.Call, Code.Ret
+			}) && ((MethodDef)ins.DelegateMethod.Body.Instructions[6].Operand)
+			      .ReturnType.FullName.Equals("System.String");
+		}
+
+		public static Boolean Is_Ldnull(this EazVirtualInstruction ins)
+		{
+			return ins.MatchesEntire(new Code[] {
+				Code.Ldarg_0, Code.Newobj, Code.Call, Code.Ret
+			});
+		}
+
+		public static Boolean Is_Ret(this EazVirtualInstruction ins)
+		{
+			return ins.MatchesEntire(new Code[] {
+				Code.Ldarg_0, Code.Call, Code.Ret
+			}) && ((MethodDef)ins.DelegateMethod.Body.Instructions[1].Operand).MatchesEntire(new Code[] {
+				Code.Ldarg_0, Code.Ldc_I4_1, Code.Stfld, Code.Ret
+			});
 		}
 	}
 }

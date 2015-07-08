@@ -50,7 +50,9 @@
     <Compile Include="EazVirtualInstruction.Helpers.cs" />
     <Compile Include="EazVirtualization.cs" />
     <Compile Include="IO\DnBinaryReader.cs" />
+    <Compile Include="IO\EazResourceReader.cs" />
     <Compile Include="IO\EazVirtualizedMethodBodyReader.cs" />
+    <Compile Include="IO\EazResolver.cs" />
     <Compile Include="OriginalOpcodeUnknownException.cs" />
     <Compile Include="Util\DotNetUtils.cs" />
     <Compile Include="EazCryptoStream.cs" />
@@ -63,6 +65,7 @@
     <Compile Include="Options.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Util\Extensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

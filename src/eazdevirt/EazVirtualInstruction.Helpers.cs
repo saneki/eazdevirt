@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using de4dot.blocks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
-using System.Collections.Generic;
+using eazdevirt.Util;
 
 namespace eazdevirt
 {
@@ -35,7 +36,7 @@ namespace eazdevirt
 		public Boolean Matches(IList<Code> codePattern)
 		{
 			this.CheckDelegateMethod();
-			return (Helpers.FindOpCodePatterns(this.DelegateMethod.Body.Instructions, codePattern).Count > 0);
+			return this.DelegateMethod.Matches(codePattern);
 		}
 
 		/// <summary>
@@ -46,8 +47,7 @@ namespace eazdevirt
 		public Boolean MatchesEntire(IList<Code> codePattern)
 		{
 			this.CheckDelegateMethod();
-			var instructions = Helpers.FindOpCodePatterns(this.DelegateMethod.Body.Instructions, codePattern);
-			return (instructions.Count == 1 && instructions[0].Length == this.DelegateMethod.Body.Instructions.Count);
+			return this.DelegateMethod.MatchesEntire(codePattern);
 		}
 
 		/// <summary>
@@ -166,12 +166,16 @@ namespace eazdevirt
 			return false;
 		}
 
+		/// <summary>
+		/// Find the first occurrence of an opcode pattern in the delegate method,
+		/// returning the matching instruction sequence.
+		/// </summary>
+		/// <param name="pattern">Pattern to search for</param>
+		/// <returns>Matching instruction sequence, or null if none found</returns>
 		public IList<Instruction> Find(IList<Code> pattern)
 		{
-			var result = Helpers.FindOpCodePatterns(this.DelegateMethod.Body.Instructions, pattern);
-			if (result.Count == 0)
-				return null;
-			else return result[0];
+			this.CheckDelegateMethod();
+			return this.DelegateMethod.Find(pattern);
 		}
 
 		/// <summary>

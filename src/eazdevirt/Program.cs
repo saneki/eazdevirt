@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using CommandLine;
 using dnlib.DotNet;
-using System.IO;
 using dnlib.DotNet.Emit;
-using System.Collections.Generic;
 using eazdevirt.IO;
 
 namespace eazdevirt
@@ -102,14 +102,17 @@ namespace eazdevirt
 						Console.WriteLine("--> Actual method size: {0} (0x{0:X8})", reader.CodeSize);
 
 						if (!threwUnknownOpcodeException && !threwException)
-							Console.WriteLine("--> Potentially devirtualizable");
+						{
+							Console.WriteLine("--> Devirtualizable");
+							WritePartiallyDevirtualizedMethod(reader);
+						}
 						else if (threwUnknownOpcodeException)
 						{
 							var matches = module.VirtualInstructions
 								.Where((instr) => { return instr.VirtualOpCode == reader.LastVirtualOpCode; })
 								.ToArray();
 
-							if(matches.Length > 0)
+							if (matches.Length > 0)
 							{
 								EazVirtualInstruction v = matches[0];
 								Console.WriteLine("--> Not yet devirtualizable (contains unknown virtual instruction)");
