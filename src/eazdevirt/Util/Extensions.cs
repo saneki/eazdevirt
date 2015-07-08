@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using de4dot.blocks;
 
 namespace eazdevirt.Util
 {
@@ -15,8 +17,11 @@ namespace eazdevirt.Util
 		/// <returns>true if match, false if not</returns>
 		public static Boolean Matches(this MethodDef method, IList<Code> codePattern)
 		{
-			if (method == null)
+			if (method == null || codePattern == null)
 				throw new ArgumentNullException();
+
+			if (!method.HasBody || !method.Body.HasInstructions)
+				return false;
 
 			return (Helpers.FindOpCodePatterns(method.Body.Instructions, codePattern).Count > 0);
 		}
@@ -32,8 +37,33 @@ namespace eazdevirt.Util
 			if (method == null)
 				throw new ArgumentNullException();
 
+			if (!method.HasBody || !method.Body.HasInstructions)
+				return false;
+
 			var instructions = Helpers.FindOpCodePatterns(method.Body.Instructions, codePattern);
 			return (instructions.Count == 1 && instructions[0].Length == method.Body.Instructions.Count);
+		}
+
+		public static Boolean MatchesIndirect(this MethodDef method, IList<Code> codePattern)
+		{
+			if (method == null)
+				throw new ArgumentNullException();
+
+			return method.Calls().FirstOrDefault((called) =>
+			{
+				MethodDef def = called as MethodDef;
+				if (def == null)
+					return false;
+				else return def.Matches(codePattern);
+			}) != null;
+		}
+
+		public static IEnumerable<IMethod> Calls(this MethodDef method)
+		{
+			if (method == null)
+				throw new ArgumentNullException();
+
+			return DotNetUtils.GetMethodCalls(method);
 		}
 
 		/// <summary>

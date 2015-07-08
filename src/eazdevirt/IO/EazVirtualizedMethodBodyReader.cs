@@ -71,6 +71,11 @@ namespace eazdevirt.IO
 		public EazResolver Resolver { get; private set; }
 
 		/// <summary>
+		/// Map of IL offsets to virtual offsets.
+		/// </summary>
+		public Dictionary<UInt32, UInt32> VirtualOffsets { get; private set; }
+
+		/// <summary>
 		/// Construct a method body reader given a virtualized method.
 		/// </summary>
 		/// <param name="method">Virtualized method</param>
@@ -103,6 +108,7 @@ namespace eazdevirt.IO
 
 			this.Stream.Position = this.InitialPosition;
 			this.Resolver = new EazResolver(this.Parent);
+			this.VirtualOffsets = new Dictionary<UInt32, UInt32>();
 		}
 
 		public void Read()
@@ -149,6 +155,9 @@ namespace eazdevirt.IO
 			while(this.Stream.Position < finalPosition)
 				this.Instructions.Add(this.ReadOneInstruction());
 
+			// After fully read, branch operands can be fixed
+			this.FixBranches();
+
 			//this.Instructions = instructions;
 			this.FullyRead = true;
 		}
@@ -168,6 +177,8 @@ namespace eazdevirt.IO
 				throw new OriginalOpcodeUnknownException(virtualInstruction);
 
 			OpCode opcode = virtualInstruction.OpCode.ToOpCode();
+
+			this.VirtualOffsets.Add(this.CurrentILOffset, this.CurrentVirtualOffset);
 
 			Instruction instruction = new Instruction(opcode);
 			instruction.Offset = this.CurrentILOffset;
@@ -225,13 +236,14 @@ namespace eazdevirt.IO
 						branchDests[i] = this.Reader.ReadInt32();
 					return branchDests;
 				case OperandType.ShortInlineBrTarget:
-					return this.Reader.ReadSByte();
+					return this.ReadShortInlineBrTarget(instr);
 				case OperandType.ShortInlineI:
 					if (instr.OpCode.Code == Code.Ldc_I4_S)
 						return this.Reader.ReadSByte();
 					else
 						return this.Reader.ReadByte();
 				case OperandType.InlineBrTarget: // ?
+					return this.ReadInlineBrTarget(instr);
 				case OperandType.InlineI:
 					return this.Reader.ReadInt32();
 				case OperandType.InlineI8:
@@ -270,6 +282,90 @@ namespace eazdevirt.IO
 			}
 
 			return null;
+		}
+
+		/// <summary>
+		/// Translates a virtual offset to an IL offset.
+		/// </summary>
+		/// <param name="virtualOffset">Virtual offset used as virtual branch operand</param>
+		/// <returns>Real offset, or UInt32.MaxValue if couldn't translate</returns>
+		public UInt32 GetRealOffset(UInt32 virtualOffset)
+		{
+			foreach(var kvp in this.VirtualOffsets)
+			{
+				if (kvp.Value == virtualOffset)
+					return kvp.Key;
+			}
+
+			return UInt32.MaxValue;
+		}
+
+		/// <summary>
+		/// Fixes all branch instructions so their operands are set to an <see cref="Instruction"/>
+		/// instead of a virtual offset.
+		/// </summary>
+		void FixBranches()
+		{
+			// Todo: Support switch operands
+			foreach(var instr in this.Instructions)
+			{
+				switch(instr.OpCode.OperandType)
+				{
+					case OperandType.InlineBrTarget:
+					case OperandType.ShortInlineBrTarget:
+						UInt32 realOffset = this.GetRealOffset((UInt32)instr.Operand);
+						instr.Operand = GetInstruction(realOffset);
+						break;
+				}
+			}
+		}
+
+		/// <summary>
+		/// Finds an instruction
+		/// </summary>
+		/// <param name="offset">Offset of instruction</param>
+		/// <returns>The instruction or <c>null</c> if there's no instruction at <paramref name="offset"/>.</returns>
+		/// <remarks>Copied from MethodBodyReaderBase</remarks>
+		protected Instruction GetInstruction(uint offset)
+		{
+			// The instructions are sorted and all Offset fields are correct. Do a binary search.
+			int lo = 0, hi = this.Instructions.Count - 1;
+			while (lo <= hi)
+			{
+				int i = (lo + hi) / 2;
+				var instr = this.Instructions[i];
+				if (instr.Offset == offset)
+					return instr;
+				if (offset < instr.Offset)
+					hi = i - 1;
+				else
+					lo = i + 1;
+			}
+			return null;
+		}
+
+		/// <summary>
+		/// Reads a <see cref="OperandType.InlineBrTarget"/> operand
+		/// </summary>
+		/// <param name="instr">The current instruction</param>
+		/// <returns>The operand</returns>
+		/// <remarks>Copied from MethodBodyReaderBase</remarks>
+		protected virtual UInt32 ReadInlineBrTarget(Instruction instr)
+		{
+			//return instr.Offset + (UInt32)instr.GetSize() + this.Reader.ReadUInt32();
+			return (UInt32)this.Reader.ReadUInt32();
+		}
+
+		/// <summary>
+		/// Reads a <see cref="OperandType.ShortInlineBrTarget"/> operand
+		/// </summary>
+		/// <param name="instr">The current instruction</param>
+		/// <returns>The operand</returns>
+		/// <remarks>Copied from MethodBodyReaderBase</remarks>
+		protected virtual UInt32 ReadShortInlineBrTarget(Instruction instr)
+		{
+			//return instr.Offset + (UInt32)instr.GetSize() + (UInt32)this.Reader.ReadSByte();
+			return (UInt32)this.Reader.ReadSByte();
 		}
 
 		protected virtual IMethod ReadInlineField(Instruction instruction)

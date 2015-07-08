@@ -34,6 +34,12 @@ namespace eazdevirt
 				return Code.Bge;
 			else if (ins.Is_Blt())
 				return Code.Blt;
+			else if (ins.Is_Br())
+				return Code.Br;
+			else if (ins.Is_Brfalse())
+				return Code.Brfalse;
+			else if (ins.Is_Brtrue())
+				return Code.Brtrue;
 			else if (ins.Is_Call())
 				return Code.Call;
 			else if (ins.Is_Cgt())
@@ -108,6 +114,16 @@ namespace eazdevirt
 				return Code.Ldnull;
 			else if (ins.Is_Ldstr())
 				return Code.Ldstr;
+			else if (ins.Is_Mul())
+				return Code.Mul;
+			else if (ins.Is_Mul_Ovf())
+				return Code.Mul_Ovf;
+			else if (ins.Is_Mul_Ovf_Un())
+				return Code.Mul_Ovf_Un;
+			else if (ins.Is_Newobj())
+				return Code.Newobj;
+			else if (ins.Is_Not())
+				return Code.Not;
 			else if (ins.Is_Or())
 				return Code.Or;
 			else if (ins.Is_Rem())
@@ -716,7 +732,6 @@ namespace eazdevirt
 			return matches.Count == 1 && matches[0].Length == Pattern_Throw.Length;
 		}
 
-		/// <remarks>Unsure</remarks>
 		public static Boolean Is_Throw(this EazVirtualInstruction ins)
 		{
 			return ins.MatchesEntire(new Code[] {
@@ -725,7 +740,6 @@ namespace eazdevirt
 			}) && _Is_Throw(ins, ((MethodDef)ins.DelegateMethod.Body.Instructions[5].Operand));
 		}
 
-		/// <remarks>Unsure</remarks>
 		public static Boolean Is_Rethrow(this EazVirtualInstruction ins)
 		{
 			var sub = ins.Find(new Code[] {
@@ -783,6 +797,77 @@ namespace eazdevirt
 			}) && ((MethodDef)ins.DelegateMethod.Body.Instructions[1].Operand).MatchesEntire(new Code[] {
 				Code.Ldarg_0, Code.Ldc_I4_1, Code.Stfld, Code.Ret
 			});
+		}
+
+		public static Boolean Is_Not(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.MatchesIndirect(new Code[] {
+				Code.Ldloc_1, Code.Ldloc_S, Code.Not, Code.Callvirt, Code.Ldloc_1, Code.Ret
+			});
+		}
+
+		public static Boolean Is_Newobj(this EazVirtualInstruction ins)
+		{
+			return ins.Matches(new Code[] {
+				Code.Ldarg_0, Code.Ldloc_2, Code.Ldnull, Code.Ldloc_3, Code.Ldc_I4_0,
+				Code.Call, Code.Stloc_S, Code.Leave_S
+			});
+		}
+
+		/// <summary>
+		/// OpCode pattern seen in the Mul_* helper method.
+		/// </summary>
+		private static readonly Code[] Pattern_Mul = new Code[] {
+			Code.Ldloc_0, Code.Ldloc_1, Code.Mul, Code.Stloc_2, Code.Newobj, Code.Stloc_3,
+			Code.Ldloc_3, Code.Ldloc_2, Code.Callvirt, Code.Ldloc_3, Code.Ret
+		};
+
+		public static Boolean Is_Mul(this EazVirtualInstruction ins)
+		{
+			return ins.MatchesIndirectWithBoolean2(false, false, Pattern_Mul);
+		}
+
+		public static Boolean Is_Mul_Ovf(this EazVirtualInstruction ins)
+		{
+			return ins.MatchesIndirectWithBoolean2(true, false, Pattern_Mul);
+		}
+
+		public static Boolean Is_Mul_Ovf_Un(this EazVirtualInstruction ins)
+		{
+			return ins.MatchesIndirectWithBoolean2(true, true, Pattern_Mul);
+		}
+
+		public static Boolean Is_Br(this EazVirtualInstruction ins)
+		{
+			MethodDef called;
+			return ins.MatchesEntire(new Code[] {
+				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_0, Code.Ldarg_0,
+				Code.Ldloc_0, Code.Call, Code.Ret
+			}) && (called = (MethodDef)ins.DelegateMethod.Calls().ToArray()[1]).MatchesEntire(new Code[] {
+				Code.Ldarg_0, Code.Ldarg_1, Code.Newobj, Code.Stfld, Code.Ret
+			}) && ((IMethod)called.Body.Instructions[2].Operand).FullName.Contains("System.Nullable");
+
+		}
+
+		public static Boolean Is_Brfalse(this EazVirtualInstruction ins)
+		{
+			return ins.Matches(new Code[] {
+				Code.Ldloc_0, Code.Callvirt, Code.Ldnull, Code.Ceq, Code.Stloc_1, Code.Br_S
+			});
+		}
+
+		public static Boolean Is_Brtrue(this EazVirtualInstruction ins)
+		{
+			return ins.Matches(new Code[] {
+				Code.Ldloc_0, Code.Callvirt, Code.Ldnull, Code.Ceq, Code.Ldc_I4_0,
+				Code.Ceq, Code.Stloc_1, Code.Br_S
+			});
+			//var sub = ins.DelegateMethod.Find(new Code[] {
+			//	Code.Ldloc_0, Code.Castclass, Code.Callvirt, Code.Ldsfld, Code.Call,
+			//	Code.Stloc_1, Code.Br_S
+			//});
+			//return sub != null
+			//	&& ((IMethod)sub[4].Operand).FullName.Contains("System.UIntPtr::op_Inequality");
 		}
 	}
 }
