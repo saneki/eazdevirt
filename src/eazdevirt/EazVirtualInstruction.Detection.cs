@@ -287,7 +287,7 @@ namespace eazdevirt
 
 		/// <summary>
 		/// OpCode pattern seen in the Less-Than helper method.
-		/// Used in: Clt, Blt, Bge (negated)
+		/// Used in: Clt, Blt, Bge_Un (negated)
 		/// </summary>
 		private static readonly Code[] Pattern_Clt = new Code[] {
 			Code.Ldloc_S, Code.Ldloc_S, Code.Blt_S,
@@ -956,14 +956,40 @@ namespace eazdevirt
 			Code.Stloc_0, Code.Ldloc_0, Code.Ret
 		};
 
+		/// <summary>
+		/// OpCode pattern seen in the first Ble_Un helper method.
+		/// Called Pattern_Cgt_Un because of the comparison type.
+		/// </summary>
+		private static readonly Code[] Pattern_Cgt_Un = new Code[] {
+			Code.Ldloc_S, Code.Ldloc_S, Code.Cgt, Code.Stloc_0, Code.Br_S,
+			Code.Ldc_I4_0, Code.Stloc_0, Code.Ldloc_0, Code.Ret
+		};
+
+		/// <summary>
+		/// OpCode pattern seen in Ble, Ble_Un delegate methods. Probably others.
+		/// </summary>
+		private static readonly Code[] Pattern_Ble = new Code[] {
+			Code.Ldloc_1, Code.Ldloc_0, Code.Call, Code.Ldc_I4_0, Code.Ceq, Code.Stloc_2, Code.Br_S,
+			Code.Ldloc_1, Code.Ldloc_0, Code.Call, Code.Ldc_I4_0, Code.Ceq, Code.Stloc_2
+		};
+
 		public static Boolean Is_Blt(this EazVirtualInstruction ins)
 		{
 			return ins.Matches(Pattern_Br_True) && ins.MatchesIndirect(Pattern_LessThan);
 		}
 
+		/// <summary>
+		/// OpCode pattern seen in Blt_Un helper method. Probably used in others.
+		/// </summary>
+		/// <remarks>Seen near the end of the method</remarks>
+		private static readonly Code[] Pattern_Blt_Un = new Code[] {
+			Code.Ldloc_S, Code.Ldloc_S, Code.Blt_S, Code.Ldloc_S, Code.Call, Code.Brtrue_S,
+			Code.Ldloc_S, Code.Call, Code.Br_S
+		};
+
 		public static Boolean Is_Blt_Un(this EazVirtualInstruction ins)
 		{
-			return false;
+			return ins.Matches(Pattern_Br_True) && ins.MatchesIndirect(Pattern_Blt_Un);
 		}
 
 		public static Boolean Is_Bgt(this EazVirtualInstruction ins)
@@ -973,7 +999,12 @@ namespace eazdevirt
 
 		public static Boolean Is_Bgt_Un(this EazVirtualInstruction ins)
 		{
-			return false;
+			return ins.Matches(new Code[] {
+				Code.Call, Code.Brfalse_S, Code.Ldarg_1, Code.Castclass
+			}) && ins.MatchesIndirect(new Code[] {
+				Code.Ldloc_2, Code.Ldloc_3, Code.Bgt_S, Code.Ldloc_2, Code.Call, Code.Brtrue_S,
+				Code.Ldloc_3, Code.Call, Code.Br_S
+			});
 		}
 
 		public static Boolean Is_Ble(this EazVirtualInstruction ins)
@@ -985,19 +1016,25 @@ namespace eazdevirt
 
 		public static Boolean Is_Ble_Un(this EazVirtualInstruction ins)
 		{
-			return false;
+			var sub = ins.DelegateMethod.Find(Pattern_Ble);
+			return sub != null && ((MethodDef)sub[2].Operand).Matches(Pattern_Cgt_Un);
 		}
 
 		public static Boolean Is_Bge(this EazVirtualInstruction ins)
 		{
 			return ins.Matches(new Code[] {
 				Code.Call, Code.Brtrue_S, Code.Ldarg_1, Code.Castclass
-			}) && ins.MatchesIndirect(Pattern_Clt);
+			}) && ins.MatchesIndirect(new Code[] {
+				Code.Ldarg_0, Code.Castclass, Code.Callvirt, Code.Ldarg_1, Code.Castclass,
+				Code.Callvirt, Code.Clt, Code.Stloc_0, Code.Ldloc_0, Code.Ret
+			});
 		}
 
 		public static Boolean Is_Bge_Un(this EazVirtualInstruction ins)
 		{
-			return false;
+			return ins.Matches(new Code[] {
+				Code.Call, Code.Brtrue_S, Code.Ldarg_1, Code.Castclass
+			}) && ins.MatchesIndirect(Pattern_Clt);
 		}
 	}
 }
