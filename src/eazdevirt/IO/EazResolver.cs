@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using de4dot.blocks;
 using dnlib.DotNet;
@@ -45,25 +46,90 @@ namespace eazdevirt.IO
 			}
 			else
 			{
-				// For now just throw
-				throw new Exception(String.Format(
-					"Cannot yet resolve a Method without a direct token, resolved @ {0} (0x{0:X8})",
-					position
-				));
+				MethodData data = operand.Data as MethodData;
+				ITypeDefOrRef declaring = this.ResolveType_NoLock(data.DeclaringType.Token);
 
-				// Still haven't figured out how the MethodData is used
-				//MethodData data = operand.Data as MethodData;
-				//
-				//if(data.Unknown2)
+				if (declaring is TypeDef)
+				{
+					TypeDef declaringDef = declaring as TypeDef;
+					return declaringDef.FindMethod(data.Name);
+				}
+				else if(declaring is TypeRef)
+				{
+					TypeRef declaringRef = declaring as TypeRef;
+
+					// Todo: Generics support
+					TypeSig returnType = ResolveType(data.ReturnType);
+					TypeSig[] paramTypes = new TypeSig[data.Parameters.Length];
+					for (Int32 i = 0; i < paramTypes.Length; i++)
+					{
+						paramTypes[i] = ResolveType(data.Parameters[i]);
+					}
+
+					MethodSig methodSig = MethodSig.CreateStatic(returnType, paramTypes);
+					MemberRef memberRef = new MemberRefUser(this.Module, data.Name, methodSig, declaringRef);
+					return memberRef;
+
+					//Boolean referencesFound = this.Module.GetMemberRefs().Any((r) =>
+					//{
+					//	Console.WriteLine("{0} == {1}", r.DeclaringType.MDToken, declaringRef.MDToken);
+					//	return r.DeclaringType.MDToken == declaringRef.MDToken;
+					//});
+					//
+					//if (referencesFound)
+					//	Console.WriteLine("References found");
+					//else
+					//	Console.WriteLine("References NOT found");
+					//
+					//Importer importer = new Importer(this.Module);
+					//TypeDef declaringDef = importer.Import(declaringRef).ResolveTypeDefThrow();
+					//return declaringDef.FindMethod(data.Name);
+				}
+
+				throw new Exception("Wat");
+
+				//if(data.Unknown2) // if (HasGenericArguments()) ???
 				//{
 				//	// ???
-				//	this.ResolveType_NoLock(data.Unknown1.Token);
+				//	Type declaringType = this.ResolveType_Reflection_NoLock(data.DeclaringType.Token);
+				//	MemberInfo[] infos = declaringType.GetMember(data.Name, data.BindingFlags);
+				//
+				//	foreach(var memberInfo in infos)
+				//	{
+				//		MethodInfo info = memberInfo as MethodInfo;
+				//
+				//		ParameterInfo[] paramInfos = info.GetParameters();
+				//		Type[] genericArgs = info.GetGenericArguments();
+				//
+				//		if(paramInfos.Length != data.Parameters.Length)
+				//			throw new Exception("Cannot bind method (bad parameters length)");
+				//
+				//		if (genericArgs.Length != data.GenericArguments.Length)
+				//			throw new Exception("Cannot bind method (bad generic args length)");
+				//
+				//		if (!this.Compare(info.ReturnType, data.ReturnType))
+				//			throw new Exception("Cannot bind method (return type mismatch)");
+				//
+				//		// Check param types
+				//		for(Int32 i = 0; i < paramInfos.Length; i++)
+				//		{
+				//			if (!this.Compare(paramInfos[i].ParameterType, data.Parameters[i]))
+				//				throw new Exception(String.Format(
+				//					"Cannot bind method (parameter type mismatch @ {0})", i));
+				//		}
+				//	}
 				//}
 				//else
 				//{
 				//	// ...
 				//}
 			}
+		}
+
+		TypeSig ResolveType(InlineOperand operand)
+		{
+			ITypeDefOrRef type = this.ResolveType_NoLock(operand.Token);
+			return type.ToTypeSig(true);
 		}
 
 		/// <summary>
@@ -102,7 +168,7 @@ namespace eazdevirt.IO
 		/// <returns>Type</returns>
 		public ITypeDefOrRef ResolveType(Int32 position)
 		{
-			lock(_lock)
+			lock (_lock)
 			{
 				return this.ResolveType_NoLock(position);
 			}
@@ -126,11 +192,31 @@ namespace eazdevirt.IO
 			}
 			else
 			{
-				// For now just throw
+				TypeData data = operand.Data as TypeData;
+				String typeName = data.Name;
+
+				// Try to find typedef
+				TypeDef typeDef = this.Module.FindReflection(typeName);
+				if (typeDef != null)
+					return typeDef;
+
+				// Otherwise, try to find typeref
+				TypeRef typeRef = null;
+				typeRef = this.Module.GetTypeRefs().FirstOrDefault((t) =>
+				{
+					return t.ReflectionFullName.Equals(typeName);
+				});
+				if (typeRef != null)
+					return typeRef;
+
+				// If all else fails, make our own typeref
+				AssemblyRef assemblyRef = GetAssemblyRef(data.AssemblyFullName);
+				typeRef = new TypeRefUser(this.Module, String.Empty, data.TypeName, assemblyRef);
+				if (typeRef != null)
+					return typeRef;
+
 				throw new Exception(String.Format(
-					"Cannot yet resolve a Type without a direct token, resolved @ {0} (0x{0:X8})",
-					position
-				));
+					"Couldn't resolve type {0} @ {1} (0x{1:X8})", typeName, position));
 
 				// Still haven't figured out how the TypeData is used
 				//TypeData data = operand.Data as TypeData;
@@ -166,6 +252,87 @@ namespace eazdevirt.IO
 				//}
 			}
 		}
+
+		AssemblyRef GetAssemblyRef(String fullname)
+		{
+			return this.Module.GetAssemblyRefs().FirstOrDefault((ar) =>
+			{
+				return ar.FullName.Equals(fullname);
+			});
+		}
+
+		/// <summary>
+		/// Type comparison method.
+		/// </summary>
+		/// <param name="type1">Type 1</param>
+		/// <param name="type2">Type 2</param>
+		/// <returns>true if seemingly equal, false if not</returns>
+		static Boolean AreTypesEqual(Type type1, Type type2)
+		{
+			if (type1 == type2)
+			{
+				return true;
+			}
+			if (type1 == null || type2 == null)
+			{
+				return false;
+			}
+			if (type1.IsByRef)
+			{
+				return type2.IsByRef
+					&& AreTypesEqual(type1.GetElementType(), type2.GetElementType());
+			}
+			if (type2.IsByRef)
+			{
+				return false;
+			}
+			if (type1.IsPointer)
+			{
+				return type2.IsPointer
+					&& AreTypesEqual(type1.GetElementType(), type2.GetElementType());
+			}
+			if (type2.IsPointer)
+			{
+				return false;
+			}
+			if (type1.IsArray)
+			{
+				return type2.IsArray
+					&& type1.GetArrayRank() == type2.GetArrayRank()
+					&& AreTypesEqual(type1.GetElementType(), type2.GetElementType());
+			}
+			if (type2.IsArray)
+			{
+				return false;
+			}
+			if (type1.IsGenericType && !type1.IsGenericTypeDefinition)
+			{
+				type1 = type1.GetGenericTypeDefinition();
+			}
+			if (type2.IsGenericType && !type2.IsGenericTypeDefinition)
+			{
+				type2 = type2.GetGenericTypeDefinition();
+			}
+			return type1 == type2;
+		}
+
+		Type GetRealType(Type type)
+		{
+			if (!type.IsByRef && !type.IsArray && !type.IsPointer)
+				return type;
+			return GetRealType(type.GetElementType());
+		}
+
+		//Boolean Compare(Type type, InlineOperand operand)
+		//{
+		//	TypeData data = operand.Data as TypeData;
+		//
+		//	if(GetRealType(type).IsGenericParameter)
+		//		return data == null || data.Unknown3;
+		//
+		//	Type resolvedType = this.ResolveType_Reflection_NoLock(operand.Token);
+		//	return AreTypesEqual(type, resolvedType);
+		//}
 
 		/// <remarks>Mostly copied from decompiler, unsure how relevant</remarks>
 		private enum TypeModifier
@@ -355,6 +522,32 @@ namespace eazdevirt.IO
 				get { return InlineOperandType.Type; }
 			}
 
+			public String TypeName
+			{
+				get
+				{
+					if (this.Name.Contains(", "))
+						return this.Name.Split(',')[0];
+					else return this.Name;
+				}
+			}
+
+			public String AssemblyFullName
+			{
+				get
+				{
+					return this.Name.Substring(
+						this.TypeName.Length + 2,
+						this.Name.Length - (this.TypeName.Length + 2)
+					);
+				}
+			}
+
+			public String AssemblyName
+			{
+				get { return AssemblyFullName.Split(',')[0]; }
+			}
+
 			public TypeData(BinaryReader reader)
 				: base(reader)
 			{
@@ -399,11 +592,11 @@ namespace eazdevirt.IO
 		// Class44
 		public class MethodData : InlineOperandData
 		{
-			public InlineOperand Unknown1 { get; private set; } // class54_0
+			public InlineOperand DeclaringType { get; private set; } // class54_0
 			public Boolean Unknown2 { get; private set; } // bool_0
 			public Boolean Flags { get; private set; } // bool_1
 			public String Name { get; private set; } // string_0
-			public InlineOperand Unknown5 { get; private set; } // class54_3
+			public InlineOperand ReturnType { get; private set; } // class54_3
 			public InlineOperand[] Parameters { get; private set; } // class54_1
 			public InlineOperand[] GenericArguments { get; private set; } // class54_2
 
@@ -432,11 +625,11 @@ namespace eazdevirt.IO
 
 			protected override void Deserialize(BinaryReader reader)
 			{
-				this.Unknown1 = InlineOperand.ReadInternal(reader);
+				this.DeclaringType = InlineOperand.ReadInternal(reader);
 				this.Unknown2 = reader.ReadBoolean();
 				this.Flags = reader.ReadBoolean();
 				this.Name = reader.ReadString();
-				this.Unknown5 = InlineOperand.ReadInternal(reader);
+				this.ReturnType = InlineOperand.ReadInternal(reader);
 				this.Parameters = InlineOperand.ReadArrayInternal(reader);
 				this.GenericArguments = InlineOperand.ReadArrayInternal(reader);
 			}
