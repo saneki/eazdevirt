@@ -215,10 +215,15 @@ namespace eazdevirt
 			this.VirtualInstructions = EazVirtualInstruction.FindAllInstructions(this, this.Virtualization.VirtualizationType);
 			var identified = this.VirtualInstructions.Where((instruction) => { return instruction.IsIdentified; });
 
+			Boolean warningOccurred = false;
+
 			foreach (var instruction in identified)
 			{
 				Boolean containsVirtual = this.IdentifiedOpCodes.ContainsKey(instruction.VirtualOpCode);
-				Boolean containsActual = this.IdentifiedOpCodes.ContainsValue(instruction);
+				Boolean containsActual = this.IdentifiedOpCodes.Any((kvp) =>
+				{
+					return kvp.Value.OpCode == instruction.OpCode;
+				});
 
 				if (containsVirtual)
 					Console.WriteLine("WARNING: Multiple instruction types with the same virtual opcode detected ({0})",
@@ -228,8 +233,14 @@ namespace eazdevirt
 					Console.WriteLine("WARNING: Multiple virtual opcodes map to the same actual opcode ({0})",
 						instruction.OpCode.ToString());
 
+				if (!warningOccurred)
+					warningOccurred = (containsVirtual || containsActual);
+
 				this.IdentifiedOpCodes.Add(instruction.VirtualOpCode, instruction);
 			}
+
+			if (warningOccurred)
+				Console.WriteLine();
 		}
 
 		/// <summary>
