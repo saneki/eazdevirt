@@ -129,9 +129,38 @@ namespace eazdevirt.IO
 			for (Int32 i = 0; i < unknown1.Length; i++)
 				unknown1[i] = new UnknownType4(reader);
 
+			// Set locals and parameters
+			this.SetLocalsAndParameters();
+
 			// Read instructions
 			this.CodeSize = reader.ReadInt32();
 			this.ReadInstructions();
+		}
+
+		protected void SetLocalsAndParameters()
+		{
+			ITypeDefOrRef type;
+
+			foreach(var local in this.Info.Locals)
+			{
+				type = this.Resolver.ResolveType(local.TypeCode);
+
+				if(type != null)
+					this.Locals.Add(new Local(type.ToTypeSig(true)));
+				else
+					Console.WriteLine("[SetLocalsAndParameters] WARNING: Unable to resolve local type");
+			}
+
+			for(Int32 i = 0; i < this.Info.Parameters.Length; i++)
+			{
+				var parameter = this.Info.Parameters[i];
+				type = this.Resolver.ResolveType(parameter.TypeCode);
+
+				if(type != null)
+					this.Parameters.Add(new Parameter(i, type.ToTypeSig(true)));
+				else
+					Console.WriteLine("[SetLocalsAndParameters] WARNING: Unable to resolve parameter type");
+			}
 		}
 
 		/// <summary>
@@ -253,10 +282,7 @@ namespace eazdevirt.IO
 				case OperandType.ShortInlineR:
 					return this.Reader.ReadSingle();
 				case OperandType.InlineVar:
-					// return this.Reader.ReadUInt16();
-					if (IsArgOperandInstruction(instr))
-						return this.GetArgument(reader.ReadUInt16());
-					return this.GetLocal(reader.ReadUInt16());
+					return this.ReadInlineVar(instr);
 				case OperandType.ShortInlineVar:
 					return this.Reader.ReadByte();
 
@@ -344,6 +370,13 @@ namespace eazdevirt.IO
 			return null;
 		}
 
+		protected virtual IVariable ReadInlineVar(Instruction instr)
+		{
+			if (IsArgOperandInstruction(instr))
+				return this.GetArgument(this.Reader.ReadUInt16());
+			return this.GetLocal(this.Reader.ReadUInt16());
+		}
+
 		/// <summary>
 		/// Reads a <see cref="OperandType.InlineBrTarget"/> operand
 		/// </summary>
@@ -398,6 +431,8 @@ namespace eazdevirt.IO
 			return this.Resolver.ResolveString(this.Reader.ReadInt32());
 		}
 
+		public IList<Parameter> Parameters = new List<Parameter>();
+
 		/// <summary>
 		/// Translate the specified SerializedParameter to a dnlib Parameter and return it.
 		/// </summary>
@@ -405,9 +440,12 @@ namespace eazdevirt.IO
 		/// <returns>Parameter</returns>
 		public Parameter GetArgument(UInt16 index)
 		{
-			// Todo
-			return null;
+			if (index < this.Parameters.Count)
+				return this.Parameters[index];
+			else return null;
 		}
+
+		public LocalList Locals = new LocalList();
 
 		/// <summary>
 		/// Translate the specified SerializedLocal to a dnlib Local and return it.
@@ -416,8 +454,9 @@ namespace eazdevirt.IO
 		/// <returns>Local</returns>
 		public Local GetLocal(UInt16 index)
 		{
-			// Todo
-			return null;
+			if (index < this.Locals.Count)
+				return this.Locals[index];
+			else return null;
 		}
 
 		/// <summary>
