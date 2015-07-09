@@ -16,9 +16,13 @@ namespace eazdevirt
 			var result = CommandLine.Parser.Default.ParseArguments
 				<FindMethodsSubOptions,
 				 GetKeySubOptions,
+				 ISubOptions,
 				 InstructionsSubOptions,
+				 MSubOptions,
 				 PositionSubOptions,
-				 ResourceSubOptions>(args);
+				 ResourceSubOptions,
+				 ResSubOptions,
+				 RSubOptions>(args);
 
 			if (!result.Errors.Any())
 			{

@@ -24,6 +24,11 @@ namespace eazdevirt
 		public Boolean ExtraOutput { get; set; }
 	}
 
+	[Verb("m", HelpText = "Alias for \"find-methods\"")]
+	public class MSubOptions : FindMethodsSubOptions
+	{
+	}
+
 	[Verb("get-key", HelpText = "Extract the integer used for stream crypto")]
 	public class GetKeySubOptions : BaseAssemblyOptions { }
 
@@ -46,6 +51,11 @@ namespace eazdevirt
 
 		[Option('e', "extra-output", DefaultValue = false, HelpText = "Extra output")]
 		public Boolean ExtraOutput { get; set; }
+	}
+
+	[Verb("i", HelpText = "Alias for \"instructions\"")]
+	public class ISubOptions : InstructionsSubOptions
+	{
 	}
 
 	[Verb("position", HelpText = "Get the position specified by a position string of length 10")]
@@ -77,5 +87,15 @@ namespace eazdevirt
 		[Option('D', "keep-encrypted", DefaultValue = false,
 			HelpText = "Don't decrypt the embedded resource when extracting")]
 		public Boolean KeepEncrypted { get; set; }
+	}
+
+	[Verb("res", HelpText = "Alias for \"resource\"")]
+	public class ResSubOptions : ResourceSubOptions
+	{
+	}
+
+	[Verb("r", HelpText = "Alias for \"resource\"")]
+	public class RSubOptions : ResourceSubOptions
+	{
 	}
 }
