@@ -16,6 +16,24 @@ namespace eazdevirt
 		public String AssemblyPath { get; set; }
 	}
 
+	[Verb("devirtualize", HelpText = "Devirtualize")]
+	public class DevirtualizeSubOptions : BaseAssemblyOptions
+	{
+		[Option('e', "extra-output", DefaultValue = false,
+			HelpText = "Extra output")]
+		public Boolean ExtraOutput { get; set; }
+	}
+
+	[Verb("devirt", HelpText = "Alias for \"devirtualize\"")]
+	public class DevirtSubOptions : DevirtualizeSubOptions
+	{
+	}
+
+	[Verb("d", HelpText = "Alias for \"devirtualize\"")]
+	public class DSubOptions : DevirtualizeSubOptions
+	{
+	}
+
 	[Verb("find-methods", HelpText = "Find virtualized methods")]
 	public class FindMethodsSubOptions : BaseAssemblyOptions
 	{

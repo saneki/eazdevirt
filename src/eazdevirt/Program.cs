@@ -14,7 +14,10 @@ namespace eazdevirt
 		static void Main(String[] args)
 		{
 			var result = CommandLine.Parser.Default.ParseArguments
-				<FindMethodsSubOptions,
+				<DSubOptions,
+				 DevirtSubOptions,
+				 DevirtualizeSubOptions,
+				 FindMethodsSubOptions,
 				 GetKeySubOptions,
 				 ISubOptions,
 				 InstructionsSubOptions,
@@ -31,7 +34,11 @@ namespace eazdevirt
 				if(!options.NoLogo)
 					WriteAsciiLogo();
 
-				if (result.Value is FindMethodsSubOptions)
+				if (result.Value is DevirtualizeSubOptions)
+				{
+					DoDevirtualize((DevirtualizeSubOptions)result.Value);
+				}
+				else if (result.Value is FindMethodsSubOptions)
 				{
 					DoFindMethods((FindMethodsSubOptions)result.Value);
 				}
@@ -52,6 +59,85 @@ namespace eazdevirt
 					DoResource((ResourceSubOptions)result.Value);
 				}
 			}
+		}
+
+		/// <summary>
+		/// Perform "devirtualize" verb.
+		/// </summary>
+		/// <param name="options">Options</param>
+		static void DoDevirtualize(DevirtualizeSubOptions options)
+		{
+			EazModule module;
+			if (!TryLoadModule(options.AssemblyPath, out module))
+				return;
+
+			EazVirtualizedMethod[] methods = module.FindVirtualizedMethods();
+
+			if(methods.Length == 0)
+			{
+				Console.WriteLine("No virtualized methods found");
+				return;
+			}
+
+			Int32 devirtCount = 0;
+			foreach (var method in methods)
+			{
+				var reader = new EazVirtualizedMethodBodyReader(method);
+				Boolean threwUnknownOpcodeException = false, threwException = false;
+				Exception exception = null;
+
+				try
+				{
+					reader.Read(); // Read method
+				}
+				catch (OriginalOpcodeUnknownException)
+				{
+					// This is almost guaranteed to happen at this point
+					threwUnknownOpcodeException = true;
+				}
+				catch (Exception e)
+				{
+					// ...
+					threwException = true;
+					exception = e;
+				}
+
+				if(!threwException && !threwUnknownOpcodeException)
+				{
+					devirtCount++;
+					Console.WriteLine("Devirtualizing {0} (MDToken = 0x{1:X8})",
+						method.Method.FullName, method.Method.MDToken.Raw);
+
+					method.Method.Body.Instructions.Clear();
+					foreach (var instr in reader.Instructions)
+						method.Method.Body.Instructions.Add(instr);
+
+					if(options.ExtraOutput)
+					{
+						Console.WriteLine();
+						foreach (var instr in method.Method.Body.Instructions)
+							Console.WriteLine(instr);
+						Console.WriteLine();
+					}
+				}
+			}
+
+			if (devirtCount > 0)
+				Console.WriteLine();
+
+			String outputPath = GetDevirtualizedModulePath(options.AssemblyPath);
+
+			Console.WriteLine("Devirtualized {0}/{1} methods", devirtCount, methods.Length);
+			Console.WriteLine("Saving {0}", outputPath);
+			module.Write(outputPath);
+		}
+
+		static String GetDevirtualizedModulePath(String origPath)
+		{
+			String ext = Path.GetExtension(origPath);
+			String noExt = Path.GetFileNameWithoutExtension(origPath);
+			return String.Format("{0}-devirtualized{1}",
+				Path.Combine(Path.GetDirectoryName(origPath), noExt), ext);
 		}
 
 		/// <summary>

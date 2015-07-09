@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using dnlib.DotNet;
 using System.IO;
+using dnlib.DotNet.Writer;
 
 namespace eazdevirt
 {
@@ -56,6 +57,15 @@ namespace eazdevirt
 		{
 			this.Virtualization = new EazVirtualization(this);
 			this.InitializeIdentifiedOpCodes();
+		}
+
+		public void Write(String filepath)
+		{
+			var options = new ModuleWriterOptions(this.Module);
+			options.MetaDataOptions.Flags |= MetaDataFlags.PreserveAll;
+			options.MetaDataOptions.Flags |= MetaDataFlags.KeepOldMaxStack;
+			options.Logger = DummyLogger.NoThrowInstance;
+			this.Module.Write(filepath, options);
 		}
 
 		/// <summary>
