@@ -162,6 +162,48 @@ namespace eazdevirt.IO
 		}
 
 		/// <summary>
+		/// Resolve a field.
+		/// </summary>
+		/// <param name="position">Position</param>
+		/// <returns>Field</returns>
+		public IField ResolveField(Int32 position)
+		{
+			lock (_lock)
+			{
+				return this.ResolveField_NoLock(position);
+			}
+		}
+
+		IField ResolveField_NoLock(Int32 position)
+		{
+			this.Stream.Position = position;
+
+			InlineOperand operand = new InlineOperand(this.Reader);
+			if(operand.IsDirect)
+			{
+				MDToken token = new MDToken(operand.Token);
+				return this.Module.ResolveField(token.Rid);
+			}
+			else
+			{
+				FieldData data = operand.Data as FieldData;
+				ITypeDefOrRef type = this.ResolveType_NoLock(data.FieldType.Token);
+				if (type == null)
+					throw new Exception("Unable to resolve type as TypeDef or TypeRef");
+
+				TypeDef typeDef = type as TypeDef;
+				if (typeDef != null)
+					return typeDef.FindField(data.Name);
+
+				typeDef = (type as TypeRef).ResolveTypeDef();
+				if (typeDef != null)
+					return typeDef.FindField(data.Name);
+
+				throw new Exception("Currently unable to resolve a field from an unresolvable TypeRef");
+			}
+		}
+
+		/// <summary>
 		/// Resolve a type.
 		/// </summary>
 		/// <param name="position">Position</param>
@@ -196,7 +238,7 @@ namespace eazdevirt.IO
 				String typeName = data.Name;
 
 				// Try to find typedef
-				TypeDef typeDef = this.Module.FindReflection(typeName);
+				TypeDef typeDef = this.Module.FindReflection(data.TypeName);
 				if (typeDef != null)
 					return typeDef;
 
@@ -204,12 +246,13 @@ namespace eazdevirt.IO
 				TypeRef typeRef = null;
 				typeRef = this.Module.GetTypeRefs().FirstOrDefault((t) =>
 				{
-					return t.ReflectionFullName.Equals(typeName);
+					return t.ReflectionFullName.Equals(data.TypeName);
 				});
 				if (typeRef != null)
 					return typeRef;
 
 				// If all else fails, make our own typeref
+				Console.WriteLine("[ResolveType_NoLock] WARNING: Creating TypeRef for: {0}", data.Name);
 				AssemblyRef assemblyRef = GetAssemblyRef(data.AssemblyFullName);
 				typeRef = new TypeRefUser(this.Module, String.Empty, data.TypeName, assemblyRef);
 				if (typeRef != null)
@@ -567,13 +610,26 @@ namespace eazdevirt.IO
 		// Class42
 		public class FieldData : InlineOperandData
 		{
-			public InlineOperand Unknown1 { get; private set; }
-			public String Unknown2 { get; private set; }
-			public Boolean Unknown3 { get; private set; }
+			public InlineOperand FieldType { get; private set; }
+			public String Name { get; private set; }
+			public Boolean Flags { get; private set; }
 
 			public override InlineOperandType Type
 			{
 				get { return InlineOperandType.Field; }
+			}
+
+			public BindingFlags BindingFlags
+			{
+				get
+				{
+					BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic;
+					if (this.Flags)
+						bindingFlags |= BindingFlags.Static;
+					else
+						bindingFlags |= BindingFlags.Instance;
+					return bindingFlags;
+				}
 			}
 
 			public FieldData(BinaryReader reader)
@@ -583,9 +639,9 @@ namespace eazdevirt.IO
 
 			protected override void Deserialize(BinaryReader reader)
 			{
-				this.Unknown1 = InlineOperand.ReadInternal(reader);
-				this.Unknown2 = reader.ReadString();
-				this.Unknown3 = reader.ReadBoolean();
+				this.FieldType = InlineOperand.ReadInternal(reader);
+				this.Name = reader.ReadString();
+				this.Flags = reader.ReadBoolean();
 			}
 		}
 

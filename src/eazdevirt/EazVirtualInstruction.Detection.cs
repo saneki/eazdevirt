@@ -114,6 +114,10 @@ namespace eazdevirt
 				return Code.Ldc_R4;
 			else if (ins.Is_Ldc_R8())
 				return Code.Ldc_R8;
+			else if (ins.Is_Ldfld())
+				return Code.Ldfld;
+			else if (ins.Is_Ldflda())
+				return Code.Ldflda;
 			else if (ins.Is_Ldloc())
 				return Code.Ldloc;
 			else if (ins.Is_Ldloc_S())
@@ -160,6 +164,8 @@ namespace eazdevirt
 				return Code.Starg;
 			else if (ins.Is_Starg_S())
 				return Code.Starg_S;
+			else if (ins.Is_Stfld())
+				return Code.Stfld;
 			else if (ins.Is_Stloc())
 				return Code.Stloc;
 			else if (ins.Is_Stloc_S())
@@ -1035,6 +1041,39 @@ namespace eazdevirt
 			return ins.Matches(new Code[] {
 				Code.Call, Code.Brtrue_S, Code.Ldarg_1, Code.Castclass
 			}) && ins.MatchesIndirect(Pattern_Clt);
+		}
+
+		public static Boolean Is_Ldfld(this EazVirtualInstruction ins)
+		{
+			return ins.Matches(new Code[] {
+				Code.Ldarg_0, Code.Ldloc_1, Code.Ldloc_3, Code.Callvirt, Code.Ldloc_1,
+				Code.Callvirt, Code.Call, Code.Call, Code.Ret
+			}) && ins.DelegateMethod.Calls().Any((called) => {
+				return called.FullName.Contains("System.Reflection.FieldInfo::GetValue");
+			});
+		}
+
+		public static Boolean Is_Ldflda(this EazVirtualInstruction ins)
+		{
+			MethodDef method;
+			var sub = ins.DelegateMethod.Find(new Code[] {
+				Code.Ldloc_1, Code.Ldloc_S, Code.Callvirt, Code.Ldloc_1, Code.Ldloc_2,
+				Code.Callvirt, Code.Ldloc_1, Code.Call, Code.Ret
+			});
+			return sub != null
+				&& (method = (sub[2].Operand as MethodDef)) != null
+				&& method.Parameters.Count == 2
+				&& method.Parameters[1].Type.FullName.Contains("System.Reflection.FieldInfo");
+		}
+
+		public static Boolean Is_Stfld(this EazVirtualInstruction ins)
+		{
+			return ins.Matches(new Code[] {
+				Code.Ldarg_0, Code.Ldloc_1, Code.Ldloc_0, Code.Ldnull, Code.Call,
+				Code.Call, Code.Ret
+			}) && ins.DelegateMethod.Calls().Any((called) => {
+				return called.FullName.Contains("System.Reflection.FieldInfo::SetValue");
+			});
 		}
 	}
 }

@@ -368,9 +368,9 @@ namespace eazdevirt.IO
 			return (UInt32)this.Reader.ReadSByte();
 		}
 
-		protected virtual IMethod ReadInlineField(Instruction instruction)
+		protected virtual IField ReadInlineField(Instruction instruction)
 		{
-			throw new NotSupportedException();
+			return this.Resolver.ResolveField(this.Reader.ReadInt32());
 		}
 
 		protected virtual IMethod ReadInlineSig(Instruction instruction)
