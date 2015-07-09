@@ -34,6 +34,18 @@ namespace eazdevirt.IO
 			}
 		}
 
+		public IMethod TryResolveMethod(Int32 position)
+		{
+			try
+			{
+				return this.ResolveMethod(position);
+			}
+			catch(Exception)
+			{
+				return null;
+			}
+		}
+
 		IMethod ResolveMethod_NoLock(Int32 position)
 		{
 			this.Stream.Position = position;
@@ -174,6 +186,18 @@ namespace eazdevirt.IO
 			}
 		}
 
+		public IField TryResolveField(Int32 position)
+		{
+			try
+			{
+				return this.ResolveField(position);
+			}
+			catch(Exception)
+			{
+				return null;
+			}
+		}
+
 		IField ResolveField_NoLock(Int32 position)
 		{
 			this.Stream.Position = position;
@@ -213,6 +237,18 @@ namespace eazdevirt.IO
 			lock (_lock)
 			{
 				return this.ResolveType_NoLock(position);
+			}
+		}
+
+		public ITypeDefOrRef TryResolveType(Int32 position)
+		{
+			try
+			{
+				return this.ResolveType(position);
+			}
+			catch (Exception)
+			{
+				return null;
 			}
 		}
 

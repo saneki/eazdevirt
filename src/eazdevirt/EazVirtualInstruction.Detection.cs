@@ -58,6 +58,8 @@ namespace eazdevirt
 				return Code.Brtrue;
 			else if (ins.Is_Call())
 				return Code.Call;
+			else if (ins.Is_Callvirt())
+				return Code.Callvirt;
 			else if (ins.Is_Cgt())
 				return Code.Cgt;
 			else if (ins.Is_Ckfinite())
@@ -114,6 +116,32 @@ namespace eazdevirt
 				return Code.Ldc_R4;
 			else if (ins.Is_Ldc_R8())
 				return Code.Ldc_R8;
+			else if (ins.Is_Ldelem())
+				return Code.Ldelem;
+			else if (ins.Is_Ldelem_I())
+				return Code.Ldelem_I;
+			else if (ins.Is_Ldelem_I1())
+				return Code.Ldelem_I1;
+			else if (ins.Is_Ldelem_I2())
+				return Code.Ldelem_I2;
+			else if (ins.Is_Ldelem_I4())
+				return Code.Ldelem_I4;
+			else if (ins.Is_Ldelem_I8())
+				return Code.Ldelem_I8;
+			else if (ins.Is_Ldelem_U1())
+				return Code.Ldelem_U1;
+			else if (ins.Is_Ldelem_U2())
+				return Code.Ldelem_U2;
+			else if (ins.Is_Ldelem_U4())
+				return Code.Ldelem_U4;
+			else if (ins.Is_Ldelem_R4())
+				return Code.Ldelem_R4;
+			else if (ins.Is_Ldelem_R8())
+				return Code.Ldelem_R8;
+			else if (ins.Is_Ldelem_Ref())
+				return Code.Ldelem_Ref;
+			else if (ins.Is_Ldelema())
+				return Code.Ldelema;
 			else if (ins.Is_Ldfld())
 				return Code.Ldfld;
 			else if (ins.Is_Ldflda())
@@ -1073,6 +1101,130 @@ namespace eazdevirt
 				Code.Call, Code.Ret
 			}) && ins.DelegateMethod.Calls().Any((called) => {
 				return called.FullName.Contains("System.Reflection.FieldInfo::SetValue");
+			});
+		}
+
+		public static Boolean Is_Callvirt(this EazVirtualInstruction ins)
+		{
+			MethodDef method;
+			var sub = ins.Find(new Code[] {
+				Code.Ldarg_1, Code.Castclass, Code.Stloc_S, Code.Ldarg_0, Code.Ldloc_S,
+				Code.Callvirt, Code.Call, Code.Stloc_0, Code.Ldarg_0, Code.Ldfld, Code.Brfalse_S
+			});
+			return sub != null
+				&& (method = sub[6].Operand as MethodDef) != null
+				&& method.HasReturnType && method.ReturnType.FullName.Equals("System.Reflection.MethodBase");
+		}
+
+		/// <summary>
+		/// OpCode pattern seen in Ldelem, Ldelem_* helper methods.
+		/// </summary>
+		private static readonly Code[] Pattern_Ldelem = new Code[] {
+			Code.Castclass, Code.Stloc_1, Code.Ldarg_0, Code.Ldloc_1, Code.Ldloc_0, Code.Callvirt
+		};
+
+		private static Boolean _Is_Ldelem(EazVirtualInstruction ins)
+		{
+			MethodDef method;
+			IList<Instruction> pattern;
+			var calls = ins.DelegateMethod.Calls().ToArray();
+			return calls.Length > 0
+				&& (method = calls.Last() as MethodDef) != null
+				&& (pattern = method.Find(Pattern_Ldelem)) != null
+				&& ((ITypeDefOrRef)pattern[0].Operand).FullName.Contains("System.Array");
+		}
+
+		private static Boolean _Is_Ldelem_T(EazVirtualInstruction ins, String typeName)
+		{
+			return ins.MatchesEntire(new Code[] {
+				Code.Ldarg_0, Code.Ldtoken, Code.Call, Code.Call, Code.Ret
+			}) && ((ITypeDefOrRef)ins.DelegateMethod.Body.Instructions[1].Operand)
+			      .FullName.Equals(typeName)
+				&& _Is_Ldelem(ins);
+		}
+
+		public static Boolean Is_Ldelem(this EazVirtualInstruction ins)
+		{
+			return ins.MatchesEntire(new Code[] {
+				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_0, Code.Ldarg_0, Code.Ldloc_0,
+				Code.Call, Code.Stloc_1, Code.Ldarg_0, Code.Ldloc_1, Code.Call, Code.Ret
+			}) && _Is_Ldelem(ins);
+		}
+
+		public static Boolean Is_Ldelem_I1(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldelem_T(ins, "System.SByte");
+		}
+
+		public static Boolean Is_Ldelem_I2(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldelem_T(ins, "System.Int16");
+		}
+
+		public static Boolean Is_Ldelem_I4(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldelem_T(ins, "System.Int32");
+		}
+
+		public static Boolean Is_Ldelem_I8(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldelem_T(ins, "System.Int64");
+		}
+
+		public static Boolean Is_Ldelem_U1(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldelem_T(ins, "System.Byte");
+		}
+
+		public static Boolean Is_Ldelem_U2(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldelem_T(ins, "System.UInt16");
+		}
+
+		public static Boolean Is_Ldelem_U4(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldelem_T(ins, "System.UInt32");
+		}
+
+		public static Boolean Is_Ldelem_R4(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldelem_T(ins, "System.Single");
+		}
+
+		public static Boolean Is_Ldelem_R8(this EazVirtualInstruction ins)
+		{
+			return _Is_Ldelem_T(ins, "System.Double");
+		}
+
+		public static Boolean Is_Ldelem_Ref(this EazVirtualInstruction ins)
+		{
+			// Is exact same as Ldelem_I except for the field reference
+			return ins.MatchesEntire(new Code[] {
+				Code.Ldarg_0, Code.Ldsfld, Code.Call, Code.Ret
+			}) && _Is_Ldelem(ins) && !ins.Is_Ldelem_I();
+		}
+
+		public static Boolean Is_Ldelem_I(this EazVirtualInstruction ins)
+		{
+			var sub = ins.Find(new Code[] {
+				Code.Ldarg_0, Code.Ldsfld, Code.Call, Code.Ret
+			});
+			return sub != null
+				&& ((IField)sub[1].Operand).MDToken == ins.Virtualization.GetTypeField("System.IntPtr").MDToken
+				&& _Is_Ldelem(ins);
+		}
+
+		public static Boolean Is_Ldelema(this EazVirtualInstruction ins)
+		{
+			// Note: Another way to detect may be by looking at Newobj TypeDef, as
+			// it seems specific to the Ldelema instruction type
+			// (has 3 fields: Array, long, Type)
+			return ins.Matches(new Code[] {
+				Code.Ldarg_0, Code.Newobj, Code.Stloc_0,
+				Code.Ldloc_0, Code.Ldloc_S, Code.Callvirt,
+				Code.Ldloc_0, Code.Ldloc_2, Code.Callvirt,
+				Code.Ldloc_0, Code.Ldloc_3, Code.Callvirt,
+				Code.Ldloc_0, Code.Call, Code.Ret
 			});
 		}
 	}

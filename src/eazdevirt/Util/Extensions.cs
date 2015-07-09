@@ -82,5 +82,20 @@ namespace eazdevirt.Util
 				return null;
 			else return result[0];
 		}
+
+		/// <summary>
+		/// Find all occurrences of an opcode pattern in a method.
+		/// </summary>
+		/// <param name="method">Method to search</param>
+		/// <param name="pattern">Pattern to search for</param>
+		/// <returns>All matching instruction sequences</returns>
+		public static IList<Instruction[]> FindAll(this MethodDef method, IList<Code> pattern)
+		{
+			if (method == null)
+				throw new ArgumentNullException();
+
+			var result = Helpers.FindOpCodePatterns(method.Body.Instructions, pattern);
+			return result;
+		}
 	}
 }

@@ -370,7 +370,7 @@ namespace eazdevirt.IO
 
 		protected virtual IField ReadInlineField(Instruction instruction)
 		{
-			return this.Resolver.ResolveField(this.Reader.ReadInt32());
+			return this.Resolver.TryResolveField(this.Reader.ReadInt32());
 		}
 
 		protected virtual IMethod ReadInlineSig(Instruction instruction)
@@ -385,12 +385,12 @@ namespace eazdevirt.IO
 
 		protected virtual IMethod ReadInlineMethod(Instruction instruction)
 		{
-			return this.Resolver.ResolveMethod(this.Reader.ReadInt32());
+			return this.Resolver.TryResolveMethod(this.Reader.ReadInt32());
 		}
 
 		protected virtual ITypeDefOrRef ReadInlineType(Instruction instruction)
 		{
-			return this.Resolver.ResolveType(this.Reader.ReadInt32());
+			return this.Resolver.TryResolveType(this.Reader.ReadInt32());
 		}
 
 		protected virtual String ReadInlineString(Instruction instruction)

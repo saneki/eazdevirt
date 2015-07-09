@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using de4dot.blocks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using eazdevirt.Util;
 
 namespace eazdevirt
 {
@@ -28,6 +29,11 @@ namespace eazdevirt
 		/// </summary>
 		public FieldDef LocalsField { get; private set; }
 
+		/// <summary>
+		/// A few Type fields are set in .cctor.
+		/// </summary>
+		public Dictionary<FieldDef, ITypeDefOrRef> TypeFields { get; private set; }
+
 		public EazVirtualization(EazModule module)
 		{
 			if (module == null)
@@ -44,6 +50,7 @@ namespace eazdevirt
 
 			this.InitializeArgumentsField(); // Set ArgumentsField
 			this.InitializeLocalsField();    // Set LocalsField
+			this.InitializeTypeFields();     // Set TypeFields
 		}
 
 		/// <summary>
@@ -108,6 +115,52 @@ namespace eazdevirt
 
 			if (this.LocalsField == null)
 				throw new Exception("Unable to find locals field");
+		}
+
+		private void InitializeTypeFields()
+		{
+			this.TypeFields = new Dictionary<FieldDef, ITypeDefOrRef>();
+			MethodDef cctor = this.VirtualizationType.FindMethod(".cctor");
+			if (cctor == null)
+				throw new Exception("Unable to find virtualization type .cctor");
+
+			if (!cctor.HasBody || !cctor.Body.HasInstructions)
+				throw new Exception("Virtualization type .cctor has no instructions");
+
+			var subs = cctor.FindAll(new Code[] { Code.Ldtoken, Code.Call, Code.Stsfld });
+			foreach(var sub in subs)
+			{
+				FieldDef field = sub[2].Operand as FieldDef;
+				if (field == null)
+					continue;
+
+				ITypeDefOrRef type = sub[0].Operand as ITypeDefOrRef;
+				if (type == null)
+					continue;
+
+				if (this.TypeFields.ContainsKey(field))
+				{
+					Console.WriteLine("[InitializeTypeFields] WARNING: Overwriting ITypeDefOrRef for FieldDef");
+					this.TypeFields[field] = type;
+				}
+				else this.TypeFields.Add(field, type);
+			}
+		}
+
+		/// <summary>
+		/// Get the FieldDef which maps to a type of a specific name.
+		/// </summary>
+		/// <param name="typeName">Name of type</param>
+		/// <returns>FieldDef if successful, null if not</returns>
+		public FieldDef GetTypeField(String typeName)
+		{
+			foreach(var kvp in this.TypeFields)
+			{
+				if (kvp.Value.FullName.Equals(typeName))
+					return kvp.Key;
+			}
+
+			return null;
 		}
 	}
 }
