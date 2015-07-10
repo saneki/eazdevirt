@@ -64,21 +64,12 @@ namespace eazdevirt.IO
 				if (declaring is TypeDef)
 				{
 					TypeDef declaringDef = declaring as TypeDef;
-					return declaringDef.FindMethod(data.Name);
+					return declaringDef.FindMethod(data.Name, GetMethodSig(data));
 				}
 				else if(declaring is TypeRef)
 				{
 					TypeRef declaringRef = declaring as TypeRef;
-
-					// Todo: Generics support
-					TypeSig returnType = ResolveType(data.ReturnType);
-					TypeSig[] paramTypes = new TypeSig[data.Parameters.Length];
-					for (Int32 i = 0; i < paramTypes.Length; i++)
-					{
-						paramTypes[i] = ResolveType(data.Parameters[i]);
-					}
-
-					MethodSig methodSig = MethodSig.CreateStatic(returnType, paramTypes);
+					MethodSig methodSig = GetMethodSig(data);
 					MemberRef memberRef = new MemberRefUser(this.Module, data.Name, methodSig, declaringRef);
 					return memberRef;
 
@@ -136,6 +127,25 @@ namespace eazdevirt.IO
 				//	// ...
 				//}
 			}
+		}
+
+		MethodSig GetMethodSig(MethodData data)
+		{
+			// Todo: Generics support
+			TypeSig returnType = ResolveType(data.ReturnType);
+			TypeSig[] paramTypes = new TypeSig[data.Parameters.Length];
+			for (Int32 i = 0; i < paramTypes.Length; i++)
+			{
+				paramTypes[i] = ResolveType(data.Parameters[i]);
+			}
+
+			MethodSig methodSig;
+			if (data.IsStatic)
+				methodSig = MethodSig.CreateStatic(returnType, paramTypes);
+			else
+				methodSig = MethodSig.CreateInstance(returnType, paramTypes);
+
+			return methodSig;
 		}
 
 		TypeSig ResolveType(InlineOperand operand)
@@ -290,7 +300,7 @@ namespace eazdevirt.IO
 				// If all else fails, make our own typeref
 				Console.WriteLine("[ResolveType_NoLock] WARNING: Creating TypeRef for: {0}", data.Name);
 				AssemblyRef assemblyRef = GetAssemblyRef(data.AssemblyFullName);
-				typeRef = new TypeRefUser(this.Module, String.Empty, data.TypeName, assemblyRef);
+				typeRef = new TypeRefUser(this.Module, data.Namespace, data.TypeNameWithoutNamespace, assemblyRef);
 				if (typeRef != null)
 					return typeRef;
 
@@ -601,6 +611,31 @@ namespace eazdevirt.IO
 				get { return InlineOperandType.Type; }
 			}
 
+			public String TypeNameWithoutNamespace
+			{
+				get
+				{
+					if (this.TypeName.Contains("."))
+						return this.TypeName.Split('.').Last();
+					else
+						return String.Empty;
+				}
+			}
+
+			public String Namespace
+			{
+				get
+				{
+					if (this.TypeName.Contains("."))
+					{
+						return String.Join(".",
+							this.TypeName.Split('.').Reverse().Skip(1).Reverse().ToArray());
+					}
+					else
+						return this.TypeName;
+				}
+			}
+
 			public String TypeName
 			{
 				get
@@ -695,6 +730,16 @@ namespace eazdevirt.IO
 			public override InlineOperandType Type
 			{
 				get { return InlineOperandType.Method; }
+			}
+
+			public Boolean IsStatic
+			{
+				get { return this.Flags; }
+			}
+
+			public Boolean IsInstance
+			{
+				get { return !this.Flags; }
 			}
 
 			public BindingFlags BindingFlags

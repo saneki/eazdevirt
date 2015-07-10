@@ -208,7 +208,8 @@ namespace eazdevirt
 								Console.WriteLine("--> Not yet devirtualizable (contains unknown virtual instruction)");
 								Console.WriteLine("-----> Virtual OpCode = {0} @ [{1}] (0x{2:X8})",
 									reader.LastVirtualOpCode, reader.CurrentInstructionOffset, reader.CurrentVirtualOffset);
-								Console.WriteLine("-----> Delegate method: {0}", v.DelegateMethod.FullName);
+								Console.WriteLine("-----> Delegate method: {0} (MDToken = 0x{1:X8})",
+									v.DelegateMethod.FullName, v.DelegateMethod.MDToken.Raw);
 
 								if (reader.CurrentInstructionOffset > 0)
 									WritePartiallyDevirtualizedMethod(reader);

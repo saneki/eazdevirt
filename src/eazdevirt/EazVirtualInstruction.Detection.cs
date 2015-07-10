@@ -50,6 +50,8 @@ namespace eazdevirt
 				return Code.Blt_Un;
 			else if (ins.Is_Bne_Un())
 				return Code.Bne_Un;
+			else if (ins.Is_Box())
+				return Code.Box;
 			else if (ins.Is_Br())
 				return Code.Br;
 			else if (ins.Is_Brfalse())
@@ -174,6 +176,8 @@ namespace eazdevirt
 				return Code.Not;
 			else if (ins.Is_Or())
 				return Code.Or;
+			else if (ins.Is_Pop())
+				return Code.Pop;
 			else if (ins.Is_Rem())
 				return Code.Rem;
 			else if (ins.Is_Rem_Un())
@@ -1225,6 +1229,25 @@ namespace eazdevirt
 				Code.Ldloc_0, Code.Ldloc_2, Code.Callvirt,
 				Code.Ldloc_0, Code.Ldloc_3, Code.Callvirt,
 				Code.Ldloc_0, Code.Call, Code.Ret
+			});
+		}
+
+		public static Boolean Is_Pop(this EazVirtualInstruction ins)
+		{
+			MethodDef method = null;
+			return ins.MatchesEntire(new Code[] {
+				Code.Ldarg_0, Code.Call, Code.Pop, Code.Ret
+			}) && (method = ins.DelegateMethod.Body.Instructions[1].Operand as MethodDef) != null
+			   && method.MatchesEntire(new Code[] {
+				   Code.Ldarg_0, Code.Ldfld, Code.Callvirt, Code.Ret
+			   });
+		}
+
+		public static Boolean Is_Box(this EazVirtualInstruction ins)
+		{
+			return ins.Matches(new Code[] {
+				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_2, Code.Ldarg_0,
+				Code.Ldloc_2, Code.Call, Code.Stloc_0, Code.Ldarg_0, Code.Call
 			});
 		}
 	}
