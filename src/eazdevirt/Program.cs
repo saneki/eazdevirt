@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Text;
 using CommandLine;
+using CommandLine.Text;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using eazdevirt.IO;
@@ -13,7 +16,9 @@ namespace eazdevirt
 	{
 		static void Main(String[] args)
 		{
-			var result = CommandLine.Parser.Default.ParseArguments
+			var parser = CreateParser();
+
+			var result = parser.ParseArguments
 				<DSubOptions,
 				 DevirtSubOptions,
 				 DevirtualizeSubOptions,
@@ -59,6 +64,48 @@ namespace eazdevirt
 					DoResource((ResourceSubOptions)result.Value);
 				}
 			}
+			else
+			{
+				WriteHelpText(args, parser, result);
+			}
+		}
+
+		/// <summary>
+		/// Create a custom command line parser.
+		/// </summary>
+		/// <returns>Parser</returns>
+		static Parser CreateParser()
+		{
+			return new Parser((settings) =>
+			{
+				// Will handle writing help ourself
+				settings.HelpWriter = null;
+			});
+		}
+
+		/// <summary>
+		/// Write help text to console.
+		/// </summary>
+		/// <param name="args">Args</param>
+		/// <param name="parser">Parser</param>
+		/// <param name="result">Parse result</param>
+		static void WriteHelpText(String[] args, Parser parser, ParserResult<Object> result)
+		{
+			// Get description from assembly attribute
+			Assembly assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
+			var descAttr = (AssemblyDescriptionAttribute)assembly.GetCustomAttribute(typeof(AssemblyDescriptionAttribute));
+			String description = descAttr.Description;
+
+			// Append description to heading
+			HeadingInfo headingInfo = HeadingInfo.Default;
+			StringBuilder headingBuilder = new StringBuilder(headingInfo.ToString());
+			headingBuilder.Append(" - ");
+			headingBuilder.Append(description);
+
+			HelpText helpText = HelpText.AutoBuild(result);
+			helpText.AdditionalNewLineAfterOption = false;
+			helpText.Heading = headingBuilder.ToString();
+			Console.WriteLine(helpText);
 		}
 
 		/// <summary>
