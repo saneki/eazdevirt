@@ -108,14 +108,38 @@ namespace eazdevirt
 					Console.WriteLine("Devirtualizing {0} (MDToken = 0x{1:X8})",
 						method.Method.FullName, method.Method.MDToken.Raw);
 
-					method.Method.Body.Instructions.Clear();
-					foreach (var instr in reader.Instructions)
-						method.Method.Body.Instructions.Add(instr);
+					//method.Method.Body.Instructions.Clear();
+					//foreach (var instr in reader.Instructions)
+					//	method.Method.Body.Instructions.Add(instr);
+
+					var body = new CilBody(
+						true,
+						reader.Instructions,
+						new List<ExceptionHandler>(),
+						reader.Locals
+					);
+
+					method.Method.FreeMethodBody();
+					method.Method.Body = body;
 
 					if(options.ExtraOutput)
 					{
 						Console.WriteLine();
-						foreach (var instr in method.Method.Body.Instructions)
+
+						// Print locals
+						if (body.HasVariables)
+						{
+							Console.WriteLine("Locals:");
+							Console.WriteLine("-------");
+							foreach (var local in body.Variables)
+								Console.WriteLine("local[{0}]: {1}", local.Index, local.Type.FullName);
+							Console.WriteLine();
+						}
+
+						// Print instructions
+						Console.WriteLine("Instructions:");
+						Console.WriteLine("-------------");
+						foreach (var instr in body.Instructions)
 							Console.WriteLine(instr);
 						Console.WriteLine();
 					}

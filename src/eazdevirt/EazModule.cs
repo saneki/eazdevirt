@@ -64,7 +64,7 @@ namespace eazdevirt
 			var options = new ModuleWriterOptions(this.Module);
 			options.MetaDataOptions.Flags |= MetaDataFlags.PreserveAll;
 			options.MetaDataOptions.Flags |= MetaDataFlags.KeepOldMaxStack;
-			options.Logger = DummyLogger.NoThrowInstance;
+			// options.Logger = DummyLogger.NoThrowInstance;
 			this.Module.Write(filepath, options);
 		}
 

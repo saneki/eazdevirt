@@ -68,6 +68,10 @@ namespace eazdevirt
 				return Code.Ckfinite;
 			else if (ins.Is_Clt())
 				return Code.Clt;
+			else if (ins.Is_Conv_I4())
+				return Code.Conv_I4;
+			else if (ins.Is_Conv_Ovf_I4())
+				return Code.Conv_Ovf_I4;
 			else if (ins.Is_Div())
 				return Code.Div;
 			else if (ins.Is_Div_Un())
@@ -148,6 +152,8 @@ namespace eazdevirt
 				return Code.Ldfld;
 			else if (ins.Is_Ldflda())
 				return Code.Ldflda;
+			else if (ins.Is_Ldlen())
+				return Code.Ldlen;
 			else if (ins.Is_Ldloc())
 				return Code.Ldloc;
 			else if (ins.Is_Ldloc_S())
@@ -1249,6 +1255,39 @@ namespace eazdevirt
 				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_2, Code.Ldarg_0,
 				Code.Ldloc_2, Code.Call, Code.Stloc_0, Code.Ldarg_0, Code.Call
 			});
+		}
+
+		public static Boolean Is_Ldlen(this EazVirtualInstruction ins)
+		{
+			return ins.MatchesEntire(new Code[] {
+				Code.Ldarg_0, Code.Call, Code.Callvirt, Code.Castclass, Code.Stloc_0, Code.Ldarg_0,
+				Code.Newobj, Code.Stloc_1, Code.Ldloc_1, Code.Ldloc_0, Code.Callvirt, Code.Callvirt,
+				Code.Ldloc_1, Code.Call, Code.Ret
+			}) && ((IMethod)ins.DelegateMethod.Body.Instructions[10].Operand)
+			      .FullName.Contains("System.Array::get_Length");
+		}
+
+		/// <summary>
+		/// OpCode pattern seen in Conv_I4, Conv_Ovf_I4 helper methods.
+		/// </summary>
+		private static readonly Code[] Pattern_Conv_I4 = new Code[] {
+			Code.Ldloc_0, Code.Castclass, Code.Callvirt, Code.Conv_Ovf_I4,
+			Code.Stloc_2, Code.Br_S, Code.Ldloc_0, Code.Castclass, Code.Callvirt,
+			Code.Conv_I4, Code.Stloc_2
+		};
+
+		public static Boolean Is_Conv_I4(this EazVirtualInstruction ins)
+		{
+			return ins.MatchesEntire(new Code[] {
+				Code.Ldarg_0, Code.Ldc_I4_0, Code.Call, Code.Ret
+			}) && ins.DelegateMethod.MatchesIndirect(Pattern_Conv_I4);
+		}
+
+		public static Boolean Is_Conv_Ovf_I4(this EazVirtualInstruction ins)
+		{
+			return ins.MatchesEntire(new Code[] {
+				Code.Ldarg_0, Code.Ldc_I4_1, Code.Call, Code.Ret
+			}) && ins.DelegateMethod.MatchesIndirect(Pattern_Conv_I4);
 		}
 	}
 }

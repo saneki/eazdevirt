@@ -54,7 +54,14 @@ namespace eazdevirt.IO
 			if(operand.IsDirect)
 			{
 				MDToken token = new MDToken(operand.Token);
-				return this.Module.ResolveMethod(token.Rid);
+				if (token.Table == Table.Method)
+					return this.Module.ResolveMethod(token.Rid);
+				else if (token.Table == Table.MemberRef)
+					return this.Module.ResolveMemberRef(token.Rid);
+				else if (token.Table == Table.MethodSpec)
+					return this.Module.ResolveMethodSpec(token.Rid);
+
+				throw new Exception("Bad MDToken table");
 			}
 			else
 			{
@@ -63,10 +70,41 @@ namespace eazdevirt.IO
 
 				if (declaring is TypeDef)
 				{
+					// If declaring type is a TypeDef, it is defined inside this module, so a
+					// MethodDef should be attainable. However, the method may have generic parameters.
+
 					TypeDef declaringDef = declaring as TypeDef;
-					return declaringDef.FindMethod(data.Name, GetMethodSig(data));
+
+					//Console.WriteLine("Method: " + data.Name);
+					//Console.WriteLine("Declaring Def: " + declaringDef.FullName);
+
+					// This signature may not be exact:
+					// If `MyMethod<T>(T something): Void` is called as MyMethod<Int32>(100),
+					// signature will appear as `System.Void <!!0>(System.Int32)` instead of `System.Void <!!0>(T)`
+					var sig = GetMethodSig(data);
+
+					// Try to easily find the method by name + signature
+					var foundMethod = declaringDef.FindMethod(data.Name, sig);
+					if (foundMethod != null)
+						return foundMethod;
+
+					// Search for the method
+					var methods = declaringDef.FindMethods(data.Name);
+					foreach (var method in methods)
+					{
+						if (method.IsStatic != data.IsStatic)
+							continue;
+
+						if (Matches(method, sig))
+						{
+							// This should only happen for generic inst methods
+							return ToMethodSpec(method, data);
+						}
+					}
+
+					throw new Exception("Blah");
 				}
-				else if(declaring is TypeRef)
+				else if (declaring is TypeRef)
 				{
 					TypeRef declaringRef = declaring as TypeRef;
 					MethodSig methodSig = GetMethodSig(data);
@@ -87,6 +125,46 @@ namespace eazdevirt.IO
 					//Importer importer = new Importer(this.Module);
 					//TypeDef declaringDef = importer.Import(declaringRef).ResolveTypeDefThrow();
 					//return declaringDef.FindMethod(data.Name);
+				}
+				else if (declaring is TypeSpec)
+				{
+					// If declaring type is a TypeSpec, it should have generic types associated
+					// with it. This doesn't mean the method itself will, though.
+
+					var comparer = new SignatureEqualityComparer(SigComparerOptions.SubstituteGenericParameters);
+
+					TypeSpec declaringSpec = declaring as TypeSpec;
+					MethodSig methodSig = GetMethodSig(data);
+
+					if (declaringSpec.TypeSig.IsGenericInstanceType
+					/* && !data.Name.Equals(".ctor") */)
+					{
+						//Console.WriteLine("Contains generic parameter: {0}", declaringSpec);
+
+						TypeDef declaringDef = declaringSpec.ResolveTypeDefThrow();
+						var methods = declaringDef.FindMethods(data.Name);
+						foreach (var method in methods)
+						{
+							//Console.WriteLine("Comparing: {0} | {1} == {2}",
+							//	method.MethodSig, methodSig, Equals(declaringSpec, method.MethodSig, methodSig));
+							if (Equals(declaringSpec, method.MethodSig, methodSig))
+							{
+								return new MemberRefUser(this.Module, data.Name, method.MethodSig, declaringSpec);
+							}
+						}
+					}
+
+					if (data.HasGenericArguments)
+					{
+						MemberRef memberRef = new MemberRefUser(this.Module, data.Name, methodSig, declaringSpec);
+						MethodSpec methodSpec = ToMethodSpec(memberRef, data);
+						return methodSpec;
+					}
+					else
+					{
+						MemberRef memberRef = new MemberRefUser(this.Module, data.Name, methodSig, declaringSpec);
+						return memberRef;
+					}
 				}
 
 				throw new Exception("Wat");
@@ -129,21 +207,153 @@ namespace eazdevirt.IO
 			}
 		}
 
+		/// <summary>
+		/// Compare two method signatures, with the first having generic parameters
+		/// of types from the declaring type's generic arguments.
+		/// </summary>
+		/// <param name="s1">First signature</param>
+		/// <param name="s2">Second signature</param>
+		/// <returns>true if appear equal, false if not</returns>
+		/// <remarks>Make a comparer class for this later?</remarks>
+		Boolean Equals(TypeSpec declaringType, MethodSig s1, MethodSig s2)
+		{
+			// This is necessary because the serialized MethodData doesn't contain
+			// information (from what I can tell) about which parameters correspond
+			// to which generic arguments.
+
+			var comparer = new SigComparer();
+
+			var gsig = declaringType.TryGetGenericInstSig();
+			if (gsig == null)
+			{
+				// If declaring type isn't a generic instance, compare normally
+				return comparer.Equals(s1, s2);
+			}
+
+			if (s1.Params.Count != s2.Params.Count)
+				return false;
+
+			for (Int32 i = 0; i < s1.Params.Count; i++)
+			{
+				var p = s1.Params[i];
+				if (p.IsGenericTypeParameter)
+				{
+					var genericVar = p.ToGenericVar();
+					var genericNumber = genericVar.GenericParam.Number;
+					var genericArgument = gsig.GenericArguments[genericNumber];
+					p = genericArgument;
+				}
+
+				if(!comparer.Equals(p, s2.Params[i]))
+					return false;
+			}
+
+			return comparer.Equals(s1.RetType, s2.RetType);
+		}
+
+		/// <summary>
+		/// Create a generic instance signature by applying generics
+		/// from deserialized data to an existing type.
+		/// </summary>
+		/// <param name="type">Existing type</param>
+		/// <param name="data">Deserialized data with generic types</param>
+		/// <returns>GenericInstSig</returns>
+		ITypeDefOrRef ApplyGenerics(ITypeDefOrRef type, TypeData data)
+		{
+			List<TypeSig> types = new List<TypeSig>();
+			foreach (var g in data.GenericTypes)
+			{
+				var gtype = this.ResolveType_NoLock(g.Token);
+				types.Add(gtype.ToTypeSig());
+			}
+
+			ClassOrValueTypeSig typeSig = type.ToTypeSig().ToClassOrValueTypeSig();
+			return new GenericInstSig(typeSig, types).ToTypeDefOrRef();
+			// TypeSpec typeSpec = new TypeSpecUser(genericSig);
+		}
+
+		/// <summary>
+		/// Create a MethodSpec from a MethodDef and data with generic arguments.
+		/// </summary>
+		/// <param name="method">Method</param>
+		/// <param name="data">Data</param>
+		/// <returns>MethodSpec</returns>
+		MethodSpec ToMethodSpec(IMethodDefOrRef method, MethodData data)
+		{
+			// Resolve all generic argument types
+			List<TypeSig> types = new List<TypeSig>();
+			foreach (var g in data.GenericArguments)
+			{
+				var gtype = this.ResolveType_NoLock(g.Token);
+				types.Add(gtype.ToTypeSig());
+			}
+
+			var sig = new GenericInstMethodSig(types);
+			return new MethodSpecUser(method, sig);
+		}
+
+		/// <summary>
+		/// Check whether or not a MethodDef matches some MethodSig.
+		/// </summary>
+		/// <param name="method">Method</param>
+		/// <param name="signature">Method signature</param>
+		/// <returns>true if matches, false if not</returns>
+		/// <remarks>Could use dnlib's SigComparer for this maybe?</remarks>
+		Boolean Matches(MethodDef method, MethodSig signature)
+		{
+			//This is imperfect and may confuse methods such as:
+			// `MyMethod<T>(T, int): void` and `MyMethod<T>(int, T)`
+
+			if (method.MethodSig.Params.Count != signature.Params.Count)
+				return false;
+
+			for (Int32 i = 0; i < method.MethodSig.Params.Count; i++)
+			{
+				TypeSig mp = method.MethodSig.Params[i];
+				TypeSig sp = signature.Params[i];
+
+				if (mp.IsGenericMethodParameter)
+					continue;
+				else if (!mp.MDToken.Equals(sp.MDToken))
+					return false;
+			}
+
+			return method.MethodSig.RetType.MDToken.Equals(signature.RetType.MDToken)
+				&& method.MethodSig.GenParamCount == signature.GenParamCount;
+		}
+
+		/// <summary>
+		/// Convert some method data into a method signature.
+		/// </summary>
+		/// <param name="data">Data</param>
+		/// <returns>Signature</returns>
 		MethodSig GetMethodSig(MethodData data)
 		{
-			// Todo: Generics support
 			TypeSig returnType = ResolveType(data.ReturnType);
+
 			TypeSig[] paramTypes = new TypeSig[data.Parameters.Length];
 			for (Int32 i = 0; i < paramTypes.Length; i++)
 			{
 				paramTypes[i] = ResolveType(data.Parameters[i]);
 			}
 
+			UInt32 genericTypeCount = (UInt32)data.GenericArguments.Length;
+
 			MethodSig methodSig;
-			if (data.IsStatic)
-				methodSig = MethodSig.CreateStatic(returnType, paramTypes);
+			if (genericTypeCount == 0)
+			{
+				if (data.IsStatic)
+					methodSig = MethodSig.CreateStatic(returnType, paramTypes);
+				else
+					methodSig = MethodSig.CreateInstance(returnType, paramTypes);
+			}
 			else
-				methodSig = MethodSig.CreateInstance(returnType, paramTypes);
+			{
+				if (data.IsStatic)
+					methodSig = MethodSig.CreateStaticGeneric(genericTypeCount, returnType, paramTypes);
+				else
+					methodSig = MethodSig.CreateInstanceGeneric(genericTypeCount, returnType, paramTypes);
+			}
 
 			return methodSig;
 		}
@@ -271,31 +481,86 @@ namespace eazdevirt.IO
 			{
 				MDToken token = new MDToken(operand.Token);
 
-				if(token.Table == Table.TypeDef)
+				if (token.Table == Table.TypeDef)
 					return this.Module.ResolveTypeDef(token.Rid);
 				else if (token.Table == Table.TypeRef)
 					return this.Module.ResolveTypeRef(token.Rid);
+				else if (token.Table == Table.TypeSpec)
+					return this.Module.ResolveTypeSpec(token.Rid);
 
 				throw new Exception("Bad MDToken table");
 			}
 			else
 			{
 				TypeData data = operand.Data as TypeData;
-				String typeName = data.Name;
+				String typeName = data.TypeName;
+
+				if(data.SomeIndex != -1)
+					Console.WriteLine("[{0}] SomeIndex: {1}", data.TypeName, data.SomeIndex2);
+				if(data.SomeIndex2 != -1)
+					Console.WriteLine("[{0}] SomeIndex2: {1}", data.TypeName, data.SomeIndex2);
+
+				// Get the type modifiers stack
+				Stack<String> modifiers = GetModifiersStack(data.TypeName, out typeName);
+
+				// Hacky, add a proper fix for this (also * and &)
+				//Boolean isArray = data.TypeName.EndsWith("[]");
+				//if (isArray)
+				//	typeName = typeName.Substring(0, typeName.Length - 2);
 
 				// Try to find typedef
-				TypeDef typeDef = this.Module.FindReflection(data.TypeName);
+				TypeDef typeDef = this.Module.FindReflection(typeName);
 				if (typeDef != null)
-					return typeDef;
+				{
+					ITypeDefOrRef result = typeDef;
+					if (data.GenericTypes.Length > 0)
+						result = ApplyGenerics(typeDef, data);
+
+					TypeSig sig = ApplyTypeModifiers(result.ToTypeSig(), modifiers);
+					return sig.ToTypeDefOrRef();
+
+					//if (isArray)
+					//{
+					//	var sig = new SZArraySig(typeDef.ToTypeSig());
+					//	result = sig.ToTypeDefOrRef();
+					//}
+					//
+					//return result;
+
+					//if (data.GenericTypes.Length > 0)
+					//	return ToTypeSpec(typeDef, data);
+					//else return typeDef;
+				}
 
 				// Otherwise, try to find typeref
 				TypeRef typeRef = null;
 				typeRef = this.Module.GetTypeRefs().FirstOrDefault((t) =>
 				{
-					return t.ReflectionFullName.Equals(data.TypeName);
+					return t.ReflectionFullName.Equals(typeName);
 				});
 				if (typeRef != null)
-					return typeRef;
+				{
+					ITypeDefOrRef result = typeRef;
+					if (data.GenericTypes.Length > 0)
+						result = ApplyGenerics(typeRef, data);
+
+					TypeSig sig = ApplyTypeModifiers(result.ToTypeSig(), modifiers);
+					return sig.ToTypeDefOrRef();
+
+					//if (isArray)
+					//{
+					//	Console.WriteLine("TypeRef array type found: " + data.Name);
+					//	var sig = new SZArraySig(typeRef.ToTypeSig());
+					//	result = sig.ToTypeDefOrRef();
+					//	Console.WriteLine("Result: " + result);
+					//}
+					//
+					//return result;
+
+					//if (data.GenericTypes.Length > 0)
+					//	return ToTypeSpec(typeRef, data);
+					//else return typeRef;
+				}
 
 				// If all else fails, make our own typeref
 				Console.WriteLine("[ResolveType_NoLock] WARNING: Creating TypeRef for: {0}", data.Name);
@@ -340,6 +605,75 @@ namespace eazdevirt.IO
 				//	// ...
 				//}
 			}
+		}
+
+		Stack<String> GetModifiersStack(String rawName, out String fixedName)
+		{
+			var stack = new Stack<String>();
+
+			while(true)
+			{
+				if (rawName.EndsWith("*"))
+					stack.Push("*");
+				else if (rawName.EndsWith("&"))
+					stack.Push("&");
+				else break;
+
+				rawName = rawName.Substring(0, rawName.Length - 1);
+			}
+
+			while(rawName.EndsWith("[]"))
+			{
+				stack.Push("[]");
+				rawName = rawName.Substring(0, rawName.Length - 2);
+			}
+
+			fixedName = rawName;
+			return stack;
+		}
+
+		TypeSig ApplyTypeModifiers(TypeSig typeSig, Stack<String> modifiers)
+		{
+			// This might not be implemented correctly
+			typeSig = this.FixTypeAsArray(typeSig, modifiers);
+			typeSig = this.FixTypeAsRefOrPointer(typeSig, modifiers);
+			return typeSig;
+		}
+
+		TypeSig FixTypeAsArray(TypeSig typeSig, Stack<String> modifiers)
+		{
+			UInt32 rank = 0;
+
+			while(modifiers.Count > 0 && modifiers.Peek().Equals("[]"))
+			{
+				modifiers.Pop();
+				rank++;
+			}
+
+			if (rank == 0)
+				return typeSig;
+			else if (rank == 1)
+				return new SZArraySig(typeSig);
+			else
+				return new ArraySig(typeSig, rank);
+		}
+
+		TypeSig FixTypeAsRefOrPointer(TypeSig typeSig, Stack<String> modifiers)
+		{
+			while(modifiers.Count > 0
+				&& (modifiers.Peek().Equals("*") || modifiers.Peek().Equals("&")))
+			{
+				if(modifiers.Pop().Equals("*")) // Pointer
+				{
+					typeSig = new PtrSig(typeSig);
+				}
+				else // ByRef
+				{
+					typeSig = new ByRefSig(typeSig);
+				}
+			}
+
+			return typeSig;
 		}
 
 		AssemblyRef GetAssemblyRef(String fullname)
@@ -603,8 +937,8 @@ namespace eazdevirt.IO
 			public Int32 SomeIndex2 { get; private set; } // int_0, index into type_5? (DeclaringType.GetGenericArguments())
 			public Boolean Unknown3 { get; private set; } // bool_0
 			public String Name { get; private set; } // string_0
-			public Boolean Unknown5 { get; private set; } // bool_1
-			public InlineOperand[] Unknown6 { get; private set; } // class54_0
+			public Boolean HasGenericTypes { get; private set; } // bool_1
+			public InlineOperand[] GenericTypes { get; private set; } // class54_0
 
 			public override InlineOperandType Type
 			{
@@ -673,8 +1007,8 @@ namespace eazdevirt.IO
 				this.SomeIndex2 = reader.ReadInt32();
 				this.Unknown3 = reader.ReadBoolean();
 				this.Name = reader.ReadString();
-				this.Unknown5 = reader.ReadBoolean();
-				this.Unknown6 = InlineOperand.ReadArrayInternal(reader);
+				this.HasGenericTypes = reader.ReadBoolean();
+				this.GenericTypes = InlineOperand.ReadArrayInternal(reader);
 			}
 		}
 
@@ -726,6 +1060,11 @@ namespace eazdevirt.IO
 			public InlineOperand ReturnType { get; private set; } // class54_3
 			public InlineOperand[] Parameters { get; private set; } // class54_1
 			public InlineOperand[] GenericArguments { get; private set; } // class54_2
+
+			public Boolean HasGenericArguments
+			{
+				get { return this.GenericArguments.Length > 0; }
+			}
 
 			public override InlineOperandType Type
 			{

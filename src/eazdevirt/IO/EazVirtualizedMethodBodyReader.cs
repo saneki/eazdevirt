@@ -284,7 +284,7 @@ namespace eazdevirt.IO
 				case OperandType.InlineVar:
 					return this.ReadInlineVar(instr);
 				case OperandType.ShortInlineVar:
-					return this.Reader.ReadByte();
+					return this.ReadShortInlineVar(instr);
 
 				// Resolving
 				case OperandType.InlineMethod:
@@ -377,6 +377,13 @@ namespace eazdevirt.IO
 			return this.GetLocal(this.Reader.ReadUInt16());
 		}
 
+		protected virtual IVariable ReadShortInlineVar(Instruction instr)
+		{
+			if (IsArgOperandInstruction(instr))
+				return this.GetArgument(this.Reader.ReadByte());
+			return this.GetLocal(this.Reader.ReadByte());
+		}
+
 		/// <summary>
 		/// Reads a <see cref="OperandType.InlineBrTarget"/> operand
 		/// </summary>
@@ -403,7 +410,7 @@ namespace eazdevirt.IO
 
 		protected virtual IField ReadInlineField(Instruction instruction)
 		{
-			return this.Resolver.TryResolveField(this.Reader.ReadInt32());
+			return this.Resolver.ResolveField(this.Reader.ReadInt32());
 		}
 
 		protected virtual IMethod ReadInlineSig(Instruction instruction)
@@ -418,12 +425,12 @@ namespace eazdevirt.IO
 
 		protected virtual IMethod ReadInlineMethod(Instruction instruction)
 		{
-			return this.Resolver.TryResolveMethod(this.Reader.ReadInt32());
+			return this.Resolver.ResolveMethod(this.Reader.ReadInt32());
 		}
 
 		protected virtual ITypeDefOrRef ReadInlineType(Instruction instruction)
 		{
-			return this.Resolver.TryResolveType(this.Reader.ReadInt32());
+			return this.Resolver.ResolveType(this.Reader.ReadInt32());
 		}
 
 		protected virtual String ReadInlineString(Instruction instruction)
@@ -445,7 +452,8 @@ namespace eazdevirt.IO
 			else return null;
 		}
 
-		public LocalList Locals = new LocalList();
+		public IList<Local> Locals = new List<Local>();
+		//public LocalList Locals = new LocalList();
 
 		/// <summary>
 		/// Translate the specified SerializedLocal to a dnlib Local and return it.
