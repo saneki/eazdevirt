@@ -152,6 +152,8 @@ namespace eazdevirt
 				return Code.Ldfld;
 			else if (ins.Is_Ldflda())
 				return Code.Ldflda;
+			else if (ins.Is_Ldftn())
+				return Code.Ldftn;
 			else if (ins.Is_Ldlen())
 				return Code.Ldlen;
 			else if (ins.Is_Ldloc())
@@ -1255,6 +1257,19 @@ namespace eazdevirt
 				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_2, Code.Ldarg_0,
 				Code.Ldloc_2, Code.Call, Code.Stloc_0, Code.Ldarg_0, Code.Call
 			});
+		}
+
+		public static Boolean Is_Ldftn(this EazVirtualInstruction ins)
+		{
+			MethodDef called = null;
+			var sub = ins.DelegateMethod.Find(new Code[] {
+				Code.Ldarg_0, Code.Newobj, Code.Stloc_2, Code.Ldloc_2, Code.Ldloc_1,
+				Code.Callvirt, Code.Ldloc_2, Code.Call, Code.Ret
+			});
+			return sub != null
+				&& (called = ((MethodDef)sub[5].Operand)) != null
+				&& called.Parameters.Count >= 2
+				&& called.Parameters[1].Type.FullName.Equals("System.Reflection.MethodBase");
 		}
 
 		public static Boolean Is_Ldlen(this EazVirtualInstruction ins)
