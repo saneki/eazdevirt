@@ -118,89 +118,58 @@ namespace eazdevirt
 			if (!TryLoadModule(options.AssemblyPath, out module))
 				return;
 
-			EazVirtualizedMethod[] methods = module.FindVirtualizedMethods();
+			EazDevirtualizer devirtualizer = new EazDevirtualizer(module);
 
-			if(methods.Length == 0)
+			var results = devirtualizer.Devirtualize((attempt) =>
+			{
+				if (attempt.Successful)
+				{
+					var method = attempt.Method;
+					var body = attempt.MethodBody;
+
+					Console.WriteLine("Devirtualized {0} (MDToken = 0x{1:X8})",
+						method.FullName, method.MDToken.Raw);
+
+					Console.WriteLine();
+
+					// Print locals
+					if (body.HasVariables)
+					{
+						Console.WriteLine("Locals:");
+						Console.WriteLine("-------");
+						foreach (var local in body.Variables)
+							Console.WriteLine("local[{0}]: {1}", local.Index, local.Type.FullName);
+						Console.WriteLine();
+					}
+
+					// Print instructions
+					Console.WriteLine("Instructions:");
+					Console.WriteLine("-------------");
+					foreach (var instr in body.Instructions)
+						Console.WriteLine(instr);
+					Console.WriteLine();
+				}
+			});
+
+			if (results.Empty)
 			{
 				Console.WriteLine("No virtualized methods found");
 				return;
 			}
 
-			Int32 devirtCount = 0;
-			foreach (var method in methods)
-			{
-				var reader = new EazVirtualizedMethodBodyReader(method);
-				Boolean threwUnknownOpcodeException = false, threwException = false;
-				Exception exception = null;
-
-				try
-				{
-					reader.Read(); // Read method
-				}
-				catch (OriginalOpcodeUnknownException)
-				{
-					// This is almost guaranteed to happen at this point
-					threwUnknownOpcodeException = true;
-				}
-				catch (Exception e)
-				{
-					// ...
-					threwException = true;
-					exception = e;
-				}
-
-				if(!threwException && !threwUnknownOpcodeException)
-				{
-					devirtCount++;
-					Console.WriteLine("Devirtualizing {0} (MDToken = 0x{1:X8})",
-						method.Method.FullName, method.Method.MDToken.Raw);
-
-					//method.Method.Body.Instructions.Clear();
-					//foreach (var instr in reader.Instructions)
-					//	method.Method.Body.Instructions.Add(instr);
-
-					var body = new CilBody(
-						true,
-						reader.Instructions,
-						new List<ExceptionHandler>(),
-						reader.Locals
-					);
-
-					method.Method.FreeMethodBody();
-					method.Method.Body = body;
-
-					if(options.ExtraOutput)
-					{
-						Console.WriteLine();
-
-						// Print locals
-						if (body.HasVariables)
-						{
-							Console.WriteLine("Locals:");
-							Console.WriteLine("-------");
-							foreach (var local in body.Variables)
-								Console.WriteLine("local[{0}]: {1}", local.Index, local.Type.FullName);
-							Console.WriteLine();
-						}
-
-						// Print instructions
-						Console.WriteLine("Instructions:");
-						Console.WriteLine("-------------");
-						foreach (var instr in body.Instructions)
-							Console.WriteLine(instr);
-						Console.WriteLine();
-					}
-				}
-			}
-
-			if (devirtCount > 0)
+			if (results.DevirtualizedCount > 0)
 				Console.WriteLine();
 
-			String outputPath = GetDevirtualizedModulePath(options.AssemblyPath);
+			Console.WriteLine("Devirtualized {0}/{1} methods",
+				results.DevirtualizedCount, results.MethodCount);
 
-			Console.WriteLine("Devirtualized {0}/{1} methods", devirtCount, methods.Length);
-			Console.WriteLine("Saving {0}", outputPath);
-			module.Write(outputPath);
+			// Only save if at least one method devirtualized
+			if (results.DevirtualizedCount > 0)
+			{
+				String outputPath = GetDevirtualizedModulePath(options.AssemblyPath);
+				Console.WriteLine("Saving {0}", outputPath);
+				module.Write(outputPath);
+			}
 		}
 
 		static String GetDevirtualizedModulePath(String origPath)

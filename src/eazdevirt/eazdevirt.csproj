@@ -47,6 +47,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EazDevirtualizer.cs" />
     <Compile Include="EazVirtualInstruction.Helpers.cs" />
     <Compile Include="EazVirtualization.cs" />
     <Compile Include="IO\DnBinaryReader.cs" />
