@@ -58,7 +58,7 @@ namespace eazdevirt
 		/// Looks like: [static] ??? method(Value, Value)
 		/// </remarks>
 		/// <returns>true if match, false if not</returns>
-		public Boolean MatchesIndirect(Code[] codePattern)
+		public Boolean MatchesIndirect(IList<Code> codePattern)
 		{
 			this.CheckDelegateMethod();
 
@@ -85,7 +85,7 @@ namespace eazdevirt
 		/// Looks like: [static] ??? method(Value, Value, Boolean)
 		/// </remarks>
 		/// <returns>true if match, false if not</returns>
-		public Boolean MatchesIndirectWithBoolean(Boolean val, Code[] codePattern)
+		public Boolean MatchesIndirectWithBoolean(Boolean val, IList<Code> codePattern)
 		{
 			this.CheckDelegateMethod();
 
@@ -130,7 +130,7 @@ namespace eazdevirt
 		/// Looks like: [static] ??? method(Value, Value, Boolean, Boolean)
 		/// </remarks>
 		/// <returns>true if match, false if not</returns>
-		public Boolean MatchesIndirectWithBoolean2(Boolean val1, Boolean val2, Code[] codePattern)
+		public Boolean MatchesIndirectWithBoolean2(Boolean val1, Boolean val2, IList<Code> codePattern)
 		{
 			this.CheckDelegateMethod();
 

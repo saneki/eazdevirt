@@ -178,6 +178,10 @@ namespace eazdevirt
 				return Code.Mul_Ovf;
 			else if (ins.Is_Mul_Ovf_Un())
 				return Code.Mul_Ovf_Un;
+			else if (ins.Is_Neg())
+				return Code.Neg;
+			else if (ins.Is_Newarr())
+				return Code.Newarr;
 			else if (ins.Is_Newobj())
 				return Code.Newobj;
 			else if (ins.Is_Not())
@@ -854,6 +858,15 @@ namespace eazdevirt
 			});
 		}
 
+		public static Boolean Is_Newarr(this EazVirtualInstruction ins)
+		{
+			var sub = ins.DelegateMethod.Find(
+				Code.Ldloc_S, Code.Ldloc_1, Code.Call, Code.Stloc_S
+			);
+			return sub != null
+				&& ((IMethod)sub[2].Operand).FullName.Contains("System.Array::CreateInstance");
+		}
+
 		public static Boolean Is_Newobj(this EazVirtualInstruction ins)
 		{
 			return ins.Matches(new Code[] {
@@ -883,6 +896,13 @@ namespace eazdevirt
 		public static Boolean Is_Mul_Ovf_Un(this EazVirtualInstruction ins)
 		{
 			return ins.MatchesIndirectWithBoolean2(true, true, Pattern_Mul);
+		}
+
+		public static Boolean Is_Neg(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.MatchesIndirect(
+				Code.Ldloc_0, Code.Ldloc_S, Code.Neg, Code.Callvirt, Code.Ldloc_0, Code.Ret
+			);
 		}
 
 		public static Boolean _Jumps(EazVirtualInstruction ins)
