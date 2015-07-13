@@ -47,6 +47,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Detection\InstructionDetectorBase.cs" />
+    <Compile Include="Detection\IInstructionDetector.cs" />
+    <Compile Include="Detection\V1\Detection.Arg.cs" />
+    <Compile Include="Detection\V1\Detection.Bitwise.cs" />
+    <Compile Include="Detection\V1\Detection.Br.cs" />
+    <Compile Include="Detection\V1\Detection.Conv.cs" />
+    <Compile Include="Detection\V1\Detection.Elem.cs" />
+    <Compile Include="Detection\V1\Detection.Ldc.cs" />
+    <Compile Include="Detection\V1\Detection.Math.cs" />
+    <Compile Include="Detection\V1\Detection.Misc.cs" />
+    <Compile Include="Detection\V1\InstructionDetectorV1.cs" />
+    <Compile Include="Detection\V1\Detection.cs" />
+    <Compile Include="Detection\V1\Detection.Loc.cs" />
     <Compile Include="EazDevirtualizer.cs" />
     <Compile Include="EazVirtualInstruction.Helpers.cs" />
     <Compile Include="EazVirtualization.cs" />
@@ -55,6 +68,7 @@
     <Compile Include="IO\EazVirtualizedMethodBodyReader.cs" />
     <Compile Include="IO\EazResolver.cs" />
     <Compile Include="OriginalOpcodeUnknownException.cs" />
+    <Compile Include="Reflection\DetectAttribute.cs" />
     <Compile Include="Util\DotNetUtils.cs" />
     <Compile Include="EazCryptoStream.cs" />
     <Compile Include="EazModule.cs" />

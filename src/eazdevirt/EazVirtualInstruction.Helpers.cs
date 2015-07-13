@@ -4,6 +4,7 @@ using System.Linq;
 using de4dot.blocks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using eazdevirt.Detection.V1.Ext;
 using eazdevirt.Util;
 
 namespace eazdevirt

@@ -6,7 +6,8 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using eazdevirt.Util;
 
-namespace eazdevirt
+// Remove this later?
+namespace eazdevirt.Old
 {
 	/// <summary>
 	/// Extensions for detecting original instruction type (opcode).
