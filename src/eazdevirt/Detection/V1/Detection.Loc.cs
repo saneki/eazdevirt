@@ -59,7 +59,9 @@ namespace eazdevirt.Detection.V1.Ext
 		{
 			return ins.MatchesEntire(Pattern_Ldloc)
 				&& ((MethodDef)ins.DelegateMethod.Body.Instructions[7].Operand)
-				   .ReturnType.FullName.Equals("System.UInt16");
+				   .ReturnType.FullName.Equals("System.UInt16")
+				&& ((FieldDef)ins.DelegateMethod.Body.Instructions[5].Operand)
+				   .MDToken == ins.Virtualization.LocalsField.MDToken;
 		}
 
 		[Detect(Code.Ldloc_S)]
@@ -67,7 +69,9 @@ namespace eazdevirt.Detection.V1.Ext
 		{
 			return ins.MatchesEntire(Pattern_Ldloc)
 				&& ((MethodDef)ins.DelegateMethod.Body.Instructions[7].Operand)
-				   .ReturnType.FullName.Equals("System.Byte");
+				   .ReturnType.FullName.Equals("System.Byte")
+				&& ((FieldDef)ins.DelegateMethod.Body.Instructions[5].Operand)
+				   .MDToken == ins.Virtualization.LocalsField.MDToken;
 		}
 
 		/// <summary>
