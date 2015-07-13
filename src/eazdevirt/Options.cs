@@ -47,6 +47,23 @@ namespace eazdevirt
 	{
 	}
 
+	[Verb("g", HelpText = "Alias for \"generate\"")]
+	public class GSubOptions : GenerateSubOptions
+	{
+	}
+
+	[Verb("gen", HelpText = "Alias for \"generate\"")]
+	public class GenSubOptions : GenerateSubOptions
+	{
+	}
+
+	[Verb("generate", HelpText = "Generate a test assembly for easily identifying virtual instruction types")]
+	public class GenerateSubOptions : BaseOptions
+	{
+		[Value(0)]
+		public String OutputPath { get; set; }
+	}
+
 	[Verb("get-key", HelpText = "Extract the integer used for stream crypto")]
 	public class GetKeySubOptions : BaseAssemblyOptions { }
 

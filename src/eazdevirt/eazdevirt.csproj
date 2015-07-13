@@ -64,6 +64,8 @@
     <Compile Include="EazDevirtualizer.cs" />
     <Compile Include="EazVirtualInstruction.Helpers.cs" />
     <Compile Include="EazVirtualization.cs" />
+    <Compile Include="Generator\IAssemblyGenerator.cs" />
+    <Compile Include="Generator\VirtualizableAssemblyGenerator.cs" />
     <Compile Include="IO\DnBinaryReader.cs" />
     <Compile Include="IO\EazResourceReader.cs" />
     <Compile Include="IO\EazVirtualizedMethodBodyReader.cs" />

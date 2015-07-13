@@ -8,6 +8,7 @@ using CommandLine;
 using CommandLine.Text;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using eazdevirt.Generator;
 using eazdevirt.IO;
 
 namespace eazdevirt
@@ -23,6 +24,9 @@ namespace eazdevirt
 				 DevirtSubOptions,
 				 DevirtualizeSubOptions,
 				 FindMethodsSubOptions,
+				 GSubOptions,
+				 GenSubOptions,
+				 GenerateSubOptions,
 				 GetKeySubOptions,
 				 ISubOptions,
 				 InstructionsSubOptions,
@@ -46,6 +50,10 @@ namespace eazdevirt
 				else if (result.Value is FindMethodsSubOptions)
 				{
 					DoFindMethods((FindMethodsSubOptions)result.Value);
+				}
+				else if (result.Value is GenerateSubOptions)
+				{
+					DoGenerate((GenerateSubOptions)result.Value);
 				}
 				else if (result.Value is GetKeySubOptions)
 				{
@@ -270,6 +278,24 @@ namespace eazdevirt
 					}
 				}
 			}
+		}
+
+		/// <summary>
+		/// Perform "generate" verb.
+		/// </summary>
+		/// <param name="options">Options</param>
+		static void DoGenerate(GenerateSubOptions options)
+		{
+			var generator = VirtualizableAssemblyGenerator.CreateConvAssembly();
+			var assembly = generator.Generate();
+
+			String filepath = options.OutputPath;
+			if (filepath == null)
+				filepath = "eazdevirt-test.exe";
+
+			Console.WriteLine("Saving test assembly {0}", filepath);
+
+			assembly.Write(filepath);
 		}
 
 		/// <summary>
