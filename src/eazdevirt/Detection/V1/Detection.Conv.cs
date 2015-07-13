@@ -109,28 +109,24 @@ namespace eazdevirt.Detection.V1.Ext
 			return ins.DelegateMethod.Matches(Conv_Helper_Pattern(Code.Conv_Ovf_I8, Code.Call));
 		}
 
-		// Conflicts: Ldloc_S
 		[Detect(Code.Conv_Ovf_I1_Un)]
 		public static Boolean Is_Conv_Ovf_I1_Un(this EazVirtualInstruction ins)
 		{
 			return ins.DelegateMethod.Matches(Conv_Helper_Pattern(Code.Conv_Ovf_I1, Code.Stloc_2));
 		}
 
-		// Conflicts: Ldloc_S
 		[Detect(Code.Conv_Ovf_I2_Un)]
 		public static Boolean Is_Conv_Ovf_I2_Un(this EazVirtualInstruction ins)
 		{
 			return ins.DelegateMethod.Matches(Conv_Helper_Pattern(Code.Conv_Ovf_I2, Code.Stloc_2));
 		}
 
-		// Conflicts: Ldloc_S
 		[Detect(Code.Conv_Ovf_I4_Un)]
 		public static Boolean Is_Conv_Ovf_I4_Un(this EazVirtualInstruction ins)
 		{
 			return ins.DelegateMethod.Matches(Conv_Helper_Pattern(Code.Conv_Ovf_I4, Code.Stloc_2));
 		}
 
-		// Conflicts: Ldloc_S
 		[Detect(Code.Conv_Ovf_I8_Un)]
 		public static Boolean Is_Conv_Ovf_I8_Un(this EazVirtualInstruction ins)
 		{
