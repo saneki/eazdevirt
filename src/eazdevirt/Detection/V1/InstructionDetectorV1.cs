@@ -57,8 +57,6 @@ namespace eazdevirt.Detection.V1
 					}
 				}
 			}
-
-			Console.WriteLine("Detector methods found: {0}", _detectors.Count);
 		}
 
 		/// <summary>
