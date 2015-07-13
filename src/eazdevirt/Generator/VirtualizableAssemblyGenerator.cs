@@ -284,7 +284,11 @@ namespace eazdevirt.Generator
 			all.Add(OpCodes.Ldsfld.ToInstruction(field));
 			all.Add(OpCodes.Stsfld.ToInstruction(field));
 			all.Add(OpCodes.Ldsflda.ToInstruction(field));
-			all.Add(OpCodes.Pop.ToInstruction());
+
+			// Pop causes the virtualizer to optimize in some cases,
+			// and remove previous instruction
+			// all.Add(OpCodes.Pop.ToInstruction());
+
 			all.Add(OpCodes.Ret.ToInstruction());
 			return all;
 		}
