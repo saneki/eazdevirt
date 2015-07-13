@@ -62,6 +62,9 @@ namespace eazdevirt
 	{
 		[Value(0)]
 		public String OutputPath { get; set; }
+
+		[Option('i', "instruction-set")]
+		public String InstructionSet { get; set; }
 	}
 
 	[Verb("get-key", HelpText = "Extract the integer used for stream crypto")]

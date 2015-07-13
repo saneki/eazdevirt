@@ -286,7 +286,28 @@ namespace eazdevirt
 		/// <param name="options">Options</param>
 		static void DoGenerate(GenerateSubOptions options)
 		{
-			var generator = VirtualizableAssemblyGenerator.CreateConvAssembly();
+			var generator = new VirtualizableAssemblyGenerator();
+
+			String instructionSet = "all";
+			if (options.InstructionSet != null && options.InstructionSet.Length > 0)
+				instructionSet = options.InstructionSet.ToLower();
+
+			String[] sets;
+			if (instructionSet.Contains(','))
+				sets = instructionSet.Split(',');
+			else sets = new String[] { instructionSet };
+
+			if (sets.Contains("conv") || sets.Contains("all"))
+				generator.AddConvMethod();
+			if (sets.Contains("static-field") || sets.Contains("all"))
+				generator.AddStaticFieldMethod();
+
+			if (!generator.HasMethod)
+			{
+				Console.WriteLine("Unknown set(s): {0}", instructionSet);
+				return;
+			}
+
 			var assembly = generator.Generate();
 
 			String filepath = options.OutputPath;
