@@ -54,6 +54,7 @@
     <Compile Include="Detection\V1\Detection.Br.cs" />
     <Compile Include="Detection\V1\Detection.Conv.cs" />
     <Compile Include="Detection\V1\Detection.Elem.cs" />
+    <Compile Include="Detection\V1\Detection.Ind.cs" />
     <Compile Include="Detection\V1\Detection.Ldc.cs" />
     <Compile Include="Detection\V1\Detection.Math.cs" />
     <Compile Include="Detection\V1\Detection.Misc.cs" />

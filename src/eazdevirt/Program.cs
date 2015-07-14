@@ -297,9 +297,12 @@ namespace eazdevirt
 				sets = instructionSet.Split(',');
 			else sets = new String[] { instructionSet };
 
-			if (sets.Contains("conv") || sets.Contains("all"))
+			Boolean all = sets.Contains("all");
+			if (sets.Contains("conv") || all)
 				generator.AddConvMethod();
-			if (sets.Contains("static-field") || sets.Contains("all"))
+			if (sets.Contains("ind") || all)
+				generator.AddIndMethod();
+			if (sets.Contains("static-field") || all)
 				generator.AddStaticFieldMethod();
 
 			if (!generator.HasMethod)

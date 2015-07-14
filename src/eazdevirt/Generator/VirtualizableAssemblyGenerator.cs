@@ -51,6 +51,11 @@ namespace eazdevirt.Generator
 			this.AddMethod("ConvMethod", VirtualizableAssemblyGenerator.GetConvInstructions);
 		}
 
+		public void AddIndMethod()
+		{
+			this.AddMethod("IndMethod", VirtualizableAssemblyGenerator.GetIndInstructions);
+		}
+
 		public void AddStaticFieldMethod()
 		{
 			this.AddMethod("StaticFieldMethod", VirtualizableAssemblyGenerator.GetStaticFieldInstructions);
@@ -290,6 +295,52 @@ namespace eazdevirt.Generator
 			// all.Add(OpCodes.Pop.ToInstruction());
 
 			all.Add(OpCodes.Ret.ToInstruction());
+			return all;
+		}
+
+		/// <summary>
+		/// Get a sensible list of all Ldind_*, Stind_* instructions.
+		/// </summary>
+		/// <param name="module">Module</param>
+		/// <param name="mainType">Main type</param>
+		/// <returns>Instructions</returns>
+		static IList<Instruction> GetIndInstructions(ModuleDef module, TypeDef mainType)
+		{
+			var all = new List<Instruction>();
+
+			// This is a bit lazy
+			for (Int32 i = 0; i < 11; i++)
+			{
+				all.Add(OpCodes.Ldc_I4_0.ToInstruction());
+			}
+
+			all.Add(OpCodes.Ldind_I.ToInstruction());
+			all.Add(OpCodes.Ldind_I1.ToInstruction());
+			all.Add(OpCodes.Ldind_I2.ToInstruction());
+			all.Add(OpCodes.Ldind_I4.ToInstruction());
+			all.Add(OpCodes.Ldind_I8.ToInstruction());
+			all.Add(OpCodes.Ldind_R4.ToInstruction());
+			all.Add(OpCodes.Ldind_R8.ToInstruction());
+			all.Add(OpCodes.Ldind_Ref.ToInstruction());
+			all.Add(OpCodes.Ldind_U1.ToInstruction());
+			all.Add(OpCodes.Ldind_U2.ToInstruction());
+			all.Add(OpCodes.Ldind_U4.ToInstruction());
+
+			for (Int32 i = 0; i < 8; i++)
+			{
+				all.Add(OpCodes.Ldc_I4_0.ToInstruction());
+				all.Add(OpCodes.Ldc_I4_0.ToInstruction());
+			}
+
+			all.Add(OpCodes.Stind_I.ToInstruction());
+			all.Add(OpCodes.Stind_I1.ToInstruction());
+			all.Add(OpCodes.Stind_I2.ToInstruction());
+			all.Add(OpCodes.Stind_I4.ToInstruction());
+			all.Add(OpCodes.Stind_I8.ToInstruction());
+			all.Add(OpCodes.Stind_R4.ToInstruction());
+			all.Add(OpCodes.Stind_R8.ToInstruction());
+			all.Add(OpCodes.Stind_Ref.ToInstruction());
+
 			return all;
 		}
 	}
