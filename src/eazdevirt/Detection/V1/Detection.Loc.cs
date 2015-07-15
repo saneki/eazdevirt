@@ -2,6 +2,7 @@
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using eazdevirt.Reflection;
+using eazdevirt.Util;
 
 namespace eazdevirt.Detection.V1.Ext
 {
@@ -72,6 +73,16 @@ namespace eazdevirt.Detection.V1.Ext
 				   .ReturnType.FullName.Equals("System.Byte")
 				&& ((FieldDef)ins.DelegateMethod.Body.Instructions[5].Operand)
 				   .MDToken == ins.Virtualization.LocalsField.MDToken;
+		}
+
+		[Detect(Code.Ldloca_S)]
+		public static Boolean Is_Ldloca_S(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.MatchesEntire(
+				Code.Ldarg_1, Code.Castclass, Code.Stloc_0, Code.Ldarg_0, Code.Newobj,
+				Code.Stloc_1, Code.Ldloc_1, Code.Ldloc_0, Code.Callvirt, Code.Callvirt,
+				Code.Ldloc_1, Code.Call, Code.Ret
+			);
 		}
 
 		/// <summary>

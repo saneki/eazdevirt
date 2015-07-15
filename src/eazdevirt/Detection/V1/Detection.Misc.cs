@@ -163,6 +163,27 @@ namespace eazdevirt.Detection.V1.Ext
 			);
 		}
 
+		[Detect(Code.Isinst)]
+		public static Boolean Is_Isinst(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.Matches(
+				Code.Call, Code.Brfalse_S, Code.Ldarg_0, Code.Ldloc_2, Code.Call, Code.Ret,
+				Code.Ldarg_0, Code.Newobj, Code.Call, Code.Ret
+			);
+		}
+
+		[Detect(Code.Jmp)]
+		public static Boolean Is_Jmp(this EazVirtualInstruction ins)
+		{
+			IMethod called;
+			var sub = ins.DelegateMethod.Find(
+				Code.Callvirt, Code.Call, Code.Stloc_1, Code.Ldarg_0, Code.Ldfld, Code.Stloc_2
+			);
+			return sub != null
+				&& (called = sub[1].Operand as IMethod) != null
+				&& called.FullName.Contains("System.Reflection.MethodBase");
+		}
+
 		/// <summary>
 		/// OpCode pattern seen in the Throw, Rethrow helper methods.
 		/// </summary>
@@ -438,6 +459,15 @@ namespace eazdevirt.Detection.V1.Ext
 			return ins.DelegateMethod.MatchesEntire(Code.Ret)
 				&& ins.TryGetOperandType(out operandType)
 				&& operandType == OperandType.InlineType;
+		}
+
+		[Detect(Code.Unbox_Any)]
+		public static Boolean Is_Unbox_Any(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.Matches(
+				Code.Ldloc_2, Code.Callvirt, Code.Stloc_3, Code.Ldloc_3, Code.Ldloc_1,
+				Code.Call, Code.Stloc_S, Code.Ldarg_0, Code.Ldloc_S, Code.Call, Code.Ret
+			);
 		}
 	}
 }
