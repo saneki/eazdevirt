@@ -10,6 +10,7 @@ using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using eazdevirt.Generator;
 using eazdevirt.IO;
+using eazdevirt.Logging;
 
 namespace eazdevirt
 {
@@ -116,17 +117,31 @@ namespace eazdevirt
 			Console.WriteLine(helpText);
 		}
 
+		static ILogger GetLogger(BaseOptions options)
+		{
+			LoggerEvent e = LoggerEvent.Info;
+
+			if (options.VeryVerbose)
+				e = LoggerEvent.VeryVerbose;
+			else if (options.Verbose)
+				e = LoggerEvent.Verbose;
+
+			return new ConsoleLogger(e);
+		}
+
 		/// <summary>
 		/// Perform "devirtualize" verb.
 		/// </summary>
 		/// <param name="options">Options</param>
 		static void DoDevirtualize(DevirtualizeSubOptions options)
 		{
+			ILogger logger = GetLogger(options);
+
 			EazModule module;
-			if (!TryLoadModule(options.AssemblyPath, out module))
+			if (!TryLoadModule(options.AssemblyPath, logger, out module))
 				return;
 
-			EazDevirtualizer devirtualizer = new EazDevirtualizer(module);
+			EazDevirtualizer devirtualizer = new EazDevirtualizer(module, logger);
 
 			var results = devirtualizer.Devirtualize((attempt) =>
 			{
@@ -138,7 +153,7 @@ namespace eazdevirt
 					Console.WriteLine("Devirtualized {0} (MDToken = 0x{1:X8})",
 						method.FullName, method.MDToken.Raw);
 
-					if (options.ExtraOutput)
+					if (options.Verbose)
 					{
 						Console.WriteLine();
 
@@ -551,9 +566,14 @@ namespace eazdevirt
 
 		static Boolean TryLoadModule(String path, out EazModule module)
 		{
+			return TryLoadModule(path, null, out module);
+		}
+
+		static Boolean TryLoadModule(String path, ILogger logger, out EazModule module)
+		{
 			try
 			{
-				module = new EazModule(path);
+				module = new EazModule(path, logger);
 			}
 			catch (IOException e)
 			{

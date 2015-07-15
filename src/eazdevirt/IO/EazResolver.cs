@@ -12,13 +12,19 @@ namespace eazdevirt.IO
 	public class EazResolver : EazResourceReader
 	{
 		/// <summary>
+		/// Logger.
+		/// </summary>
+		public ILogger Logger { get; private set; }
+
+		/// <summary>
 		/// Lock used for all public resolve methods.
 		/// </summary>
 		private Object _lock = new Object();
 
-		public EazResolver(EazModule module)
+		public EazResolver(EazModule module, ILogger logger)
 			: base(module)
 		{
+			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
 		}
 
 		/// <summary>
@@ -154,14 +160,14 @@ namespace eazdevirt.IO
 					//if (declaringSpec.TypeSig.IsGenericInstanceType)
 					if (declaringSpec.TypeSig.IsGenericInstanceType)
 					{
-						Console.WriteLine("Comparing against possible method sigs: {0}", data.Name);
+						this.Logger.Verbose(this, "Comparing against possible method sigs: {0}", data.Name);
 
 						TypeDef declaringDef = declaringSpec.ResolveTypeDefThrow();
 						var methods = declaringDef.FindMethods(data.Name);
 						var possibleMethodSigs = CreateMethodSigs(declaringSpec, methodSig, data);
 
 						foreach (var possibleMethodSig in possibleMethodSigs)
-							Console.WriteLine("Possible method sig: {0}", possibleMethodSig.ToString());
+							this.Logger.Verbose(this, " Possible method sig: {0}", possibleMethodSig.ToString());
 
 						foreach (var possibleMethodSig in possibleMethodSigs)
 						{
@@ -305,10 +311,11 @@ namespace eazdevirt.IO
 				TypeData data = operand.Data as TypeData;
 				String typeName = data.TypeName;
 
+				// Related to generic context
 				if (data.SomeIndex != -1)
-					Console.WriteLine("[{0}] SomeIndex: {1}", data.TypeName, data.SomeIndex2);
+					this.Logger.Verbose(this, "[{0}] SomeIndex: {1}", data.TypeName, data.SomeIndex2);
 				if (data.SomeIndex2 != -1)
-					Console.WriteLine("[{0}] SomeIndex2: {1}", data.TypeName, data.SomeIndex2);
+					this.Logger.Verbose(this, "[{0}] SomeIndex2: {1}", data.TypeName, data.SomeIndex2);
 
 				// Get the type modifiers stack
 				Stack<String> modifiers = GetModifiersStack(data.TypeName, out typeName);
@@ -342,7 +349,7 @@ namespace eazdevirt.IO
 				}
 
 				// If all else fails, make our own typeref
-				Console.WriteLine("[ResolveType_NoLock] WARNING: Creating TypeRef for: {0}", data.Name);
+				this.Logger.Verbose(this, "[ResolveType_NoLock] WARNING: Creating TypeRef for: {0}", data.Name);
 				AssemblyRef assemblyRef = GetAssemblyRef(data.AssemblyFullName);
 				typeRef = new TypeRefUser(this.Module, data.Namespace, data.TypeNameWithoutNamespace, assemblyRef);
 				if (typeRef != null)
@@ -633,7 +640,6 @@ namespace eazdevirt.IO
 			TypeSpec declaringSpec = declaringType as TypeSpec;
 			if (declaringSpec != null)
 			{
-				Console.WriteLine("TYPESPEC");
 				var genericInstSig = declaringSpec.TryGetGenericInstSig();
 				foreach (var garg in genericInstSig.GenericArguments)
 					typeGenerics.Add(garg);
@@ -649,13 +655,16 @@ namespace eazdevirt.IO
 				}
 			}
 
-			Console.WriteLine("Type Generics");
-			foreach (var t in typeGenerics)
-				Console.WriteLine(" {0}", t);
+			if (!this.Logger.IgnoresEvent(LoggerEvent.Verbose))
+			{
+				this.Logger.Verbose(this, "Type Generics");
+				foreach (var t in typeGenerics)
+					this.Logger.Verbose(this, " {0}", t);
 
-			Console.WriteLine("Method Generics");
-			foreach (var m in methodGenerics)
-				Console.WriteLine(" {0}", m);
+				this.Logger.Verbose(this, "Method Generics");
+				foreach (var m in methodGenerics)
+					this.Logger.Verbose(this, " {0}", m);
+			}
 
 			// Todo: Combinations factoring in the possibility that return type might match
 			// a generic type

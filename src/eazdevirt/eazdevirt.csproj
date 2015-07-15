@@ -71,6 +71,8 @@
     <Compile Include="IO\EazResourceReader.cs" />
     <Compile Include="IO\EazVirtualizedMethodBodyReader.cs" />
     <Compile Include="IO\EazResolver.cs" />
+    <Compile Include="Logging\ConsoleLogger.cs" />
+    <Compile Include="MethodStubNotFoundException.cs" />
     <Compile Include="OriginalOpcodeUnknownException.cs" />
     <Compile Include="Reflection\DetectAttribute.cs" />
     <Compile Include="Util\DotNetUtils.cs" />

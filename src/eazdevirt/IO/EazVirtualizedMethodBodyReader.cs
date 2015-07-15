@@ -81,6 +81,11 @@ namespace eazdevirt.IO
 		public Dictionary<UInt32, UInt32> VirtualOffsets { get; private set; }
 
 		/// <summary>
+		/// Logger.
+		/// </summary>
+		public ILogger Logger { get; private set; }
+
+		/// <summary>
 		/// Serialized exception handlers read from the embedded resource. After the method body is
 		/// read, these will be translated to dnlib ExceptionHandlers.
 		/// </summary>
@@ -91,12 +96,23 @@ namespace eazdevirt.IO
 		/// </summary>
 		/// <param name="method">Virtualized method</param>
 		public EazVirtualizedMethodBodyReader(EazVirtualizedMethod method)
+			: this(method, null)
+		{
+		}
+
+		/// <summary>
+		/// Construct a method body reader given a virtualized method.
+		/// </summary>
+		/// <param name="method">Virtualized method</param>
+		/// <param name="logger">Logger</param>
+		public EazVirtualizedMethodBodyReader(EazVirtualizedMethod method, ILogger logger)
 			: base((method != null ? method.Module : null))
 		{
 			if (method == null)
 				throw new ArgumentNullException();
 
 			this.Method = method;
+			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
 
 			this.Initialize();
 		}
@@ -165,7 +181,7 @@ namespace eazdevirt.IO
 			*/
 
 			this.Stream.Position = this.InitialPosition;
-			this.Resolver = new EazResolver(this.Parent);
+			this.Resolver = new EazResolver(this.Parent, this.Logger);
 			this.VirtualOffsets = new Dictionary<UInt32, UInt32>();
 			this.ExceptionHandlers = new ExceptionHandler[0];
 		}
@@ -228,7 +244,7 @@ namespace eazdevirt.IO
 				if(type != null)
 					this.Locals.Add(new Local(type.ToTypeSig(true)));
 				else
-					Console.WriteLine("[SetLocalsAndParameters] WARNING: Unable to resolve local type");
+					this.Logger.Verbose(this, "[SetLocalsAndParameters] WARNING: Unable to resolve local type");
 			}
 
 			for(Int32 i = 0; i < this.Info.Parameters.Length; i++)
@@ -239,7 +255,7 @@ namespace eazdevirt.IO
 				if(type != null)
 					this.Parameters.Add(new Parameter(i, type.ToTypeSig(true)));
 				else
-					Console.WriteLine("[SetLocalsAndParameters] WARNING: Unable to resolve parameter type");
+					this.Logger.Verbose(this, "[SetLocalsAndParameters] WARNING: Unable to resolve parameter type");
 			}
 		}
 
@@ -424,15 +440,10 @@ namespace eazdevirt.IO
 						break;
 
 					case OperandType.InlineSwitch:
-						Console.WriteLine("Fixing switch...");
 						Int32[] virtualOffsets = instr.Operand as Int32[];
 						Instruction[] destinations = new Instruction[virtualOffsets.Length];
 						for (Int32 i = 0; i < virtualOffsets.Length; i++)
-						{
 							destinations[i] = this.GetInstruction(this.GetRealOffset((UInt32)virtualOffsets[i]));
-							Console.WriteLine(" Destination: {0} => {1} => {2}",
-								virtualOffsets[i], this.GetRealOffset((UInt32)virtualOffsets[i]), destinations[i]);
-						}
 						instr.Operand = destinations;
 						break;
 				}
@@ -526,10 +537,7 @@ namespace eazdevirt.IO
 			UInt32 destCount = this.Reader.ReadUInt32();
 			UInt32[] branchDests = new UInt32[destCount];
 			for (UInt32 i = 0; i < destCount; i++)
-			{
 				branchDests[i] = this.Reader.ReadUInt32();
-				Console.WriteLine(" Branch dest: " + branchDests[i]);
-			}
 			return branchDests;
 		}
 

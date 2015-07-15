@@ -34,6 +34,9 @@ namespace eazdevirt
 		/// </summary>
 		public Int32 ResourceCryptoKey { get; private set; }
 
+
+		public ILogger Logger { get; private set; }
+
 		/// <summary>
 		/// Construct an EazModule from a filepath.
 		/// </summary>
@@ -43,13 +46,24 @@ namespace eazdevirt
 		{
 		}
 
+		public EazModule(String filepath, ILogger logger)
+			: this(ModuleDefMD.Load(filepath), logger)
+		{
+		}
+
 		/// <summary>
 		/// Construct an EazModule from a loaded ModuleDefMD.
 		/// </summary>
 		/// <param name="module">Loaded module</param>
 		public EazModule(ModuleDefMD module)
+			: this(module, null)
+		{
+		}
+
+		public EazModule(ModuleDefMD module, ILogger logger)
 		{
 			this.Module = module;
+			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
 			this.Initialize();
 		}
 
@@ -237,12 +251,12 @@ namespace eazdevirt
 				Boolean containsActual = (existing != null);
 
 				if (containsVirtual)
-					Console.WriteLine("WARNING: Multiple instruction types with the same virtual opcode detected ({0})",
+					this.Logger.Warning(this, "WARNING: Multiple instruction types with the same virtual opcode detected ({0})",
 						instruction.VirtualOpCode);
 
 				if (containsActual && !instruction.ExpectsMultiple)
 				{
-					Console.WriteLine("WARNING: Multiple virtual opcodes map to the same actual opcode ({0}, {1} => {2})",
+					this.Logger.Warning(this, "WARNING: Multiple virtual opcodes map to the same actual opcode ({0}, {1} => {2})",
 						existing.VirtualOpCode, instruction.VirtualOpCode, instruction.OpCode.ToString());
 				}
 

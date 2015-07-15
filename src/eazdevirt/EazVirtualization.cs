@@ -35,6 +35,11 @@ namespace eazdevirt
 		public Dictionary<FieldDef, ITypeDefOrRef> TypeFields { get; private set; }
 
 		public EazVirtualization(EazModule module)
+			: this(module, null)
+		{
+		}
+
+		public EazVirtualization(EazModule module, ILogger logger)
 		{
 			if (module == null)
 				throw new ArgumentNullException();
@@ -46,6 +51,9 @@ namespace eazdevirt
 		private void Initialize()
 		{
 			var vmethod = this.Module.FindFirstVirtualizedMethod();
+			if (vmethod == null)
+				throw new MethodStubNotFoundException();
+
 			this.VirtualizationType = vmethod.VirtualCallMethod.DeclaringType;
 
 			this.InitializeArgumentsField(); // Set ArgumentsField

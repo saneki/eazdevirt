@@ -19,6 +19,11 @@ namespace eazdevirt
 		public ModuleDefMD Module { get { return this.EazModule.Module; } }
 
 		/// <summary>
+		/// Logger.
+		/// </summary>
+		public ILogger Logger { get; private set; }
+
+		/// <summary>
 		/// Devirtualize options flag.
 		/// </summary>
 		public EazDevirtualizeOptions Options { get; set; }
@@ -29,9 +34,20 @@ namespace eazdevirt
 		}
 
 		public EazDevirtualizer(EazModule module, EazDevirtualizeOptions options)
+			: this(module, options, null)
+		{
+		}
+
+		public EazDevirtualizer(EazModule module, ILogger logger)
+			: this(module, EazDevirtualizeOptions.Nothing, logger)
+		{
+		}
+
+		public EazDevirtualizer(EazModule module, EazDevirtualizeOptions options, ILogger logger)
 		{
 			this.EazModule = module;
 			this.Options = options;
+			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
 		}
 
 		public EazDevirtualizeResults Devirtualize()
@@ -60,7 +76,7 @@ namespace eazdevirt
 
 			foreach (var method in methods)
 			{
-				var reader = new EazVirtualizedMethodBodyReader(method);
+				var reader = new EazVirtualizedMethodBodyReader(method, this.Logger);
 				Exception exception = null;
 
 				try

@@ -8,6 +8,12 @@ namespace eazdevirt
 	{
 		[Option('L', "no-logo", DefaultValue = false, HelpText = "Don't output the ascii logo")]
 		public Boolean NoLogo { get; set; }
+
+		[Option('v', "verbose", DefaultValue = false, HelpText = "Verbosity level")]
+		public Boolean Verbose { get; set; }
+
+		[Option("very-verbose", DefaultValue = false, HelpText = "Very verbose")]
+		public Boolean VeryVerbose { get; set; }
 	}
 
 	public class BaseAssemblyOptions : BaseOptions
