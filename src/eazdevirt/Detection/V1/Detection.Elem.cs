@@ -134,5 +134,101 @@ namespace eazdevirt.Detection.V1.Ext
 				Code.Ldloc_0, Code.Call, Code.Ret
 			});
 		}
+
+		/// <summary>
+		/// OpCode pattern seen in Stelem, Stelem_* helper methods.
+		/// </summary>
+		private static readonly Code[] Pattern_Stelem = new Code[] {
+			Code.Castclass, Code.Stloc_3, Code.Ldarg_0, Code.Ldarg_1, Code.Ldloc_1,
+			Code.Ldloc_2, Code.Ldloc_3, Code.Call, Code.Ret
+		};
+
+		[Detect(Code.Stelem)]
+		public static Boolean Is_Stelem(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.MatchesEntire(
+				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_0, Code.Ldarg_0,
+				Code.Ldloc_0, Code.Call, Code.Stloc_1, Code.Ldarg_0, Code.Ldloc_1,
+				Code.Call, Code.Ret
+			) && ins.DelegateMethod.MatchesIndirect(Pattern_Stelem);
+		}
+
+		[Detect(Code.Stelem_I)]
+		public static Boolean Is_Stelem_I(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.MatchesEntire(
+				Code.Ldarg_0, Code.Ldsfld, Code.Call, Code.Ret
+			) && ins.DelegateMethod.MatchesIndirect(Pattern_Stelem)
+			&& ((FieldDef)ins.DelegateMethod.Body.Instructions[1].Operand)
+			   .MDToken == ins.Virtualization.GetTypeField("System.IntPtr").MDToken;
+		}
+
+		[Detect(Code.Stelem_Ref)]
+		public static Boolean Is_Stelem_Ref(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.MatchesEntire(
+				Code.Ldarg_0, Code.Ldsfld, Code.Call, Code.Ret
+			) && ins.DelegateMethod.MatchesIndirect(Pattern_Stelem)
+			&& !Is_Stelem_I(ins);
+		}
+
+		private static Boolean _Is_Stelem_IC(EazVirtualInstruction ins, String typeName)
+		{
+			ITypeDefOrRef type = null;
+			var sub = ins.DelegateMethod.Find(
+				Code.Ldarg_0, Code.Ldtoken, Code.Call, Code.Ldloc_0, Code.Ldloc_1,
+				Code.Ldloc_2, Code.Call, Code.Ret
+			);
+			return sub != null
+				&& (type = sub[1].Operand as ITypeDefOrRef) != null
+				&& type.FullName.Equals(typeName);
+		}
+
+		[Detect(Code.Stelem_I1)]
+		public static Boolean Is_Stelem_I1(this EazVirtualInstruction ins)
+		{
+			return _Is_Stelem_IC(ins, "System.SByte");
+		}
+
+		[Detect(Code.Stelem_I2)]
+		public static Boolean Is_Stelem_I2(this EazVirtualInstruction ins)
+		{
+			return _Is_Stelem_IC(ins, "System.Int16");
+		}
+
+		[Detect(Code.Stelem_I4)]
+		public static Boolean Is_Stelem_I4(this EazVirtualInstruction ins)
+		{
+			return _Is_Stelem_IC(ins, "System.Int32");
+		}
+
+		[Detect(Code.Stelem_I8)]
+		public static Boolean Is_Stelem_I8(this EazVirtualInstruction ins)
+		{
+			return _Is_Stelem_IC(ins, "System.Int64");
+		}
+
+		private static Boolean _Is_Stelem_RC(EazVirtualInstruction ins, String typeName)
+		{
+			ITypeDefOrRef type = null;
+			var body = ins.DelegateMethod.Body.Instructions;
+			return ins.DelegateMethod.MatchesEntire(
+				Code.Ldarg_0, Code.Ldtoken, Code.Call, Code.Call, Code.Ret
+			) && ins.DelegateMethod.MatchesIndirect(Pattern_Stelem)
+			&& (type = body[1].Operand as ITypeDefOrRef) != null
+			&& type.FullName.Equals(typeName);
+		}
+
+		[Detect(Code.Stelem_R4)]
+		public static Boolean Is_Stelem_R4(this EazVirtualInstruction ins)
+		{
+			return _Is_Stelem_RC(ins, "System.Single");
+		}
+
+		[Detect(Code.Stelem_R8)]
+		public static Boolean Is_Stelem_R8(this EazVirtualInstruction ins)
+		{
+			return _Is_Stelem_RC(ins, "System.Double");
+		}
 	}
 }
