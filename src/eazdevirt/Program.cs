@@ -138,24 +138,27 @@ namespace eazdevirt
 					Console.WriteLine("Devirtualized {0} (MDToken = 0x{1:X8})",
 						method.FullName, method.MDToken.Raw);
 
-					Console.WriteLine();
-
-					// Print locals
-					if (body.HasVariables)
+					if (options.ExtraOutput)
 					{
-						Console.WriteLine("Locals:");
-						Console.WriteLine("-------");
-						foreach (var local in body.Variables)
-							Console.WriteLine("local[{0}]: {1}", local.Index, local.Type.FullName);
+						Console.WriteLine();
+
+						// Print locals
+						if (body.HasVariables)
+						{
+							Console.WriteLine("Locals:");
+							Console.WriteLine("-------");
+							foreach (var local in body.Variables)
+								Console.WriteLine("local[{0}]: {1}", local.Index, local.Type.FullName);
+							Console.WriteLine();
+						}
+
+						// Print instructions
+						Console.WriteLine("Instructions:");
+						Console.WriteLine("-------------");
+						foreach (var instr in body.Instructions)
+							Console.WriteLine(instr);
 						Console.WriteLine();
 					}
-
-					// Print instructions
-					Console.WriteLine("Instructions:");
-					Console.WriteLine("-------------");
-					foreach (var instr in body.Instructions)
-						Console.WriteLine(instr);
-					Console.WriteLine();
 				}
 			});
 
@@ -298,6 +301,8 @@ namespace eazdevirt
 			else sets = new String[] { instructionSet };
 
 			Boolean all = sets.Contains("all");
+			if (sets.Contains("calli") || all)
+				generator.AddCalliMethod();
 			if (sets.Contains("conv") || all)
 				generator.AddConvMethod();
 			if (sets.Contains("ind") || all)

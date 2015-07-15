@@ -46,6 +46,11 @@ namespace eazdevirt.Generator
 			_assemblyVersion = assemblyVersion;
 		}
 
+		public void AddCalliMethod()
+		{
+			this.AddMethod("CalliMethod", VirtualizableAssemblyGenerator.GetCalliInstructions);
+		}
+
 		public void AddConvMethod()
 		{
 			this.AddMethod("ConvMethod", VirtualizableAssemblyGenerator.GetConvInstructions);
@@ -341,6 +346,26 @@ namespace eazdevirt.Generator
 			all.Add(OpCodes.Stind_R8.ToInstruction());
 			all.Add(OpCodes.Stind_Ref.ToInstruction());
 
+			return all;
+		}
+
+		/// <summary>
+		/// Calli.
+		/// </summary>
+		/// <param name="module">Module</param>
+		/// <param name="mainType">Main type</param>
+		/// <returns>Instructions</returns>
+		static IList<Instruction> GetCalliInstructions(ModuleDef module, TypeDef mainType)
+		{
+			TypeRef consoleRef = new TypeRefUser(module, "System", "Console", module.CorLibTypes.AssemblyRef);
+			MemberRef consoleWrite0 = new MemberRefUser(module, "WriteLine",
+						MethodSig.CreateStatic(module.CorLibTypes.Void),
+						consoleRef);
+
+			var all = new List<Instruction>();
+			all.Add(OpCodes.Ldftn.ToInstruction(consoleWrite0));
+			all.Add(OpCodes.Calli.ToInstruction(consoleWrite0.MethodSig));
+			all.Add(OpCodes.Ret.ToInstruction());
 			return all;
 		}
 	}
