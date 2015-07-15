@@ -94,6 +94,17 @@ namespace eazdevirt.Detection.V1.Ext
 				&& ((IMethod)sub[6].Operand).FullName.Contains("System.Double::IsInfinity");
 		}
 
+		[Detect(Code.Endfinally)]
+		public static Boolean Is_Endfinally(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.MatchesEntire(
+				Code.Ldarg_0, Code.Call, Code.Ret
+			) && ins.DelegateMethod.MatchesIndirect(
+				Code.Ldarg_0, Code.Ldfld, Code.Callvirt, Code.Ldarg_0, Code.Ldloc_0,
+				Code.Callvirt, Code.Call, Code.Ret
+			);
+		}
+
 		/// <summary>
 		/// OpCode pattern seen in the Throw, Rethrow helper methods.
 		/// </summary>
@@ -266,6 +277,15 @@ namespace eazdevirt.Detection.V1.Ext
 				&& (called = ((MethodDef)sub[5].Operand)) != null
 				&& called.Parameters.Count >= 2
 				&& called.Parameters[1].Type.FullName.Equals("System.Reflection.MethodBase");
+		}
+
+		[Detect(Code.Leave)]
+		public static Boolean Is_Leave(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.MatchesEntire(
+				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_0, Code.Ldarg_0,
+				Code.Ldnull, Code.Ldloc_0, Code.Call, Code.Ret
+			);
 		}
 
 		[Detect(Code.Newarr)]

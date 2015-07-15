@@ -79,7 +79,7 @@ namespace eazdevirt
 					var body = new CilBody(
 						true,
 						reader.Instructions,
-						new List<ExceptionHandler>(),
+						reader.ExceptionHandlers,
 						reader.Locals
 					);
 

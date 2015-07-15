@@ -46,6 +46,11 @@ namespace eazdevirt.IO
 		public VirtualizedMethodInfo Info { get; private set; }
 
 		/// <summary>
+		/// Exception handlers. Not set until the method is read.
+		/// </summary>
+		public IList<ExceptionHandler> ExceptionHandlers { get; private set; }
+
+		/// <summary>
 		/// Current IL offset into the method body (byte-wise).
 		/// </summary>
 		public UInt32 CurrentILOffset { get; private set; }
@@ -76,6 +81,12 @@ namespace eazdevirt.IO
 		public Dictionary<UInt32, UInt32> VirtualOffsets { get; private set; }
 
 		/// <summary>
+		/// Serialized exception handlers read from the embedded resource. After the method body is
+		/// read, these will be translated to dnlib ExceptionHandlers.
+		/// </summary>
+		private IList<SerializedExceptionHandler> _exceptionHandlers;
+
+		/// <summary>
 		/// Construct a method body reader given a virtualized method.
 		/// </summary>
 		/// <param name="method">Virtualized method</param>
@@ -88,6 +99,53 @@ namespace eazdevirt.IO
 			this.Method = method;
 
 			this.Initialize();
+		}
+
+		/// <summary>
+		/// Set the ExceptionHandlers property to a list of dnlib ExceptionHandlers.
+		/// </summary>
+		protected void FixExceptionHandlers()
+		{
+			this.ExceptionHandlers = this.GetExceptionHandlers();
+		}
+
+		/// <summary>
+		/// Convert all SerializedExceptionHandlers to dnlib ExceptionHandlers.
+		/// </summary>
+		/// <returns>List of ExceptionHandlers</returns>
+		IList<ExceptionHandler> GetExceptionHandlers()
+		{
+			IList<ExceptionHandler> handlers = new List<ExceptionHandler>();
+			for (Int32 i = 0; i < _exceptionHandlers.Count; i++)
+				handlers.Add(this.GetExceptionHandler(i));
+			return handlers;
+		}
+
+		/// <summary>
+		/// Convert the SerializedExceptionHandler at some index to a dnlib ExceptionHandler
+		/// and return it.
+		/// </summary>
+		/// <param name="index">Index</param>
+		/// <returns>ExceptionHandler</returns>
+		ExceptionHandler GetExceptionHandler(Int32 index)
+		{
+			var deserialized = _exceptionHandlers[index];
+
+			ExceptionHandler handler = new ExceptionHandler(deserialized.HandlerType);
+			if (deserialized.HasCatchType)
+				handler.CatchType = this.Resolver.ResolveType(deserialized.VirtualCatchType);
+
+			handler.TryStart = GetInstruction(this.GetRealOffset(deserialized.VirtualTryStart));
+			handler.TryEnd = GetInstruction(this.GetRealOffset(deserialized.VirtualTryEnd));
+			handler.HandlerStart = GetInstruction(this.GetRealOffset(deserialized.VirtualHandlerStart));
+
+			// VirtualHandlerEnd actually points to virtual instruction before the actual end
+			handler.HandlerEnd = GetInstruction(this.GetRealOffset(deserialized.VirtualHandlerEnd));
+			handler.HandlerEnd = GetInstructionAfter(handler.HandlerEnd);
+
+			handler.FilterStart = GetInstruction(this.GetRealOffset(deserialized.VirtualFilterStart));
+
+			return handler;
 		}
 
 		private void Initialize()
@@ -109,6 +167,7 @@ namespace eazdevirt.IO
 			this.Stream.Position = this.InitialPosition;
 			this.Resolver = new EazResolver(this.Parent);
 			this.VirtualOffsets = new Dictionary<UInt32, UInt32>();
+			this.ExceptionHandlers = new ExceptionHandler[0];
 		}
 
 		public void Read()
@@ -122,12 +181,33 @@ namespace eazdevirt.IO
 			// Read virtualized method info
 			this.Info = new VirtualizedMethodInfo(reader);
 
-			// Read N of some unknown type
-			// These are compared/used in some comparison?
+			// Read exception handlers
 			Int32 count = (Int32)reader.ReadInt16();
-			UnknownType4[] unknown1 = new UnknownType4[count];
-			for (Int32 i = 0; i < unknown1.Length; i++)
-				unknown1[i] = new UnknownType4(reader);
+			_exceptionHandlers = new SerializedExceptionHandler[count];
+			for (Int32 i = 0; i < _exceptionHandlers.Count; i++)
+				_exceptionHandlers[i] = new SerializedExceptionHandler(reader);
+
+			//if (count > 0)
+			//{
+			//	Console.WriteLine("Exception Handlers ({0}):", count);
+			//	for (Int32 i = 0; i < _exceptionHandlers.Count; i++)
+			//	{
+			//		var handler = _exceptionHandlers[i];
+			//		Console.WriteLine(" Exception handler {0}:", i);
+			//		Console.WriteLine("  Handler Type:  {0}", handler.VirtualHandlerType);
+			//
+			//		if(handler.HasCatchType)
+			//			Console.WriteLine("  Catch Type:    {0}", this.Resolver.ResolveType(handler.VirtualCatchType).FullName);
+			//		else
+			//			Console.WriteLine("  Catch Type:    {0}", handler.VirtualCatchType);
+			//
+			//		Console.WriteLine("  Try start:     {0}", handler.VirtualTryStart);
+			//		Console.WriteLine("  Try end:       {0}", handler.VirtualTryEnd);
+			//		Console.WriteLine("  Handler start: {0}", handler.VirtualHandlerStart);
+			//		Console.WriteLine("  Handler end:   {0}", handler.VirtualHandlerEnd);
+			//		Console.WriteLine("  Filter start:  {0}", handler.VirtualFilterStart);
+			//	}
+			//}
 
 			// Set locals and parameters
 			this.SetLocalsAndParameters();
@@ -186,6 +266,9 @@ namespace eazdevirt.IO
 
 			// After fully read, branch operands can be fixed
 			this.FixBranches();
+
+			// Also set real exception handlers
+			this.FixExceptionHandlers();
 
 			//this.Instructions = instructions;
 			this.FullyRead = true;
@@ -347,6 +430,26 @@ namespace eazdevirt.IO
 		}
 
 		/// <summary>
+		/// Get the instruction after the specified instruction in the list.
+		/// </summary>
+		/// <param name="instruction">Specified instruction</param>
+		/// <returns>
+		/// Instruction afterwards, or null if specified instruction not found
+		/// or specified instruction last in the list
+		/// </returns>
+		protected Instruction GetInstructionAfter(Instruction instruction)
+		{
+			for (Int32 i = 0; i < this.Instructions.Count; i++)
+			{
+				if (this.Instructions[i] == instruction
+					&& i < (this.Instructions.Count - 2))
+					return this.Instructions[i + 1];
+			}
+
+			return null;
+		}
+
+		/// <summary>
 		/// Finds an instruction
 		/// </summary>
 		/// <param name="offset">Offset of instruction</param>
@@ -410,7 +513,7 @@ namespace eazdevirt.IO
 
 		protected virtual IField ReadInlineField(Instruction instruction)
 		{
-			return this.Resolver.ResolveField(this.Reader.ReadInt32());
+			return this.Resolver.TryResolveField(this.Reader.ReadInt32());
 		}
 
 		protected virtual MethodSig ReadInlineSig(Instruction instruction)
@@ -430,7 +533,7 @@ namespace eazdevirt.IO
 
 		protected virtual ITypeDefOrRef ReadInlineType(Instruction instruction)
 		{
-			return this.Resolver.ResolveType(this.Reader.ReadInt32());
+			return this.Resolver.TryResolveType(this.Reader.ReadInt32());
 		}
 
 		protected virtual String ReadInlineString(Instruction instruction)
@@ -566,30 +669,71 @@ namespace eazdevirt.IO
 		}
 
 		/// <remarks>Might have to do with generics?</remarks>
-		public class UnknownType4
+		public class SerializedExceptionHandler
 		{
-			public Int32 Unknown1 { get; set; }
-			public Int32 Unknown2 { get; set; }
-			public UInt32 Unknown3 { get; set; }
-			public UInt32 Unknown4 { get; set; }
-			public UInt32 Unknown5 { get; set; }
-			public UInt32 Unknown6 { get; set; }
-			public UInt32 Unknown7 { get; set; }
+			public Int32 VirtualHandlerType { get; set; }
+			public Int32 VirtualCatchType { get; set; }
+			public UInt32 VirtualTryStart { get; set; }
+			public UInt32 VirtualTryLength { get; set; }
+			public UInt32 VirtualHandlerStart { get; set; }
+			public UInt32 VirtualHandlerLength { get; set; }
+			public UInt32 VirtualFilterStart { get; set; }
 
-			public UnknownType4(BinaryReader reader)
+			/// <summary>
+			/// The calculated TryEnd virtual offset.
+			/// </summary>
+			public UInt32 VirtualTryEnd
+			{
+				get { return this.VirtualTryStart + this.VirtualTryLength; }
+			}
+
+			/// <summary>
+			/// The calculated HandlerEnd virtual offset.
+			/// </summary>
+			public UInt32 VirtualHandlerEnd
+			{
+				get { return this.VirtualHandlerStart + this.VirtualHandlerLength; }
+			}
+
+			/// <summary>
+			/// The dnlib HandlerType of this SerializedExceptionHandler.
+			/// </summary>
+			public ExceptionHandlerType HandlerType
+			{
+				get
+				{
+					switch(VirtualHandlerType)
+					{
+						case 0: return ExceptionHandlerType.Catch;
+						case 2: return ExceptionHandlerType.Finally;
+						default: throw new NotSupportedException();
+					}
+				}
+			}
+
+			/// <summary>
+			/// Whether or not the virtual catch type (position) is non-negative, should
+			/// only be true if the HandlerType is Catch.
+			/// </summary>
+			public Boolean HasCatchType
+			{
+				get { return this.VirtualCatchType >= 0; }
+			}
+
+			public SerializedExceptionHandler(BinaryReader reader)
 			{
 				this.Deserialize(reader);
 			}
 
 			private void Deserialize(BinaryReader reader)
 			{
-				this.Unknown1 = reader.ReadInt32();
-				this.Unknown2 = reader.ReadInt32();
-				this.Unknown3 = reader.ReadUInt32();
-				this.Unknown4 = reader.ReadUInt32();
-				this.Unknown5 = reader.ReadUInt32();
-				this.Unknown6 = reader.ReadUInt32();
-				this.Unknown7 = reader.ReadUInt32();
+				this.VirtualHandlerType = reader.ReadInt32();
+				this.VirtualCatchType = reader.ReadInt32();
+				this.VirtualTryStart = reader.ReadUInt32();
+				this.VirtualTryLength = reader.ReadUInt32();
+				this.VirtualHandlerStart = reader.ReadUInt32();
+				this.VirtualHandlerLength = reader.ReadUInt32();
+				this.VirtualFilterStart = reader.ReadUInt32();
 			}
 		}
 	}
