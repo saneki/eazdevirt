@@ -14,6 +14,12 @@ namespace eazdevirt.Reflection
 		public Code OpCode { get; private set; }
 
 		/// <summary>
+		/// Whether or not the method expects to be matched against
+		/// more than one virtual instruction type.
+		/// </summary>
+		public Boolean ExpectsMultiple = false;
+
+		/// <summary>
 		/// Construct a Detect attribute.
 		/// </summary>
 		/// <param name="code">CIL opcode the method checks for</param>

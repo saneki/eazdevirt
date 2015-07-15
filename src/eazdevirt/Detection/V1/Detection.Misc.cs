@@ -287,6 +287,17 @@ namespace eazdevirt.Detection.V1.Ext
 			});
 		}
 
+		[Detect(Code.Nop, ExpectsMultiple = true)]
+		public static Boolean Is_Nop(this EazVirtualInstruction ins)
+		{
+			// Three virtual opcodes match this. One of them makes sense to be Nop,
+			// unsure what the other two are.
+			OperandType operandType;
+			return ins.DelegateMethod.MatchesEntire(Code.Ret)
+				&& ins.TryGetOperandType(out operandType)
+				&& operandType == OperandType.InlineNone;
+		}
+
 		[Detect(Code.Pop)]
 		public static Boolean Is_Pop(this EazVirtualInstruction ins)
 		{

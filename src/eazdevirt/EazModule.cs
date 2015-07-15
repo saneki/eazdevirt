@@ -240,7 +240,7 @@ namespace eazdevirt
 					Console.WriteLine("WARNING: Multiple instruction types with the same virtual opcode detected ({0})",
 						instruction.VirtualOpCode);
 
-				if (containsActual)
+				if (containsActual && !instruction.ExpectsMultiple)
 				{
 					Console.WriteLine("WARNING: Multiple virtual opcodes map to the same actual opcode ({0}, {1} => {2})",
 						existing.VirtualOpCode, instruction.VirtualOpCode, instruction.OpCode.ToString());

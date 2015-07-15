@@ -87,5 +87,17 @@ namespace eazdevirt.Detection.V1
 
 			throw new OriginalOpcodeUnknownException(instruction);
 		}
+
+		/// <inheritdoc/>
+		public override DetectAttribute IdentifyFull(EazVirtualInstruction instruction)
+		{
+			foreach (var kvp in _detectors)
+			{
+				if (kvp.Value(instruction))
+					return (DetectAttribute)kvp.Value.Method.GetCustomAttribute(typeof(DetectAttribute));
+			}
+
+			throw new OriginalOpcodeUnknownException(instruction);
+		}
 	}
 }

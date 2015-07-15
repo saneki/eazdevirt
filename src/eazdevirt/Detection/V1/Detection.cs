@@ -1,5 +1,6 @@
 ﻿using System;
 using dnlib.DotNet.Emit;
+using eazdevirt.Reflection;
 
 namespace eazdevirt.Detection.V1.Ext
 {
@@ -9,12 +10,13 @@ namespace eazdevirt.Detection.V1.Ext
 	public static partial class Extensions
 	{
 		/// <summary>
-		/// Attempt to identify a virtual instruction with its original CIL opcode.
+		/// Identify a virtual instruction.
 		/// </summary>
-		/// <param name="ins">Virtual instruction</param>
-		/// <exception cref="OriginalOpcodeUnknownException">Thrown if unable to identify original CIL opcode</exception>
-		/// <remarks>What this method does could probably be better done through reflection/attributes</remarks>
-		/// <returns>CIL opcode</returns>
+		/// <param name="instruction">Virtual instruction</param>
+		/// <returns>Detected CIL opcode</returns>
+		/// <exception cref="eazdevirt.OriginalOpcodeUnknownException">
+		/// Thrown if original CIL opcode is unknown.
+		/// </exception>
 		public static Code Identify(this EazVirtualInstruction ins)
 		{
 			return InstructionDetectorV1.Instance.Identify(ins);
@@ -23,6 +25,24 @@ namespace eazdevirt.Detection.V1.Ext
 		public static Boolean TryIdentify(this EazVirtualInstruction ins, out Code code)
 		{
 			return InstructionDetectorV1.Instance.TryIdentify(ins, out code);
+		}
+
+		/// <summary>
+		/// Identify a virtual instruction, getting the entire attribute of the detection method.
+		/// </summary>
+		/// <param name="instruction">Virtual instruction</param>
+		/// <returns>DetectAttribute of detection method if successful</returns>
+		/// <exception cref="eazdevirt.OriginalOpcodeUnknownException">
+		/// Thrown if original CIL opcode is unknown.
+		/// </exception>
+		public static DetectAttribute IdentifyFull(this EazVirtualInstruction ins)
+		{
+			return InstructionDetectorV1.Instance.IdentifyFull(ins);
+		}
+
+		public static Boolean TryIdentifyFull(this EazVirtualInstruction ins, out DetectAttribute attribute)
+		{
+			return InstructionDetectorV1.Instance.TryIdentifyFull(ins, out attribute);
 		}
 	}
 }

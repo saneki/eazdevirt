@@ -5,6 +5,7 @@ using de4dot.blocks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using eazdevirt.Detection.V1.Ext;
+using eazdevirt.Reflection;
 using eazdevirt.Util;
 
 namespace eazdevirt
@@ -17,10 +18,11 @@ namespace eazdevirt
 		/// <param name="ins">Virtual instruction</param>
 		protected void TrySetIdentify()
 		{
-			Code code;
-			if (this.TryIdentify(out code))
+			DetectAttribute attr;
+			if (this.TryIdentifyFull(out attr))
 			{
-				this.OpCode = code;
+				this.DetectAttribute = attr;
+				this.OpCode = attr.OpCode;
 				this.IsIdentified = true;
 			}
 			else

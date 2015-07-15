@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using de4dot.blocks;
+using eazdevirt.Reflection;
 
 namespace eazdevirt
 {
@@ -56,6 +57,19 @@ namespace eazdevirt
 		/// Whether or not the virtual instruction was identified with a legitimate CIL opcode.
 		/// </summary>
 		public Boolean IsIdentified { get; private set; }
+
+		/// <summary>
+		/// The Detect attribute of the detector method that identified this virtual instruction.
+		/// </summary>
+		public DetectAttribute DetectAttribute { get; private set; }
+
+		public Boolean ExpectsMultiple
+		{
+			get
+			{
+				return (this.DetectAttribute != null ? this.DetectAttribute.ExpectsMultiple : false);
+			}
+		}
 
 		public Code OpCode { get; private set; }
 

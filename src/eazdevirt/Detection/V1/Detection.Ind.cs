@@ -116,5 +116,12 @@ namespace eazdevirt.Detection.V1.Ext
 				Code.Ret
 			);
 		}
+
+		[Detect(Code.Stind_I, ExpectsMultiple = true)]
+		public static Boolean Is_Stind(EazVirtualInstruction ins)
+		{
+			// Consider all Stind_* instructions as Stind_I (for now?)
+			return _Is_Stind(ins);
+		}
 	}
 }
