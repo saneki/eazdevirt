@@ -300,14 +300,16 @@ namespace eazdevirt.IO
 			if (instruction.OpCode.Code == Code.Switch)
 			{
 				var targets = (IList<UInt32>)instruction.Operand;
-				this.CurrentILOffset += (UInt32)(instruction.OpCode.Size + 4 + 4 * targets.Count);
-				this.CurrentVirtualOffset += (UInt32)(instruction.OpCode.Size + 4 + 4 * targets.Count);
+				this.CurrentILOffset += (UInt32)(instruction.OpCode.Size + 4 + (4 * targets.Count));
+				this.CurrentVirtualOffset += (UInt32)(4 + 4 + (4 * targets.Count));
 			}
 			else
+			{
 				this.CurrentILOffset += (UInt32)instruction.GetSize();
 				this.CurrentVirtualOffset += (UInt32)virtualInstruction.GetSize(instruction.Operand);
 				// Doesn't apply, all virtual opcodes are size 4:
 				// this.CurrentOffset += (UInt32)instruction.GetSize();
+			}
 
 			this.CurrentInstructionOffset++;
 
@@ -342,11 +344,7 @@ namespace eazdevirt.IO
 			switch(instr.OpCode.OperandType)
 			{
 				case OperandType.InlineSwitch:
-					Int32 destCount = this.Reader.ReadInt32();
-					Int32[] branchDests = new Int32[destCount];
-					for (Int32 i = 0; i < destCount; i++)
-						branchDests[i] = this.Reader.ReadInt32();
-					return branchDests;
+					return this.ReadInlineSwitch(instr);
 				case OperandType.ShortInlineBrTarget:
 					return this.ReadShortInlineBrTarget(instr);
 				case OperandType.ShortInlineI:
@@ -415,7 +413,6 @@ namespace eazdevirt.IO
 		/// </summary>
 		void FixBranches()
 		{
-			// Todo: Support switch operands
 			foreach(var instr in this.Instructions)
 			{
 				switch(instr.OpCode.OperandType)
@@ -423,7 +420,20 @@ namespace eazdevirt.IO
 					case OperandType.InlineBrTarget:
 					case OperandType.ShortInlineBrTarget:
 						UInt32 realOffset = this.GetRealOffset((UInt32)instr.Operand);
-						instr.Operand = GetInstruction(realOffset);
+						instr.Operand = this.GetInstruction(realOffset);
+						break;
+
+					case OperandType.InlineSwitch:
+						Console.WriteLine("Fixing switch...");
+						Int32[] virtualOffsets = instr.Operand as Int32[];
+						Instruction[] destinations = new Instruction[virtualOffsets.Length];
+						for (Int32 i = 0; i < virtualOffsets.Length; i++)
+						{
+							destinations[i] = this.GetInstruction(this.GetRealOffset((UInt32)virtualOffsets[i]));
+							Console.WriteLine(" Destination: {0} => {1} => {2}",
+								virtualOffsets[i], this.GetRealOffset((UInt32)virtualOffsets[i]), destinations[i]);
+						}
+						instr.Operand = destinations;
 						break;
 				}
 			}
@@ -509,6 +519,18 @@ namespace eazdevirt.IO
 		{
 			//return instr.Offset + (UInt32)instr.GetSize() + (UInt32)this.Reader.ReadSByte();
 			return (UInt32)this.Reader.ReadSByte();
+		}
+
+		protected virtual UInt32[] ReadInlineSwitch(Instruction instr)
+		{
+			UInt32 destCount = this.Reader.ReadUInt32();
+			UInt32[] branchDests = new UInt32[destCount];
+			for (UInt32 i = 0; i < destCount; i++)
+			{
+				branchDests[i] = this.Reader.ReadUInt32();
+				Console.WriteLine(" Branch dest: " + branchDests[i]);
+			}
+			return branchDests;
 		}
 
 		protected virtual IField ReadInlineField(Instruction instruction)

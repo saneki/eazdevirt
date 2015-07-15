@@ -94,6 +94,16 @@ namespace eazdevirt.Detection.V1.Ext
 				&& ((IMethod)sub[6].Operand).FullName.Contains("System.Double::IsInfinity");
 		}
 
+		[Detect(Code.Dup)]
+		public static Boolean Is_Dup(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.MatchesEntire(
+				Code.Ldarg_0, Code.Call, Code.Stloc_0, Code.Ldloc_0, Code.Callvirt,
+				Code.Stloc_1, Code.Ldarg_0, Code.Ldloc_0, Code.Call, Code.Ldarg_0,
+				Code.Ldloc_1, Code.Call, Code.Ret
+			);
+		}
+
 		[Detect(Code.Endfinally)]
 		public static Boolean Is_Endfinally(this EazVirtualInstruction ins)
 		{
@@ -311,7 +321,7 @@ namespace eazdevirt.Detection.V1.Ext
 		public static Boolean Is_Nop(this EazVirtualInstruction ins)
 		{
 			// Three virtual opcodes match this. One of them makes sense to be Nop,
-			// unsure what the other two are.
+			// unsure what the other two are (maybe Endfault, Endfilter).
 			OperandType operandType;
 			return ins.DelegateMethod.MatchesEntire(Code.Ret)
 				&& ins.TryGetOperandType(out operandType)
@@ -362,6 +372,15 @@ namespace eazdevirt.Detection.V1.Ext
 			{
 				return called.FullName.Contains("System.Reflection.FieldInfo::SetValue");
 			});
+		}
+
+		[Detect(Code.Switch)]
+		public static Boolean Is_Switch(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.Matches(
+				Code.Blt_S, Code.Ret, Code.Ldloc_3, Code.Ldloc_2, Code.Conv_U, Code.Ldelem,
+				Code.Callvirt, Code.Stloc_S, Code.Ldarg_0, Code.Ldloc_S, Code.Call, Code.Ret
+			);
 		}
 
 		[Detect(Code.Unbox)]
