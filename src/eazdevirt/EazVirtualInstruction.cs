@@ -253,6 +253,7 @@ namespace eazdevirt
 				case 5: return OperandType.InlineNone;
 				case 7: return OperandType.InlineR;
 				case 10: return OperandType.InlineString;
+				case 13: return OperandType.InlineType;
 				case 11: return OperandType.InlineSwitch;
 				case 14: return OperandType.InlineVar;
 				case 16: return OperandType.ShortInlineI;

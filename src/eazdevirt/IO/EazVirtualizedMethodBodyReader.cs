@@ -413,14 +413,14 @@ namespace eazdevirt.IO
 			return this.Resolver.ResolveField(this.Reader.ReadInt32());
 		}
 
-		protected virtual IMethod ReadInlineSig(Instruction instruction)
+		protected virtual MethodSig ReadInlineSig(Instruction instruction)
 		{
 			throw new NotSupportedException();
 		}
 
-		protected virtual IMethod ReadInlineTok(Instruction instruction)
+		protected virtual ITokenOperand ReadInlineTok(Instruction instruction)
 		{
-			throw new NotSupportedException();
+			return this.Resolver.ResolveToken(this.Reader.ReadInt32());
 		}
 
 		protected virtual IMethod ReadInlineMethod(Instruction instruction)

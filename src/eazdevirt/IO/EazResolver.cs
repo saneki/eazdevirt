@@ -354,6 +354,54 @@ namespace eazdevirt.IO
 		}
 
 		/// <summary>
+		/// Resolve a token.
+		/// </summary>
+		/// <param name="position">Position</param>
+		/// <returns>Token</returns>
+		public ITokenOperand ResolveToken(Int32 position)
+		{
+			lock (_lock)
+			{
+				return this.ResolveToken_NoLock(position);
+			}
+		}
+
+		public ITokenOperand TryResolveToken(Int32 position)
+		{
+			try
+			{
+				return this.ResolveToken(position);
+			}
+			catch (Exception)
+			{
+				return null;
+			}
+		}
+
+		ITokenOperand ResolveToken_NoLock(Int32 position)
+		{
+			this.Stream.Position = position;
+
+			InlineOperand operand = new InlineOperand(this.Reader);
+			if (operand.IsToken)
+			{
+				throw new NotSupportedException("Currently unable to resolve a token via MDToken");
+			}
+			else
+			{
+				if (operand.Data.Type == InlineOperandType.Type)
+					return this.ResolveType_NoLock(operand.Position);
+				else if (operand.Data.Type == InlineOperandType.Field)
+					return this.ResolveField_NoLock(operand.Position);
+				else if (operand.Data.Type == InlineOperandType.Method)
+					return this.ResolveMethod_NoLock(operand.Position);
+				else throw new InvalidOperationException(String.Format(
+					"Expected inline operand type of token to be either Type, Field or Method; instead got {0}",
+					operand.Data.Type));
+			}
+		}
+
+		/// <summary>
 		/// Resolve a type from a deserialized inline operand, which should
 		/// have a direct token (position).
 		/// </summary>

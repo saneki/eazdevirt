@@ -205,6 +205,23 @@ namespace eazdevirt.Detection.V1.Ext
 				&& method.Parameters[1].Type.FullName.Contains("System.Reflection.FieldInfo");
 		}
 
+		[Detect(Code.Ldobj)]
+		public static Boolean Is_Ldobj(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.MatchesEntire(new Code[] {
+				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_0, Code.Ldarg_0,
+				Code.Ldloc_0, Code.Call, Code.Stloc_1, Code.Ldarg_0, Code.Ldloc_1,
+				Code.Call, Code.Ret
+			}) && ins.DelegateMethod.MatchesIndirect(new Code[] {
+				Code.Ldarg_0, Code.Call, Code.Stloc_0, Code.Ldarg_0, Code.Ldarg_0,
+				Code.Ldloc_0, Code.Call, Code.Callvirt, Code.Ldarg_1, Code.Call,
+				Code.Call, Code.Ret
+			}) && ((MethodDef)ins.DelegateMethod.Body.Instructions[2].Operand)
+				  .ReturnType.FullName.Equals("System.Int32")
+			&& ((MethodDef)ins.DelegateMethod.Body.Instructions[6].Operand)
+				  .ReturnType.FullName.Equals("System.Type");
+		}
+
 		[Detect(Code.Ldstr)]
 		public static Boolean Is_Ldstr(this EazVirtualInstruction ins)
 		{
@@ -223,6 +240,32 @@ namespace eazdevirt.Detection.V1.Ext
 			return ins.MatchesEntire(new Code[] {
 				Code.Ldarg_0, Code.Newobj, Code.Call, Code.Ret
 			});
+		}
+
+		[Detect(Code.Ldtoken)]
+		public static Boolean Is_Ldtoken(this EazVirtualInstruction ins)
+		{
+			// Checks delegate method tail
+			// Could also check: System.Reflection.FieldInfo::get_Type/Field/MethodHandle(),
+			// there are 1 of each of these calls
+			return ins.DelegateMethod.Matches(
+				Code.Ldarg_0, Code.Newobj, Code.Stloc_3, Code.Ldloc_3, Code.Ldloc_1,
+				Code.Callvirt, Code.Ldloc_3, Code.Call, Code.Ret
+			);
+		}
+
+		[Detect(Code.Ldvirtftn)]
+		public static Boolean Is_Ldvirtftn(this EazVirtualInstruction ins)
+		{
+			MethodDef called = null;
+			var sub = ins.DelegateMethod.Find(new Code[] {
+				Code.Ldarg_0, Code.Newobj, Code.Stloc_S, Code.Ldloc_S, Code.Ldloc_3,
+				Code.Callvirt, Code.Ldloc_S, Code.Call, Code.Ret
+			});
+			return sub != null
+				&& (called = ((MethodDef)sub[5].Operand)) != null
+				&& called.Parameters.Count >= 2
+				&& called.Parameters[1].Type.FullName.Equals("System.Reflection.MethodBase");
 		}
 
 		[Detect(Code.Newarr)]
@@ -288,6 +331,15 @@ namespace eazdevirt.Detection.V1.Ext
 			{
 				return called.FullName.Contains("System.Reflection.FieldInfo::SetValue");
 			});
+		}
+
+		[Detect(Code.Unbox)]
+		public static Boolean Is_Unbox(this EazVirtualInstruction ins)
+		{
+			OperandType operandType;
+			return ins.DelegateMethod.MatchesEntire(Code.Ret)
+				&& ins.TryGetOperandType(out operandType)
+				&& operandType == OperandType.InlineType;
 		}
 	}
 }
