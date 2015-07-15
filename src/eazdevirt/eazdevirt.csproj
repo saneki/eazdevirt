@@ -74,6 +74,13 @@
     <Compile Include="Logging\ConsoleLogger.cs" />
     <Compile Include="MethodStubNotFoundException.cs" />
     <Compile Include="OriginalOpcodeUnknownException.cs" />
+    <Compile Include="Program.Devirtualize.cs" />
+    <Compile Include="Program.Generate.cs" />
+    <Compile Include="Program.GetKey.cs" />
+    <Compile Include="Program.Instructions.cs" />
+    <Compile Include="Program.Methods.cs" />
+    <Compile Include="Program.Position.cs" />
+    <Compile Include="Program.Resource.cs" />
     <Compile Include="Reflection\DetectAttribute.cs" />
     <Compile Include="Util\DotNetUtils.cs" />
     <Compile Include="EazCryptoStream.cs" />
