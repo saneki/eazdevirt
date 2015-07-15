@@ -41,11 +41,34 @@ namespace eazdevirt.Detection.V1.Ext
 				&& method.HasReturnType && method.ReturnType.FullName.Equals("System.Reflection.MethodBase");
 		}
 
+		[Detect(Code.Castclass)]
+		public static Boolean Is_Castclass(this EazVirtualInstruction ins)
+		{
+			var sub = ins.DelegateMethod.Find(
+				Code.Call, Code.Brtrue_S, Code.Newobj, Code.Throw, Code.Ldarg_0, Code.Ldloc_2,
+				Code.Call, Code.Ret
+			);
+			return sub != null
+				&& ((IMethod)sub[2].Operand).DeclaringType.FullName.Contains("System.InvalidCastException");
+		}
+
+		[Detect(Code.Ceq)]
+		public static Boolean Is_Ceq(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.Matches(
+				Code.Ldloc_2, Code.Ldloc_1, Code.Ldloc_0, Code.Call, Code.Brtrue_S,
+				Code.Ldc_I4_0, Code.Br_S, Code.Ldc_I4_1
+			) && ins.DelegateMethod.MatchesIndirect(
+				Code.Ldloc_1, Code.Callvirt, Code.Call, Code.Ldarg_1, Code.Callvirt, Code.Call,
+				Code.Ceq, Code.Stloc_0, Code.Ldloc_0, Code.Ret
+			);
+		}
+
 		/// <summary>
 		/// OpCode pattern seen in the Less-Than helper method.
-		/// Used in: Clt, Blt, Bge_Un (negated)
+		/// Used in: Clt_Un, Blt, Bge_Un (negated)
 		/// </summary>
-		private static readonly Code[] Pattern_Clt = new Code[] {
+		private static readonly Code[] Pattern_Clt_Un = new Code[] {
 			Code.Ldloc_S, Code.Ldloc_S, Code.Blt_S,
 			Code.Ldloc_S, Code.Call, Code.Brtrue_S, // System.Double::IsNaN(float64)
 			Code.Ldloc_S, Code.Call, Code.Br_S      // System.Double::IsNaN(float64)
@@ -54,18 +77,31 @@ namespace eazdevirt.Detection.V1.Ext
 		[Detect(Code.Clt)]
 		public static Boolean Is_Clt(this EazVirtualInstruction ins)
 		{
-			return ins.Matches(new Code[] {
+			return ins.DelegateMethod.Matches(
 				Code.Call, Code.Brtrue_S, Code.Ldc_I4_0, Code.Br_S, Code.Ldc_I4_1,
 				Code.Callvirt, Code.Ldloc_2, Code.Call, Code.Ret
-			}) && ins.MatchesIndirect(Pattern_Clt);
+			) && ins.DelegateMethod.MatchesIndirect(
+				// Helper method used elsewhere?
+				Code.Ldarg_0, Code.Castclass, Code.Callvirt, Code.Ldarg_1, Code.Castclass,
+				Code.Callvirt, Code.Clt, Code.Stloc_0, Code.Ldloc_0, Code.Ret
+			);
+		}
+
+		[Detect(Code.Clt_Un)]
+		public static Boolean Is_Clt_Un(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.Matches(new Code[] {
+				Code.Call, Code.Brtrue_S, Code.Ldc_I4_0, Code.Br_S, Code.Ldc_I4_1,
+				Code.Callvirt, Code.Ldloc_2, Code.Call, Code.Ret
+			}) && ins.DelegateMethod.MatchesIndirect(Pattern_Clt_Un);
 		}
 
 		/// <summary>
 		/// OpCode pattern seen in the Greater-Than helper method.
-		/// Used in: Cgt
+		/// Used in: Cgt_Un
 		/// </summary>
 		/// <remarks>Greater-than for Double, Int32, Int64 but not-equal for other?</remarks>
-		private static readonly Code[] Pattern_Cgt = new Code[] {
+		private static readonly Code[] Pattern_Cgt_Un = new Code[] {
 			Code.Ldarg_0, Code.Castclass, Code.Callvirt, Code.Ldarg_1,
 			Code.Castclass, Code.Callvirt, Code.Cgt_Un, Code.Stloc_0
 		};
@@ -74,10 +110,22 @@ namespace eazdevirt.Detection.V1.Ext
 		/// <remarks>Unsure</remarks>
 		public static Boolean Is_Cgt(this EazVirtualInstruction ins)
 		{
-			return ins.Matches(new Code[] {
+			return ins.DelegateMethod.Matches(
 				Code.Call, Code.Brtrue_S, Code.Ldc_I4_0, Code.Br_S, Code.Ldc_I4_1,
 				Code.Callvirt, Code.Ldloc_2, Code.Call, Code.Ret
-			}) && ins.MatchesIndirect(Pattern_Cgt);
+			) && ins.DelegateMethod.MatchesIndirect(
+				Code.Ldloc_S, Code.Ldloc_S, Code.Cgt, Code.Stloc_0, Code.Br_S,
+				Code.Ldc_I4_0, Code.Stloc_0, Code.Ldloc_0, Code.Ret
+			);
+		}
+
+		[Detect(Code.Cgt_Un)]
+		public static Boolean Is_Cgt_Un(this EazVirtualInstruction ins)
+		{
+			return ins.DelegateMethod.Matches(new Code[] {
+				Code.Call, Code.Brtrue_S, Code.Ldc_I4_0, Code.Br_S, Code.Ldc_I4_1,
+				Code.Callvirt, Code.Ldloc_2, Code.Call, Code.Ret
+			}) && ins.DelegateMethod.MatchesIndirect(Pattern_Cgt_Un);
 		}
 
 		[Detect(Code.Ckfinite)]

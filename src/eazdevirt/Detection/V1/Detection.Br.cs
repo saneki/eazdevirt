@@ -136,7 +136,7 @@ namespace eazdevirt.Detection.V1.Ext
 		/// OpCode pattern seen in the first Ble_Un helper method.
 		/// Called Pattern_Cgt_Un because of the comparison type.
 		/// </summary>
-		private static readonly Code[] Pattern_Cgt_Un = new Code[] {
+		private static readonly Code[] Pattern_Ble_Un = new Code[] {
 			Code.Ldloc_S, Code.Ldloc_S, Code.Cgt, Code.Stloc_0, Code.Br_S,
 			Code.Ldc_I4_0, Code.Stloc_0, Code.Ldloc_0, Code.Ret
 		};
@@ -192,14 +192,14 @@ namespace eazdevirt.Detection.V1.Ext
 		{
 			return ins.Matches(new Code[] {
 				Code.Call, Code.Ldc_I4_0, Code.Ceq, Code.Stloc_2
-			}) && ins.MatchesIndirect(Pattern_Cgt);
+			}) && ins.MatchesIndirect(Pattern_Ble_Un);
 		}
 
 		[Detect(Code.Ble_Un)]
 		public static Boolean Is_Ble_Un(this EazVirtualInstruction ins)
 		{
 			var sub = ins.DelegateMethod.Find(Pattern_Ble);
-			return sub != null && ((MethodDef)sub[2].Operand).Matches(Pattern_Cgt_Un);
+			return sub != null && ((MethodDef)sub[2].Operand).Matches(Pattern_Ble_Un);
 		}
 
 		[Detect(Code.Bge)]
@@ -218,7 +218,7 @@ namespace eazdevirt.Detection.V1.Ext
 		{
 			return ins.Matches(new Code[] {
 				Code.Call, Code.Brtrue_S, Code.Ldarg_1, Code.Castclass
-			}) && ins.MatchesIndirect(Pattern_Clt);
+			}) && ins.MatchesIndirect(Pattern_Clt_Un);
 		}
 	}
 }
