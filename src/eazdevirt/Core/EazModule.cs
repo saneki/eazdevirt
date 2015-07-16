@@ -14,7 +14,7 @@ namespace eazdevirt
 	{
 		public ModuleDefMD Module { get; private set; }
 
-		public VirtualMachineType Virtualization { get; private set; }
+		public VirtualMachineType VType { get; private set; }
 
 		public IList<VirtualOpCode> VirtualInstructions { get; private set; }
 
@@ -69,7 +69,7 @@ namespace eazdevirt
 
 		private void Initialize()
 		{
-			this.Virtualization = new VirtualMachineType(this);
+			this.VType = new VirtualMachineType(this);
 			this.InitializeIdentifiedOpCodes();
 		}
 
@@ -124,7 +124,7 @@ namespace eazdevirt
 			var types = this.Module.GetTypes();
 			foreach (var type in types)
 			{
-				MethodStub[] methods = this.FindVirtualizedMethods(type);
+				MethodStub[] methods = this.FindMethodStubs(type);
 				if (methods.Length > 0)
 					return methods[0];
 			}
@@ -136,14 +136,14 @@ namespace eazdevirt
 		/// Look for virtualized methods throughout the module.
 		/// </summary>
 		/// <returns>Found virtualized methods</returns>
-		public MethodStub[] FindVirtualizedMethods()
+		public MethodStub[] FindMethodStubs()
 		{
 			List<MethodStub> list = new List<MethodStub>();
 
 			var types = this.Module.GetTypes();
 			foreach(var type in types)
 			{
-				MethodStub[] methods = this.FindVirtualizedMethods(type);
+				MethodStub[] methods = this.FindMethodStubs(type);
 				list.AddRange(methods);
 			}
 
@@ -155,14 +155,14 @@ namespace eazdevirt
 		/// </summary>
 		/// <param name="type">Type to look in</param>
 		/// <returns>Found virtualized methods</returns>
-		public MethodStub[] FindVirtualizedMethods(TypeDef type)
+		public MethodStub[] FindMethodStubs(TypeDef type)
 		{
 			List<MethodStub> list = new List<MethodStub>();
 
 			var methods = type.Methods;
 			foreach (var method in methods)
 			{
-				if (this.IsVirtualizedMethod(method))
+				if (this.IsMethodStub(method))
 					list.Add(new MethodStub(this, method));
 			}
 
@@ -180,7 +180,7 @@ namespace eazdevirt
 		/// First, it checks for a `ldstr` instruction that loads a length-10 string.
 		/// Second, it checks for a call to a method: (Stream, String, Object[]): ???
 		/// </remarks>
-		public Boolean IsVirtualizedMethod(MethodDef method)
+		public Boolean IsMethodStub(MethodDef method)
 		{
 			if (method == null || !method.HasBody || !method.Body.HasInstructions)
 				return false;
@@ -236,7 +236,7 @@ namespace eazdevirt
 		{
 			this.IdentifiedOpCodes = new Dictionary<Int32, VirtualOpCode>();
 
-			this.VirtualInstructions = VirtualOpCode.FindAllInstructions(this, this.Virtualization.VirtualizationType);
+			this.VirtualInstructions = VirtualOpCode.FindAllInstructions(this, this.VType.Type);
 			var identified = this.VirtualInstructions.Where((instruction) => { return instruction.IsIdentified; });
 
 			Boolean warningOccurred = false;

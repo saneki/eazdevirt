@@ -9,7 +9,7 @@ using dnlib.DotNet.MD;
 
 namespace eazdevirt.IO
 {
-	public class EazResolver : EazResourceReader
+	public class Resolver : ResourceReader
 	{
 		/// <summary>
 		/// Logger.
@@ -21,7 +21,7 @@ namespace eazdevirt.IO
 		/// </summary>
 		private Object _lock = new Object();
 
-		public EazResolver(EazModule module, ILogger logger)
+		public Resolver(EazModule module, ILogger logger)
 			: base(module)
 		{
 			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);

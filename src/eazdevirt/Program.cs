@@ -148,7 +148,7 @@ namespace eazdevirt
 			return true;
 		}
 
-		static void WritePartiallyDevirtualizedMethod(EazVirtualizedMethodBodyReader reader)
+		static void WritePartiallyDevirtualizedMethod(VirtualizedMethodBodyReader reader)
 		{
 			Console.WriteLine();
 			foreach(var instruction in reader.Instructions)

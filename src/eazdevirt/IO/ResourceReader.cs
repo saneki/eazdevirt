@@ -4,7 +4,7 @@ using dnlib.DotNet;
 
 namespace eazdevirt.IO
 {
-	public class EazResourceReader
+	public abstract class ResourceReader
 	{
 		/// <summary>
 		/// Parent module.
@@ -26,7 +26,7 @@ namespace eazdevirt.IO
 		/// </summary>
 		public BinaryReader Reader { get; private set; }
 
-		public EazResourceReader(EazModule module)
+		public ResourceReader(EazModule module)
 		{
 			if (module == null)
 				throw new ArgumentNullException();

@@ -68,9 +68,9 @@
     <Compile Include="Generator\IAssemblyGenerator.cs" />
     <Compile Include="Generator\VirtualizableAssemblyGenerator.cs" />
     <Compile Include="IO\DnBinaryReader.cs" />
-    <Compile Include="IO\EazResourceReader.cs" />
-    <Compile Include="IO\EazVirtualizedMethodBodyReader.cs" />
-    <Compile Include="IO\EazResolver.cs" />
+    <Compile Include="IO\ResourceReader.cs" />
+    <Compile Include="IO\VirtualizedMethodBodyReader.cs" />
+    <Compile Include="IO\Resolver.cs" />
     <Compile Include="Logging\ConsoleLogger.cs" />
     <Compile Include="Core\MethodStubNotFoundException.cs" />
     <Compile Include="Core\OriginalOpcodeUnknownException.cs" />

@@ -14,7 +14,7 @@ namespace eazdevirt.Detection.V1.Ext
 			return ins.DelegateMethod.MatchesEntire(
 				Code.Ldarg_0, Code.Ldsfld, Code.Call, Code.Ret
 			) && ((FieldDef)ins.DelegateMethod.Body.Instructions[1].Operand)
-				 .MDToken == ins.Virtualization.GetTypeField("System.IntPtr").MDToken
+				 .MDToken == ins.VType.GetTypeField("System.IntPtr").MDToken
 			&& ins.DelegateMethod.MatchesIndirect(
 				Code.Call, Code.Callvirt, Code.Ldarg_1, Code.Call, Code.Call, Code.Ret
 			);

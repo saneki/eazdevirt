@@ -56,7 +56,7 @@ namespace eazdevirt.Detection.V1.Ext
 			// Ldarg_C delegates will reference the arguments field in their Ldfld, which sets them apart from
 			// other very similar delegates
 			return ins.Matches(ins.ModifyPattern(Pattern_Ldarg_C, Code.Ldc_I4, code))
-				&& ((FieldDef)ins.DelegateMethod.Body.Instructions[2].Operand).MDToken == ins.Virtualization.ArgumentsField.MDToken;
+				&& ((FieldDef)ins.DelegateMethod.Body.Instructions[2].Operand).MDToken == ins.VType.ArgumentsField.MDToken;
 		}
 
 		[Detect(Code.Ldarg_0)]
@@ -97,7 +97,7 @@ namespace eazdevirt.Detection.V1.Ext
 		{
 			var sub = ins.Find(Pattern_Ldarga);
 			return sub != null
-				&& ((FieldDef)sub[2].Operand).MDToken == ins.Virtualization.ArgumentsField.MDToken
+				&& ((FieldDef)sub[2].Operand).MDToken == ins.VType.ArgumentsField.MDToken
 				&& ((MethodDef)sub[4].Operand).ReturnType.FullName.Equals("System.UInt16");
 		}
 
@@ -107,7 +107,7 @@ namespace eazdevirt.Detection.V1.Ext
 		{
 			var sub = ins.Find(Pattern_Ldarga);
 			return sub != null
-				&& ((FieldDef)sub[2].Operand).MDToken == ins.Virtualization.ArgumentsField.MDToken
+				&& ((FieldDef)sub[2].Operand).MDToken == ins.VType.ArgumentsField.MDToken
 				&& ((MethodDef)sub[4].Operand).ReturnType.FullName.Equals("System.Byte");
 		}
 
@@ -128,7 +128,7 @@ namespace eazdevirt.Detection.V1.Ext
 				&& ((MethodDef)ins.DelegateMethod.Body.Instructions[7].Operand)
 				   .ReturnType.FullName.Equals("System.UInt16")
 				&& ((FieldDef)ins.DelegateMethod.Body.Instructions[5].Operand)
-				   .MDToken == ins.Virtualization.ArgumentsField.MDToken;
+				   .MDToken == ins.VType.ArgumentsField.MDToken;
 		}
 
 		[Detect(Code.Ldarg_S)]
@@ -138,7 +138,7 @@ namespace eazdevirt.Detection.V1.Ext
 				&& ((MethodDef)ins.DelegateMethod.Body.Instructions[7].Operand)
 				   .ReturnType.FullName.Equals("System.Byte")
 				&& ((FieldDef)ins.DelegateMethod.Body.Instructions[5].Operand)
-				   .MDToken == ins.Virtualization.ArgumentsField.MDToken;
+				   .MDToken == ins.VType.ArgumentsField.MDToken;
 		}
 	}
 }

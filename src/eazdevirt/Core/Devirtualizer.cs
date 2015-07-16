@@ -11,12 +11,12 @@ namespace eazdevirt
 		/// <summary>
 		/// EazModule.
 		/// </summary>
-		public EazModule EazModule { get; private set; }
+		public EazModule Parent { get; private set; }
 
 		/// <summary>
 		/// Module.
 		/// </summary>
-		public ModuleDefMD Module { get { return this.EazModule.Module; } }
+		public ModuleDefMD Module { get { return this.Parent.Module; } }
 
 		/// <summary>
 		/// Logger.
@@ -26,57 +26,57 @@ namespace eazdevirt
 		/// <summary>
 		/// Devirtualize options flag.
 		/// </summary>
-		public EazDevirtualizeOptions Options { get; set; }
+		public DevirtualizeOptions Options { get; set; }
 
 		public Devirtualizer(EazModule module)
-			: this(module, EazDevirtualizeOptions.Nothing)
+			: this(module, DevirtualizeOptions.Nothing)
 		{
 		}
 
-		public Devirtualizer(EazModule module, EazDevirtualizeOptions options)
+		public Devirtualizer(EazModule module, DevirtualizeOptions options)
 			: this(module, options, null)
 		{
 		}
 
 		public Devirtualizer(EazModule module, ILogger logger)
-			: this(module, EazDevirtualizeOptions.Nothing, logger)
+			: this(module, DevirtualizeOptions.Nothing, logger)
 		{
 		}
 
-		public Devirtualizer(EazModule module, EazDevirtualizeOptions options, ILogger logger)
+		public Devirtualizer(EazModule module, DevirtualizeOptions options, ILogger logger)
 		{
-			this.EazModule = module;
+			this.Parent = module;
 			this.Options = options;
 			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
 		}
 
-		public EazDevirtualizeResults Devirtualize()
+		public DevirtualizeResults Devirtualize()
 		{
 			return this.Devirtualize(this.Options, null);
 		}
 
-		public EazDevirtualizeResults Devirtualize(EazDevirtualizeOptions options)
+		public DevirtualizeResults Devirtualize(DevirtualizeOptions options)
 		{
 			return this.Devirtualize(options, null);
 		}
 
-		public EazDevirtualizeResults Devirtualize(Action<EazDevirtualizeAttempt> attemptCallback)
+		public DevirtualizeResults Devirtualize(Action<DevirtualizeAttempt> attemptCallback)
 		{
 			return this.Devirtualize(this.Options, attemptCallback);
 		}
 
-		public EazDevirtualizeResults Devirtualize(EazDevirtualizeOptions options, Action<EazDevirtualizeAttempt> attemptCallback)
+		public DevirtualizeResults Devirtualize(DevirtualizeOptions options, Action<DevirtualizeAttempt> attemptCallback)
 		{
-			var methods = this.EazModule.FindVirtualizedMethods();
+			var methods = this.Parent.FindMethodStubs();
 
 			if (methods.Length == 0)
-				return new EazDevirtualizeResults();
+				return new DevirtualizeResults();
 
-			var attempts = new List<EazDevirtualizeAttempt>();
+			var attempts = new List<DevirtualizeAttempt>();
 
 			foreach (var method in methods)
 			{
-				var reader = new EazVirtualizedMethodBodyReader(method, this.Logger);
+				var reader = new VirtualizedMethodBodyReader(method, this.Logger);
 				Exception exception = null;
 
 				try
@@ -88,7 +88,7 @@ namespace eazdevirt
 					exception = e;
 				}
 
-				EazDevirtualizeAttempt attempt;
+				DevirtualizeAttempt attempt;
 
 				if (exception == null)
 				{
@@ -102,10 +102,10 @@ namespace eazdevirt
 					method.Method.FreeMethodBody();
 					method.Method.Body = body;
 
-					attempt = new EazDevirtualizeAttempt(method, body);
+					attempt = new DevirtualizeAttempt(method, body);
 				}
 				else
-					attempt = new EazDevirtualizeAttempt(method, exception);
+					attempt = new DevirtualizeAttempt(method, exception);
 
 				// Add attempt to list and fire callback
 				attempts.Add(attempt);
@@ -113,14 +113,14 @@ namespace eazdevirt
 					attemptCallback(attempt);
 			}
 
-			return new EazDevirtualizeResults(attempts);
+			return new DevirtualizeResults(attempts);
 		}
 	}
 
 	/// <summary>
 	/// Describes a devirtualization attempt on a single virtualized method.
 	/// </summary>
-	public class EazDevirtualizeAttempt
+	public class DevirtualizeAttempt
 	{
 		/// <summary>
 		/// The virtualized method associated with this attempt.
@@ -152,7 +152,7 @@ namespace eazdevirt
 		/// </summary>
 		/// <param name="vmethod">Virtualized method</param>
 		/// <param name="exception">Exception that occurred while devirtualizing</param>
-		public EazDevirtualizeAttempt(MethodStub vmethod, Exception exception)
+		public DevirtualizeAttempt(MethodStub vmethod, Exception exception)
 		{
 			this.VirtualizedMethod = vmethod;
 			this.Exception = exception;
@@ -163,7 +163,7 @@ namespace eazdevirt
 		/// </summary>
 		/// <param name="vmethod">Virtualized method</param>
 		/// <param name="body">Devirtualized method body</param>
-		public EazDevirtualizeAttempt(MethodStub vmethod, CilBody body)
+		public DevirtualizeAttempt(MethodStub vmethod, CilBody body)
 		{
 			this.VirtualizedMethod = vmethod;
 			this.MethodBody = body;
@@ -173,12 +173,12 @@ namespace eazdevirt
 	/// <summary>
 	/// Describes the results of a devirtualization attempt.
 	/// </summary>
-	public class EazDevirtualizeResults
+	public class DevirtualizeResults
 	{
 		/// <summary>
 		/// All attempts.
 		/// </summary>
-		public IList<EazDevirtualizeAttempt> Attempts { get; private set; }
+		public IList<DevirtualizeAttempt> Attempts { get; private set; }
 
 		/// <summary>
 		/// All virtualized methods.
@@ -208,12 +208,12 @@ namespace eazdevirt
 		/// <summary>
 		/// Construct empty results.
 		/// </summary>
-		public EazDevirtualizeResults()
-			: this (new List<EazDevirtualizeAttempt>())
+		public DevirtualizeResults()
+			: this (new List<DevirtualizeAttempt>())
 		{
 		}
 
-		public EazDevirtualizeResults(IList<EazDevirtualizeAttempt> attempts)
+		public DevirtualizeResults(IList<DevirtualizeAttempt> attempts)
 		{
 			this.Attempts = attempts;
 			this.Initialize();
@@ -240,7 +240,7 @@ namespace eazdevirt
 	/// Devirtualize options.
 	/// </summary>
 	[Flags]
-	public enum EazDevirtualizeOptions
+	public enum DevirtualizeOptions
 	{
 		/// <summary>
 		/// Nothing.

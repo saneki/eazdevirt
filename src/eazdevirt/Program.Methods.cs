@@ -19,7 +19,7 @@ namespace eazdevirt
 			if (!TryLoadModule(options.AssemblyPath, logger, out module))
 				return;
 
-			MethodStub[] methods = module.FindVirtualizedMethods();
+			MethodStub[] methods = module.FindMethodStubs();
 
 			if (methods.Length > 0) Console.WriteLine("Virtualized methods found: {0}", methods.Length);
 			else Console.WriteLine("No virtualized methods found");
@@ -35,7 +35,7 @@ namespace eazdevirt
 
 				if (options.ExtraOutput)
 				{
-					var reader = new EazVirtualizedMethodBodyReader(method);
+					var reader = new VirtualizedMethodBodyReader(method);
 					Boolean threwUnknownOpcodeException = false, threwException = false;
 					Exception exception = null;
 

@@ -65,7 +65,7 @@ namespace eazdevirt
 		{
 			this.CheckDelegateMethod();
 
-			var called = DotNetUtils.GetCalledMethods(this.Module.Module, this.DelegateMethod);
+			var called = DotNetUtils.GetCalledMethods(this.Parent.Module, this.DelegateMethod);
 			var targetMethod = called.FirstOrDefault((m) => {
 				return (!m.IsStatic && m.Parameters.Count == 3
 					 && m.Parameters[1].Type.FullName.Equals(m.Parameters[2].Type.FullName))
@@ -92,7 +92,7 @@ namespace eazdevirt
 		{
 			this.CheckDelegateMethod();
 
-			var called = DotNetUtils.GetCalledMethods(this.Module.Module, this.DelegateMethod);
+			var called = DotNetUtils.GetCalledMethods(this.Parent.Module, this.DelegateMethod);
 			var targetMethod = called.FirstOrDefault((m) =>
 			{
 				return m.Parameters.Count == 4
@@ -137,7 +137,7 @@ namespace eazdevirt
 		{
 			this.CheckDelegateMethod();
 
-			var called = DotNetUtils.GetCalledMethods(this.Module.Module, this.DelegateMethod);
+			var called = DotNetUtils.GetCalledMethods(this.Parent.Module, this.DelegateMethod);
 			var targetMethod = called.FirstOrDefault((m) =>
 			{
 				return m.Parameters.Count == 5
@@ -188,7 +188,7 @@ namespace eazdevirt
 		/// <remarks>Partially copied from DotNetUtils.GetCalledMethods()</remarks>
 		public IList<IMethod> GetCalledMethods()
 		{
-			ModuleDef module = this.Module.Module;
+			ModuleDef module = this.Parent.Module;
 			MethodDef method = this.DelegateMethod;
 
 			List<IMethod> methods = new List<IMethod>();

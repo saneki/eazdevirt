@@ -15,7 +15,12 @@ namespace eazdevirt
 		/// <summary>
 		/// Parent module.
 		/// </summary>
-		public EazModule Module { get; private set; }
+		public EazModule Parent { get; private set; }
+
+		/// <summary>
+		/// Module.
+		/// </summary>
+		public ModuleDefMD Module { get { return this.Parent.Module; } }
 
 		/// <summary>
 		/// The container type that holds all instruction fields.
@@ -73,7 +78,7 @@ namespace eazdevirt
 
 		public Code OpCode { get; private set; }
 
-		public VirtualMachineType Virtualization { get { return this.Module.Virtualization; } }
+		public VirtualMachineType VType { get { return this.Parent.VType; } }
 
 		/// <summary>
 		/// OpCode pattern seen per dictionary add in the dictionary method.
@@ -164,7 +169,7 @@ namespace eazdevirt
 				FieldDef instructionField = ((FieldDef)instrs[3].Operand); // ldfld
 				MethodDef delegateMethod = ((MethodDef)instrs[9].Operand); // ldftn
 
-				vInstruction.Module = module;
+				vInstruction.Parent = module;
 				vInstruction.DictionaryMethod = dictMethod;
 				vInstruction.ContainerType = containerType;
 				vInstruction.InstructionField = instructionField;

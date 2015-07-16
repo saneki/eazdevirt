@@ -116,7 +116,7 @@ namespace eazdevirt.Detection.V1.Ext
 				Code.Ldarg_0, Code.Ldsfld, Code.Call, Code.Ret
 			});
 			return sub != null
-				&& ((IField)sub[1].Operand).MDToken == ins.Virtualization.GetTypeField("System.IntPtr").MDToken
+				&& ((IField)sub[1].Operand).MDToken == ins.VType.GetTypeField("System.IntPtr").MDToken
 				&& _Is_Ldelem(ins);
 		}
 
@@ -160,7 +160,7 @@ namespace eazdevirt.Detection.V1.Ext
 				Code.Ldarg_0, Code.Ldsfld, Code.Call, Code.Ret
 			) && ins.DelegateMethod.MatchesIndirect(Pattern_Stelem)
 			&& ((FieldDef)ins.DelegateMethod.Body.Instructions[1].Operand)
-			   .MDToken == ins.Virtualization.GetTypeField("System.IntPtr").MDToken;
+			   .MDToken == ins.VType.GetTypeField("System.IntPtr").MDToken;
 		}
 
 		[Detect(Code.Stelem_Ref)]

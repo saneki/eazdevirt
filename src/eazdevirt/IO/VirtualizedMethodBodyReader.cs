@@ -7,7 +7,7 @@ using dnlib.DotNet.Emit;
 
 namespace eazdevirt.IO
 {
-	public class EazVirtualizedMethodBodyReader : EazResourceReader
+	public class VirtualizedMethodBodyReader : ResourceReader
 	{
 		/// <summary>
 		/// Method stub of virtualized method.
@@ -73,7 +73,7 @@ namespace eazdevirt.IO
 		/// <summary>
 		/// Resolver.
 		/// </summary>
-		public EazResolver Resolver { get; private set; }
+		public Resolver Resolver { get; private set; }
 
 		/// <summary>
 		/// Map of IL offsets to virtual offsets.
@@ -95,7 +95,7 @@ namespace eazdevirt.IO
 		/// Construct a method body reader given a method stub.
 		/// </summary>
 		/// <param name="method">Method stub</param>
-		public EazVirtualizedMethodBodyReader(MethodStub method)
+		public VirtualizedMethodBodyReader(MethodStub method)
 			: this(method, null)
 		{
 		}
@@ -105,7 +105,7 @@ namespace eazdevirt.IO
 		/// </summary>
 		/// <param name="method">Method stub</param>
 		/// <param name="logger">Logger</param>
-		public EazVirtualizedMethodBodyReader(MethodStub method, ILogger logger)
+		public VirtualizedMethodBodyReader(MethodStub method, ILogger logger)
 			: base((method != null ? method.Parent : null))
 		{
 			if (method == null)
@@ -181,7 +181,7 @@ namespace eazdevirt.IO
 			*/
 
 			this.Stream.Position = this.InitialPosition;
-			this.Resolver = new EazResolver(this.Parent, this.Logger);
+			this.Resolver = new Resolver(this.Parent, this.Logger);
 			this.VirtualOffsets = new Dictionary<UInt32, UInt32>();
 			this.ExceptionHandlers = new ExceptionHandler[0];
 		}

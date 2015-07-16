@@ -10,7 +10,6 @@ namespace eazdevirt.IO
 	/// </summary>
 	public class DnBinaryReader : BinaryReader, IBinaryReader
 	{
-
 		public DnBinaryReader(Stream input)
 			: base(input)
 		{

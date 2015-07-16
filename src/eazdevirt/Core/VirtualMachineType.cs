@@ -26,7 +26,7 @@ namespace eazdevirt
 		/// <summary>
 		/// Main virtualization type.
 		/// </summary>
-		public TypeDef VirtualizationType { get; private set; }
+		public TypeDef Type { get; private set; }
 
 		/// <summary>
 		/// The field used to store the arguments.
@@ -74,7 +74,7 @@ namespace eazdevirt
 			if (vmethod == null)
 				throw new MethodStubNotFoundException();
 
-			this.VirtualizationType = vmethod.VirtualCallMethod.DeclaringType;
+			this.Type = vmethod.VirtualCallMethod.DeclaringType;
 
 			this.InitializeArgumentsField(); // Set ArgumentsField
 			this.InitializeLocalsField();    // Set LocalsField
@@ -88,7 +88,7 @@ namespace eazdevirt
 		{
 			// Get arguments field
 			MethodDef setArgumentsMethod = null;
-			var methods = this.VirtualizationType.Methods;
+			var methods = this.Type.Methods;
 			foreach (var method in methods)
 			{
 				if (!method.IsStatic && method.IsPrivate
@@ -130,7 +130,7 @@ namespace eazdevirt
 		private void InitializeLocalsField()
 		{
 			// Locals field is the same type as arguments field
-			var fields = this.VirtualizationType.Fields;
+			var fields = this.Type.Fields;
 			foreach(var field in fields)
 			{
 				if(field.FieldType.FullName.Equals(this.ArgumentsField.FieldType.FullName)
@@ -148,7 +148,7 @@ namespace eazdevirt
 		private void InitializeTypeFields()
 		{
 			this.TypeFields = new Dictionary<FieldDef, ITypeDefOrRef>();
-			MethodDef cctor = this.VirtualizationType.FindMethod(".cctor");
+			MethodDef cctor = this.Type.FindMethod(".cctor");
 			if (cctor == null)
 				throw new Exception("Unable to find virtualization type .cctor");
 

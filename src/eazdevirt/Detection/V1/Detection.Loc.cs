@@ -19,7 +19,7 @@ namespace eazdevirt.Detection.V1.Ext
 		private static Boolean Is_Ldloc_C(VirtualOpCode ins, Code code)
 		{
 			return ins.MatchesEntire(ins.ModifyPattern(Pattern_Ldloc_C, Code.Ldc_I4, code))
-				&& ((FieldDef)ins.DelegateMethod.Body.Instructions[2].Operand).MDToken == ins.Virtualization.LocalsField.MDToken;
+				&& ((FieldDef)ins.DelegateMethod.Body.Instructions[2].Operand).MDToken == ins.VType.LocalsField.MDToken;
 		}
 
 		[Detect(Code.Ldloc_0)]
@@ -62,7 +62,7 @@ namespace eazdevirt.Detection.V1.Ext
 				&& ((MethodDef)ins.DelegateMethod.Body.Instructions[7].Operand)
 				   .ReturnType.FullName.Equals("System.UInt16")
 				&& ((FieldDef)ins.DelegateMethod.Body.Instructions[5].Operand)
-				   .MDToken == ins.Virtualization.LocalsField.MDToken;
+				   .MDToken == ins.VType.LocalsField.MDToken;
 		}
 
 		[Detect(Code.Ldloc_S)]
@@ -72,7 +72,7 @@ namespace eazdevirt.Detection.V1.Ext
 				&& ((MethodDef)ins.DelegateMethod.Body.Instructions[7].Operand)
 				   .ReturnType.FullName.Equals("System.Byte")
 				&& ((FieldDef)ins.DelegateMethod.Body.Instructions[5].Operand)
-				   .MDToken == ins.Virtualization.LocalsField.MDToken;
+				   .MDToken == ins.VType.LocalsField.MDToken;
 		}
 
 		[Detect(Code.Ldloca_S)]
