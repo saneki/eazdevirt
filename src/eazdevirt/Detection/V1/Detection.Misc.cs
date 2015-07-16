@@ -10,7 +10,7 @@ namespace eazdevirt.Detection.V1.Ext
 	public static partial class Extensions
 	{
 		[Detect(Code.Box)]
-		public static Boolean Is_Box(this EazVirtualInstruction ins)
+		public static Boolean Is_Box(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
 				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_2, Code.Ldarg_0,
@@ -19,7 +19,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Call)]
-		public static Boolean Is_Call(this EazVirtualInstruction ins)
+		public static Boolean Is_Call(this VirtualOpCode ins)
 		{
 			return ins.MatchesEntire(new Code[] {
 				Code.Ldarg_1, Code.Castclass, Code.Stloc_0, Code.Ldarg_0, Code.Ldloc_0,
@@ -29,7 +29,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Callvirt)]
-		public static Boolean Is_Callvirt(this EazVirtualInstruction ins)
+		public static Boolean Is_Callvirt(this VirtualOpCode ins)
 		{
 			MethodDef method;
 			var sub = ins.Find(new Code[] {
@@ -42,7 +42,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Castclass)]
-		public static Boolean Is_Castclass(this EazVirtualInstruction ins)
+		public static Boolean Is_Castclass(this VirtualOpCode ins)
 		{
 			var sub = ins.DelegateMethod.Find(
 				Code.Call, Code.Brtrue_S, Code.Newobj, Code.Throw, Code.Ldarg_0, Code.Ldloc_2,
@@ -53,7 +53,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ceq)]
-		public static Boolean Is_Ceq(this EazVirtualInstruction ins)
+		public static Boolean Is_Ceq(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.Matches(
 				Code.Ldloc_2, Code.Ldloc_1, Code.Ldloc_0, Code.Call, Code.Brtrue_S,
@@ -75,7 +75,7 @@ namespace eazdevirt.Detection.V1.Ext
 		};
 
 		[Detect(Code.Clt)]
-		public static Boolean Is_Clt(this EazVirtualInstruction ins)
+		public static Boolean Is_Clt(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.Matches(
 				Code.Call, Code.Brtrue_S, Code.Ldc_I4_0, Code.Br_S, Code.Ldc_I4_1,
@@ -88,7 +88,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Clt_Un)]
-		public static Boolean Is_Clt_Un(this EazVirtualInstruction ins)
+		public static Boolean Is_Clt_Un(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.Matches(new Code[] {
 				Code.Call, Code.Brtrue_S, Code.Ldc_I4_0, Code.Br_S, Code.Ldc_I4_1,
@@ -108,7 +108,7 @@ namespace eazdevirt.Detection.V1.Ext
 
 		[Detect(Code.Cgt)]
 		/// <remarks>Unsure</remarks>
-		public static Boolean Is_Cgt(this EazVirtualInstruction ins)
+		public static Boolean Is_Cgt(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.Matches(
 				Code.Call, Code.Brtrue_S, Code.Ldc_I4_0, Code.Br_S, Code.Ldc_I4_1,
@@ -120,7 +120,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Cgt_Un)]
-		public static Boolean Is_Cgt_Un(this EazVirtualInstruction ins)
+		public static Boolean Is_Cgt_Un(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.Matches(new Code[] {
 				Code.Call, Code.Brtrue_S, Code.Ldc_I4_0, Code.Br_S, Code.Ldc_I4_1,
@@ -129,7 +129,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ckfinite)]
-		public static Boolean Is_Ckfinite(this EazVirtualInstruction ins)
+		public static Boolean Is_Ckfinite(this VirtualOpCode ins)
 		{
 			var sub = ins.Find(new Code[] {
 				Code.Ldloc_0, Code.Callvirt, Code.Call, Code.Brtrue_S,
@@ -143,7 +143,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Dup)]
-		public static Boolean Is_Dup(this EazVirtualInstruction ins)
+		public static Boolean Is_Dup(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.MatchesEntire(
 				Code.Ldarg_0, Code.Call, Code.Stloc_0, Code.Ldloc_0, Code.Callvirt,
@@ -153,7 +153,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Endfinally)]
-		public static Boolean Is_Endfinally(this EazVirtualInstruction ins)
+		public static Boolean Is_Endfinally(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.MatchesEntire(
 				Code.Ldarg_0, Code.Call, Code.Ret
@@ -164,7 +164,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Isinst)]
-		public static Boolean Is_Isinst(this EazVirtualInstruction ins)
+		public static Boolean Is_Isinst(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.Matches(
 				Code.Call, Code.Brfalse_S, Code.Ldarg_0, Code.Ldloc_2, Code.Call, Code.Ret,
@@ -173,7 +173,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Jmp)]
-		public static Boolean Is_Jmp(this EazVirtualInstruction ins)
+		public static Boolean Is_Jmp(this VirtualOpCode ins)
 		{
 			IMethod called;
 			var sub = ins.DelegateMethod.Find(
@@ -192,14 +192,14 @@ namespace eazdevirt.Detection.V1.Ext
 			Code.Call, Code.Ldarg_0, Code.Call, Code.Ret
 		};
 
-		public static Boolean _Is_Throw(EazVirtualInstruction ins, MethodDef helper)
+		public static Boolean _Is_Throw(VirtualOpCode ins, MethodDef helper)
 		{
 			var matches = Helpers.FindOpCodePatterns(helper.Body.Instructions, Pattern_Throw);
 			return matches.Count == 1 && matches[0].Length == Pattern_Throw.Length;
 		}
 
 		[Detect(Code.Throw)]
-		public static Boolean Is_Throw(this EazVirtualInstruction ins)
+		public static Boolean Is_Throw(this VirtualOpCode ins)
 		{
 			return ins.MatchesEntire(new Code[] {
 				Code.Ldarg_0, Code.Call, Code.Stloc_0, Code.Ldloc_0,
@@ -208,7 +208,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Rethrow)]
-		public static Boolean Is_Rethrow(this EazVirtualInstruction ins)
+		public static Boolean Is_Rethrow(this VirtualOpCode ins)
 		{
 			var sub = ins.Find(new Code[] {
 				Code.Newobj, Code.Throw, Code.Ldarg_0, Code.Ldarg_0, Code.Ldfld,
@@ -219,7 +219,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldfld)]
-		public static Boolean Is_Ldfld(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldfld(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
 				Code.Ldarg_0, Code.Ldloc_1, Code.Ldloc_3, Code.Callvirt, Code.Ldloc_1,
@@ -231,7 +231,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldflda)]
-		public static Boolean Is_Ldflda(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldflda(this VirtualOpCode ins)
 		{
 			MethodDef method;
 			var sub = ins.DelegateMethod.Find(new Code[] {
@@ -245,7 +245,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldftn)]
-		public static Boolean Is_Ldftn(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldftn(this VirtualOpCode ins)
 		{
 			MethodDef called = null;
 			var sub = ins.DelegateMethod.Find(new Code[] {
@@ -259,7 +259,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldlen)]
-		public static Boolean Is_Ldlen(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldlen(this VirtualOpCode ins)
 		{
 			return ins.MatchesEntire(new Code[] {
 				Code.Ldarg_0, Code.Call, Code.Callvirt, Code.Castclass, Code.Stloc_0, Code.Ldarg_0,
@@ -270,7 +270,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldsfld)]
-		public static Boolean Is_Ldsfld(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldsfld(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.Matches(new Code[] {
 				Code.Ldarg_0, Code.Ldloc_1, Code.Ldnull, Code.Callvirt, Code.Ldloc_1,
@@ -282,7 +282,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldsflda)]
-		public static Boolean Is_Ldsflda(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldsflda(this VirtualOpCode ins)
 		{
 			MethodDef method;
 			var sub = ins.DelegateMethod.Find(new Code[] {
@@ -296,7 +296,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldobj)]
-		public static Boolean Is_Ldobj(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldobj(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.MatchesEntire(new Code[] {
 				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_0, Code.Ldarg_0,
@@ -313,7 +313,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldstr)]
-		public static Boolean Is_Ldstr(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldstr(this VirtualOpCode ins)
 		{
 			return ins.MatchesEntire(new Code[] {
 				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_0, Code.Ldarg_0,
@@ -325,7 +325,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldnull)]
-		public static Boolean Is_Ldnull(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldnull(this VirtualOpCode ins)
 		{
 			return ins.MatchesEntire(new Code[] {
 				Code.Ldarg_0, Code.Newobj, Code.Call, Code.Ret
@@ -333,7 +333,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldtoken)]
-		public static Boolean Is_Ldtoken(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldtoken(this VirtualOpCode ins)
 		{
 			// Checks delegate method tail
 			// Could also check: System.Reflection.FieldInfo::get_Type/Field/MethodHandle(),
@@ -345,7 +345,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldvirtftn)]
-		public static Boolean Is_Ldvirtftn(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldvirtftn(this VirtualOpCode ins)
 		{
 			MethodDef called = null;
 			var sub = ins.DelegateMethod.Find(new Code[] {
@@ -359,7 +359,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Leave)]
-		public static Boolean Is_Leave(this EazVirtualInstruction ins)
+		public static Boolean Is_Leave(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.MatchesEntire(
 				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_0, Code.Ldarg_0,
@@ -368,7 +368,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Newarr)]
-		public static Boolean Is_Newarr(this EazVirtualInstruction ins)
+		public static Boolean Is_Newarr(this VirtualOpCode ins)
 		{
 			var sub = ins.DelegateMethod.Find(
 				Code.Ldloc_S, Code.Ldloc_1, Code.Call, Code.Stloc_S
@@ -378,7 +378,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Newobj)]
-		public static Boolean Is_Newobj(this EazVirtualInstruction ins)
+		public static Boolean Is_Newobj(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
 				Code.Ldarg_0, Code.Ldloc_2, Code.Ldnull, Code.Ldloc_3, Code.Ldc_I4_0,
@@ -387,7 +387,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Nop, ExpectsMultiple = true)]
-		public static Boolean Is_Nop(this EazVirtualInstruction ins)
+		public static Boolean Is_Nop(this VirtualOpCode ins)
 		{
 			// Three virtual opcodes match this. One of them makes sense to be Nop,
 			// unsure what the other two are (maybe Endfault, Endfilter).
@@ -398,7 +398,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Pop)]
-		public static Boolean Is_Pop(this EazVirtualInstruction ins)
+		public static Boolean Is_Pop(this VirtualOpCode ins)
 		{
 			MethodDef method = null;
 			return ins.MatchesEntire(new Code[] {
@@ -410,7 +410,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ret)]
-		public static Boolean Is_Ret(this EazVirtualInstruction ins)
+		public static Boolean Is_Ret(this VirtualOpCode ins)
 		{
 			return ins.MatchesEntire(new Code[] {
 				Code.Ldarg_0, Code.Call, Code.Ret
@@ -420,7 +420,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Stfld)]
-		public static Boolean Is_Stfld(this EazVirtualInstruction ins)
+		public static Boolean Is_Stfld(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
 				Code.Ldarg_0, Code.Ldloc_1, Code.Ldloc_0, Code.Ldnull, Code.Call,
@@ -432,7 +432,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Stsfld)]
-		public static Boolean Is_Stsfld(this EazVirtualInstruction ins)
+		public static Boolean Is_Stsfld(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
 				Code.Ldloc_1, Code.Ldnull, Code.Ldloc_3, Code.Callvirt, Code.Callvirt,
@@ -444,7 +444,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Switch)]
-		public static Boolean Is_Switch(this EazVirtualInstruction ins)
+		public static Boolean Is_Switch(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.Matches(
 				Code.Blt_S, Code.Ret, Code.Ldloc_3, Code.Ldloc_2, Code.Conv_U, Code.Ldelem,
@@ -453,7 +453,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Unbox)]
-		public static Boolean Is_Unbox(this EazVirtualInstruction ins)
+		public static Boolean Is_Unbox(this VirtualOpCode ins)
 		{
 			OperandType operandType;
 			return ins.DelegateMethod.MatchesEntire(Code.Ret)
@@ -462,7 +462,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Unbox_Any)]
-		public static Boolean Is_Unbox_Any(this EazVirtualInstruction ins)
+		public static Boolean Is_Unbox_Any(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.Matches(
 				Code.Ldloc_2, Code.Callvirt, Code.Stloc_3, Code.Ldloc_3, Code.Ldloc_1,

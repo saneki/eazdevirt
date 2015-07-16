@@ -14,7 +14,7 @@ namespace eazdevirt
 			if (!TryLoadModule(options.AssemblyPath, out module))
 				return;
 
-			EazVirtualizedMethod method = module.FindFirstVirtualizedMethod();
+			MethodStub method = module.FindFirstVirtualizedMethod();
 			Console.WriteLine("Key: {0}", method.ResourceCryptoKey);
 		}
 	}

@@ -14,15 +14,15 @@ namespace eazdevirt
 	{
 		public ModuleDefMD Module { get; private set; }
 
-		public EazVirtualization Virtualization { get; private set; }
+		public VirtualMachineType Virtualization { get; private set; }
 
-		public IList<EazVirtualInstruction> VirtualInstructions { get; private set; }
+		public IList<VirtualOpCode> VirtualInstructions { get; private set; }
 
 		/// <summary>
 		/// Dictionary containing all identified instruction types (opcodes).
 		/// Maps virtual opcode (int) to virtual instruction containing the actual opcode.
 		/// </summary>
-		public Dictionary<Int32, EazVirtualInstruction> IdentifiedOpCodes;
+		public Dictionary<Int32, VirtualOpCode> IdentifiedOpCodes;
 
 		/// <summary>
 		/// Embedded resource string identifier.
@@ -69,7 +69,7 @@ namespace eazdevirt
 
 		private void Initialize()
 		{
-			this.Virtualization = new EazVirtualization(this);
+			this.Virtualization = new VirtualMachineType(this);
 			this.InitializeIdentifiedOpCodes();
 		}
 
@@ -108,7 +108,7 @@ namespace eazdevirt
 				throw new Exception("Unable to find resource");
 
 			if (!rawStream)
-				return new EazCryptoStream(resource.GetResourceStream(), this.ResourceCryptoKey);
+				return new CryptoStream(resource.GetResourceStream(), this.ResourceCryptoKey);
 			else
 				return resource.GetResourceStream();
 		}
@@ -119,12 +119,12 @@ namespace eazdevirt
 		/// key.
 		/// </summary>
 		/// <returns>First virtualized method if found, null if none found</returns>
-		public EazVirtualizedMethod FindFirstVirtualizedMethod()
+		public MethodStub FindFirstVirtualizedMethod()
 		{
 			var types = this.Module.GetTypes();
 			foreach (var type in types)
 			{
-				EazVirtualizedMethod[] methods = this.FindVirtualizedMethods(type);
+				MethodStub[] methods = this.FindVirtualizedMethods(type);
 				if (methods.Length > 0)
 					return methods[0];
 			}
@@ -136,14 +136,14 @@ namespace eazdevirt
 		/// Look for virtualized methods throughout the module.
 		/// </summary>
 		/// <returns>Found virtualized methods</returns>
-		public EazVirtualizedMethod[] FindVirtualizedMethods()
+		public MethodStub[] FindVirtualizedMethods()
 		{
-			List<EazVirtualizedMethod> list = new List<EazVirtualizedMethod>();
+			List<MethodStub> list = new List<MethodStub>();
 
 			var types = this.Module.GetTypes();
 			foreach(var type in types)
 			{
-				EazVirtualizedMethod[] methods = this.FindVirtualizedMethods(type);
+				MethodStub[] methods = this.FindVirtualizedMethods(type);
 				list.AddRange(methods);
 			}
 
@@ -155,15 +155,15 @@ namespace eazdevirt
 		/// </summary>
 		/// <param name="type">Type to look in</param>
 		/// <returns>Found virtualized methods</returns>
-		public EazVirtualizedMethod[] FindVirtualizedMethods(TypeDef type)
+		public MethodStub[] FindVirtualizedMethods(TypeDef type)
 		{
-			List<EazVirtualizedMethod> list = new List<EazVirtualizedMethod>();
+			List<MethodStub> list = new List<MethodStub>();
 
 			var methods = type.Methods;
 			foreach (var method in methods)
 			{
 				if (this.IsVirtualizedMethod(method))
-					list.Add(new EazVirtualizedMethod(this, method));
+					list.Add(new MethodStub(this, method));
 			}
 
 			return list.ToArray();
@@ -234,36 +234,36 @@ namespace eazdevirt
 		/// </summary>
 		private void InitializeIdentifiedOpCodes()
 		{
-			this.IdentifiedOpCodes = new Dictionary<Int32, EazVirtualInstruction>();
+			this.IdentifiedOpCodes = new Dictionary<Int32, VirtualOpCode>();
 
-			this.VirtualInstructions = EazVirtualInstruction.FindAllInstructions(this, this.Virtualization.VirtualizationType);
+			this.VirtualInstructions = VirtualOpCode.FindAllInstructions(this, this.Virtualization.VirtualizationType);
 			var identified = this.VirtualInstructions.Where((instruction) => { return instruction.IsIdentified; });
 
 			Boolean warningOccurred = false;
 
 			foreach (var instruction in identified)
 			{
-				Boolean containsVirtual = this.IdentifiedOpCodes.ContainsKey(instruction.VirtualOpCode);
+				Boolean containsVirtual = this.IdentifiedOpCodes.ContainsKey(instruction.VirtualCode);
 
-				EazVirtualInstruction existing = this.IdentifiedOpCodes.Where((kvp, index) => {
+				VirtualOpCode existing = this.IdentifiedOpCodes.Where((kvp, index) => {
 					return kvp.Value.OpCode == instruction.OpCode;
 				}).FirstOrDefault().Value;
 				Boolean containsActual = (existing != null);
 
 				if (containsVirtual)
 					this.Logger.Warning(this, "WARNING: Multiple instruction types with the same virtual opcode detected ({0})",
-						instruction.VirtualOpCode);
+						instruction.VirtualCode);
 
 				if (containsActual && !instruction.ExpectsMultiple)
 				{
 					this.Logger.Warning(this, "WARNING: Multiple virtual opcodes map to the same actual opcode ({0}, {1} => {2})",
-						existing.VirtualOpCode, instruction.VirtualOpCode, instruction.OpCode.ToString());
+						existing.VirtualCode, instruction.VirtualCode, instruction.OpCode.ToString());
 				}
 
 				if (!warningOccurred)
 					warningOccurred = (containsVirtual || containsActual);
 
-				this.IdentifiedOpCodes.Add(instruction.VirtualOpCode, instruction);
+				this.IdentifiedOpCodes.Add(instruction.VirtualCode, instruction);
 			}
 
 			if (warningOccurred)

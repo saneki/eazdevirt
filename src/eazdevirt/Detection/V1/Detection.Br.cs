@@ -9,7 +9,7 @@ namespace eazdevirt.Detection.V1.Ext
 {
 	public static partial class Extensions
 	{
-		public static Boolean _Jumps(EazVirtualInstruction ins)
+		public static Boolean _Jumps(VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.Calls().Any((called) =>
 			{
@@ -24,7 +24,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Br)]
-		public static Boolean Is_Br(this EazVirtualInstruction ins)
+		public static Boolean Is_Br(this VirtualOpCode ins)
 		{
 			MethodDef called;
 			return ins.MatchesEntire(new Code[] {
@@ -37,7 +37,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Brfalse)]
-		public static Boolean Is_Brfalse(this EazVirtualInstruction ins)
+		public static Boolean Is_Brfalse(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
 				Code.Ldloc_0, Code.Callvirt, Code.Ldnull, Code.Ceq, Code.Stloc_1, Code.Br_S
@@ -45,7 +45,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Brtrue)]
-		public static Boolean Is_Brtrue(this EazVirtualInstruction ins)
+		public static Boolean Is_Brtrue(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
 				Code.Ldloc_0, Code.Callvirt, Code.Ldnull, Code.Ceq, Code.Ldc_I4_0,
@@ -99,19 +99,19 @@ namespace eazdevirt.Detection.V1.Ext
 			Code.Ldloc_1, Code.Ldloc_0, Code.Call, Code.Brtrue_S
 		};
 
-		private static Boolean _Is_Br_Equality(EazVirtualInstruction ins)
+		private static Boolean _Is_Br_Equality(VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.MatchesIndirect(Pattern_Br_Equality);
 		}
 
 		[Detect(Code.Beq)]
-		public static Boolean Is_Beq(this EazVirtualInstruction ins)
+		public static Boolean Is_Beq(this VirtualOpCode ins)
 		{
 			return ins.Matches(Pattern_Br_True) && _Is_Br_Equality(ins) && _Jumps(ins);
 		}
 
 		[Detect(Code.Bne_Un)]
-		public static Boolean Is_Bne_Un(this EazVirtualInstruction ins)
+		public static Boolean Is_Bne_Un(this VirtualOpCode ins)
 		{
 			return ins.Matches(Pattern_Br_False) && _Is_Br_Equality(ins) && _Jumps(ins);
 		}
@@ -150,7 +150,7 @@ namespace eazdevirt.Detection.V1.Ext
 		};
 
 		[Detect(Code.Blt)]
-		public static Boolean Is_Blt(this EazVirtualInstruction ins)
+		public static Boolean Is_Blt(this VirtualOpCode ins)
 		{
 			return ins.Matches(Pattern_Br_True) && ins.MatchesIndirect(Pattern_LessThan);
 		}
@@ -165,19 +165,19 @@ namespace eazdevirt.Detection.V1.Ext
 		};
 
 		[Detect(Code.Blt_Un)]
-		public static Boolean Is_Blt_Un(this EazVirtualInstruction ins)
+		public static Boolean Is_Blt_Un(this VirtualOpCode ins)
 		{
 			return ins.Matches(Pattern_Br_True) && ins.MatchesIndirect(Pattern_Blt_Un);
 		}
 
 		[Detect(Code.Bgt)]
-		public static Boolean Is_Bgt(this EazVirtualInstruction ins)
+		public static Boolean Is_Bgt(this VirtualOpCode ins)
 		{
 			return ins.Matches(Pattern_Br_True) && ins.MatchesIndirect(Pattern_GreaterThan);
 		}
 
 		[Detect(Code.Bgt_Un)]
-		public static Boolean Is_Bgt_Un(this EazVirtualInstruction ins)
+		public static Boolean Is_Bgt_Un(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
 				Code.Call, Code.Brfalse_S, Code.Ldarg_1, Code.Castclass
@@ -188,7 +188,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ble)]
-		public static Boolean Is_Ble(this EazVirtualInstruction ins)
+		public static Boolean Is_Ble(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
 				Code.Call, Code.Ldc_I4_0, Code.Ceq, Code.Stloc_2
@@ -196,14 +196,14 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ble_Un)]
-		public static Boolean Is_Ble_Un(this EazVirtualInstruction ins)
+		public static Boolean Is_Ble_Un(this VirtualOpCode ins)
 		{
 			var sub = ins.DelegateMethod.Find(Pattern_Ble);
 			return sub != null && ((MethodDef)sub[2].Operand).Matches(Pattern_Ble_Un);
 		}
 
 		[Detect(Code.Bge)]
-		public static Boolean Is_Bge(this EazVirtualInstruction ins)
+		public static Boolean Is_Bge(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
 				Code.Call, Code.Brtrue_S, Code.Ldarg_1, Code.Castclass
@@ -214,7 +214,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Bge_Un)]
-		public static Boolean Is_Bge_Un(this EazVirtualInstruction ins)
+		public static Boolean Is_Bge_Un(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
 				Code.Call, Code.Brtrue_S, Code.Ldarg_1, Code.Castclass

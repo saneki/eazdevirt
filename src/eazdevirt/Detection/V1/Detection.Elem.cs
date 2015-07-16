@@ -17,7 +17,7 @@ namespace eazdevirt.Detection.V1.Ext
 			Code.Castclass, Code.Stloc_1, Code.Ldarg_0, Code.Ldloc_1, Code.Ldloc_0, Code.Callvirt
 		};
 
-		private static Boolean _Is_Ldelem(EazVirtualInstruction ins)
+		private static Boolean _Is_Ldelem(VirtualOpCode ins)
 		{
 			MethodDef method;
 			IList<Instruction> pattern;
@@ -28,7 +28,7 @@ namespace eazdevirt.Detection.V1.Ext
 				&& ((ITypeDefOrRef)pattern[0].Operand).FullName.Contains("System.Array");
 		}
 
-		private static Boolean _Is_Ldelem_T(EazVirtualInstruction ins, String typeName)
+		private static Boolean _Is_Ldelem_T(VirtualOpCode ins, String typeName)
 		{
 			return ins.MatchesEntire(new Code[] {
 				Code.Ldarg_0, Code.Ldtoken, Code.Call, Code.Call, Code.Ret
@@ -38,7 +38,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldelem)]
-		public static Boolean Is_Ldelem(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldelem(this VirtualOpCode ins)
 		{
 			return ins.MatchesEntire(new Code[] {
 				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_0, Code.Ldarg_0, Code.Ldloc_0,
@@ -47,61 +47,61 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldelem_I1)]
-		public static Boolean Is_Ldelem_I1(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldelem_I1(this VirtualOpCode ins)
 		{
 			return _Is_Ldelem_T(ins, "System.SByte");
 		}
 
 		[Detect(Code.Ldelem_I2)]
-		public static Boolean Is_Ldelem_I2(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldelem_I2(this VirtualOpCode ins)
 		{
 			return _Is_Ldelem_T(ins, "System.Int16");
 		}
 
 		[Detect(Code.Ldelem_I4)]
-		public static Boolean Is_Ldelem_I4(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldelem_I4(this VirtualOpCode ins)
 		{
 			return _Is_Ldelem_T(ins, "System.Int32");
 		}
 
 		[Detect(Code.Ldelem_I8)]
-		public static Boolean Is_Ldelem_I8(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldelem_I8(this VirtualOpCode ins)
 		{
 			return _Is_Ldelem_T(ins, "System.Int64");
 		}
 
 		[Detect(Code.Ldelem_U1)]
-		public static Boolean Is_Ldelem_U1(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldelem_U1(this VirtualOpCode ins)
 		{
 			return _Is_Ldelem_T(ins, "System.Byte");
 		}
 
 		[Detect(Code.Ldelem_U2)]
-		public static Boolean Is_Ldelem_U2(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldelem_U2(this VirtualOpCode ins)
 		{
 			return _Is_Ldelem_T(ins, "System.UInt16");
 		}
 
 		[Detect(Code.Ldelem_U4)]
-		public static Boolean Is_Ldelem_U4(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldelem_U4(this VirtualOpCode ins)
 		{
 			return _Is_Ldelem_T(ins, "System.UInt32");
 		}
 
 		[Detect(Code.Ldelem_R4)]
-		public static Boolean Is_Ldelem_R4(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldelem_R4(this VirtualOpCode ins)
 		{
 			return _Is_Ldelem_T(ins, "System.Single");
 		}
 
 		[Detect(Code.Ldelem_R8)]
-		public static Boolean Is_Ldelem_R8(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldelem_R8(this VirtualOpCode ins)
 		{
 			return _Is_Ldelem_T(ins, "System.Double");
 		}
 
 		[Detect(Code.Ldelem_Ref)]
-		public static Boolean Is_Ldelem_Ref(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldelem_Ref(this VirtualOpCode ins)
 		{
 			// Is exact same as Ldelem_I except for the field reference
 			return ins.MatchesEntire(new Code[] {
@@ -110,7 +110,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldelem_I)]
-		public static Boolean Is_Ldelem_I(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldelem_I(this VirtualOpCode ins)
 		{
 			var sub = ins.Find(new Code[] {
 				Code.Ldarg_0, Code.Ldsfld, Code.Call, Code.Ret
@@ -121,7 +121,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldelema)]
-		public static Boolean Is_Ldelema(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldelema(this VirtualOpCode ins)
 		{
 			// Note: Another way to detect may be by looking at Newobj TypeDef, as
 			// it seems specific to the Ldelema instruction type
@@ -144,7 +144,7 @@ namespace eazdevirt.Detection.V1.Ext
 		};
 
 		[Detect(Code.Stelem)]
-		public static Boolean Is_Stelem(this EazVirtualInstruction ins)
+		public static Boolean Is_Stelem(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.MatchesEntire(
 				Code.Ldarg_1, Code.Castclass, Code.Callvirt, Code.Stloc_0, Code.Ldarg_0,
@@ -154,7 +154,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Stelem_I)]
-		public static Boolean Is_Stelem_I(this EazVirtualInstruction ins)
+		public static Boolean Is_Stelem_I(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.MatchesEntire(
 				Code.Ldarg_0, Code.Ldsfld, Code.Call, Code.Ret
@@ -164,7 +164,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Stelem_Ref)]
-		public static Boolean Is_Stelem_Ref(this EazVirtualInstruction ins)
+		public static Boolean Is_Stelem_Ref(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.MatchesEntire(
 				Code.Ldarg_0, Code.Ldsfld, Code.Call, Code.Ret
@@ -172,7 +172,7 @@ namespace eazdevirt.Detection.V1.Ext
 			&& !Is_Stelem_I(ins);
 		}
 
-		private static Boolean _Is_Stelem_IC(EazVirtualInstruction ins, String typeName)
+		private static Boolean _Is_Stelem_IC(VirtualOpCode ins, String typeName)
 		{
 			ITypeDefOrRef type = null;
 			var sub = ins.DelegateMethod.Find(
@@ -185,30 +185,30 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Stelem_I1)]
-		public static Boolean Is_Stelem_I1(this EazVirtualInstruction ins)
+		public static Boolean Is_Stelem_I1(this VirtualOpCode ins)
 		{
 			return _Is_Stelem_IC(ins, "System.SByte");
 		}
 
 		[Detect(Code.Stelem_I2)]
-		public static Boolean Is_Stelem_I2(this EazVirtualInstruction ins)
+		public static Boolean Is_Stelem_I2(this VirtualOpCode ins)
 		{
 			return _Is_Stelem_IC(ins, "System.Int16");
 		}
 
 		[Detect(Code.Stelem_I4)]
-		public static Boolean Is_Stelem_I4(this EazVirtualInstruction ins)
+		public static Boolean Is_Stelem_I4(this VirtualOpCode ins)
 		{
 			return _Is_Stelem_IC(ins, "System.Int32");
 		}
 
 		[Detect(Code.Stelem_I8)]
-		public static Boolean Is_Stelem_I8(this EazVirtualInstruction ins)
+		public static Boolean Is_Stelem_I8(this VirtualOpCode ins)
 		{
 			return _Is_Stelem_IC(ins, "System.Int64");
 		}
 
-		private static Boolean _Is_Stelem_RC(EazVirtualInstruction ins, String typeName)
+		private static Boolean _Is_Stelem_RC(VirtualOpCode ins, String typeName)
 		{
 			ITypeDefOrRef type = null;
 			var body = ins.DelegateMethod.Body.Instructions;
@@ -220,13 +220,13 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Stelem_R4)]
-		public static Boolean Is_Stelem_R4(this EazVirtualInstruction ins)
+		public static Boolean Is_Stelem_R4(this VirtualOpCode ins)
 		{
 			return _Is_Stelem_RC(ins, "System.Single");
 		}
 
 		[Detect(Code.Stelem_R8)]
-		public static Boolean Is_Stelem_R8(this EazVirtualInstruction ins)
+		public static Boolean Is_Stelem_R8(this VirtualOpCode ins)
 		{
 			return _Is_Stelem_RC(ins, "System.Double");
 		}

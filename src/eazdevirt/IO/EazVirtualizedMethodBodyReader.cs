@@ -10,9 +10,9 @@ namespace eazdevirt.IO
 	public class EazVirtualizedMethodBodyReader : EazResourceReader
 	{
 		/// <summary>
-		/// Virtualized method.
+		/// Method stub of virtualized method.
 		/// </summary>
-		public EazVirtualizedMethod Method { get; private set; }
+		public MethodStub Method { get; private set; }
 
 		/// <summary>
 		/// Size of the method body in bytes.
@@ -24,7 +24,7 @@ namespace eazdevirt.IO
 		/// </summary>
 		public Int64 InitialPosition
 		{
-			get { return EazPosition.FromString(this.Method.PositionString, this.Method.ResourceCryptoKey); }
+			get { return Position.FromString(this.Method.PositionString, this.Method.ResourceCryptoKey); }
 		}
 
 		/// <summary>
@@ -92,21 +92,21 @@ namespace eazdevirt.IO
 		private IList<SerializedExceptionHandler> _exceptionHandlers;
 
 		/// <summary>
-		/// Construct a method body reader given a virtualized method.
+		/// Construct a method body reader given a method stub.
 		/// </summary>
-		/// <param name="method">Virtualized method</param>
-		public EazVirtualizedMethodBodyReader(EazVirtualizedMethod method)
+		/// <param name="method">Method stub</param>
+		public EazVirtualizedMethodBodyReader(MethodStub method)
 			: this(method, null)
 		{
 		}
 
 		/// <summary>
-		/// Construct a method body reader given a virtualized method.
+		/// Construct a method body reader given a method stub.
 		/// </summary>
-		/// <param name="method">Virtualized method</param>
+		/// <param name="method">Method stub</param>
 		/// <param name="logger">Logger</param>
-		public EazVirtualizedMethodBodyReader(EazVirtualizedMethod method, ILogger logger)
-			: base((method != null ? method.Module : null))
+		public EazVirtualizedMethodBodyReader(MethodStub method, ILogger logger)
+			: base((method != null ? method.Parent : null))
 		{
 			if (method == null)
 				throw new ArgumentNullException();
@@ -299,7 +299,7 @@ namespace eazdevirt.IO
 			Int32 virtualOpcode = this.Reader.ReadInt32();
 			this.LastVirtualOpCode = virtualOpcode;
 
-			EazVirtualInstruction virtualInstruction;
+			VirtualOpCode virtualInstruction;
 			if (!this.Parent.IdentifiedOpCodes.TryGetValue(virtualOpcode, out virtualInstruction))
 				//throw new Exception(String.Format("Unknown virtual opcode: {0}", virtualOpcode));
 				throw new OriginalOpcodeUnknownException(virtualInstruction);

@@ -9,7 +9,7 @@ namespace eazdevirt.Detection.V1.Ext
 	public static partial class Extensions
 	{
 		[Detect(Code.Ldind_I)]
-		public static Boolean Is_Ldind_I(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldind_I(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.MatchesEntire(
 				Code.Ldarg_0, Code.Ldsfld, Code.Call, Code.Ret
@@ -21,7 +21,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldind_Ref)]
-		public static Boolean Is_Ldind_Ref(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldind_Ref(this VirtualOpCode ins)
 		{
 			// Same as Ldind_I, but different static field. Just check if NOT Ldind_I.
 			return ins.DelegateMethod.MatchesEntire(
@@ -31,7 +31,7 @@ namespace eazdevirt.Detection.V1.Ext
 			) && !Is_Ldind_I(ins);
 		}
 
-		public static Boolean _Is_Ldind_IC(EazVirtualInstruction ins, String tokenTypeName)
+		public static Boolean _Is_Ldind_IC(VirtualOpCode ins, String tokenTypeName)
 		{
 			TypeRef tokenType = null;
 			return ins.DelegateMethod.MatchesEntire(
@@ -44,57 +44,57 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldind_I1)]
-		public static Boolean Is_Ldind_I1(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldind_I1(this VirtualOpCode ins)
 		{
 			return _Is_Ldind_IC(ins, "System.SByte");
 		}
 
 		[Detect(Code.Ldind_I2)]
-		public static Boolean Is_Ldind_I2(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldind_I2(this VirtualOpCode ins)
 		{
 			return _Is_Ldind_IC(ins, "System.Int16");
 		}
 
 		[Detect(Code.Ldind_I4)]
-		public static Boolean Is_Ldind_I4(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldind_I4(this VirtualOpCode ins)
 		{
 			return _Is_Ldind_IC(ins, "System.Int32");
 		}
 
 		[Detect(Code.Ldind_I8)]
-		public static Boolean Is_Ldind_I8(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldind_I8(this VirtualOpCode ins)
 		{
 			return _Is_Ldind_IC(ins, "System.Int64");
 		}
 
 		// Conflict
 		[Detect(Code.Ldind_R4)]
-		public static Boolean Is_Ldind_R4(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldind_R4(this VirtualOpCode ins)
 		{
 			return _Is_Ldind_IC(ins, "System.Single");
 		}
 
 		// Conflict
 		[Detect(Code.Ldind_R8)]
-		public static Boolean Is_Ldind_R8(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldind_R8(this VirtualOpCode ins)
 		{
 			return _Is_Ldind_IC(ins, "System.Double");
 		}
 
 		[Detect(Code.Ldind_U1)]
-		public static Boolean Is_Ldind_U1(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldind_U1(this VirtualOpCode ins)
 		{
 			return _Is_Ldind_IC(ins, "System.Byte");
 		}
 
 		[Detect(Code.Ldind_U2)]
-		public static Boolean Is_Ldind_U2(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldind_U2(this VirtualOpCode ins)
 		{
 			return _Is_Ldind_IC(ins, "System.UInt16");
 		}
 
 		[Detect(Code.Ldind_U4)]
-		public static Boolean Is_Ldind_U4(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldind_U4(this VirtualOpCode ins)
 		{
 			return _Is_Ldind_IC(ins, "System.UInt32");
 		}
@@ -107,7 +107,7 @@ namespace eazdevirt.Detection.V1.Ext
 		/// method afterwards, following the types on the stack. When a Stind_* instruction
 		/// is reached, the value (on top of the stack) is the type being set.
 		/// </remarks>
-		private static Boolean _Is_Stind(EazVirtualInstruction ins)
+		private static Boolean _Is_Stind(VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.MatchesEntire(Code.Ldarg_0, Code.Call, Code.Ret)
 				&& ins.DelegateMethod.MatchesIndirect(
@@ -118,7 +118,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Stind_I, ExpectsMultiple = true)]
-		public static Boolean Is_Stind(EazVirtualInstruction ins)
+		public static Boolean Is_Stind(VirtualOpCode ins)
 		{
 			// Consider all Stind_* instructions as Stind_I (for now?)
 			return _Is_Stind(ins);

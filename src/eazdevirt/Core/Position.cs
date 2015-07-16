@@ -6,7 +6,7 @@ namespace eazdevirt
 	/// <summary>
 	/// Static helper for dealing with position strings.
 	/// </summary>
-	public static class EazPosition
+	public static class Position
 	{
 		/// <summary>
 		/// Although these values appear "random," they are consistent across
@@ -31,7 +31,7 @@ namespace eazdevirt
 		{
 			byte[] array = Convert(s);
 			MemoryStream memoryStream = new MemoryStream(array);
-			EazCryptoStream stream = new EazCryptoStream(memoryStream, cryptoKey);
+			CryptoStream stream = new CryptoStream(memoryStream, cryptoKey);
 			BinaryReader binaryReader = new BinaryReader(stream);
 			long result = binaryReader.ReadInt64();
 			memoryStream.Dispose();

@@ -17,7 +17,7 @@ namespace eazdevirt
 			if (!TryLoadModule(options.AssemblyPath, out module))
 				return;
 
-			EazVirtualizedMethod method = module.FindFirstVirtualizedMethod();
+			MethodStub method = module.FindFirstVirtualizedMethod();
 			if (method == null)
 			{
 				Console.WriteLine("No methods in assembly seem to be virtualized");
@@ -56,7 +56,7 @@ namespace eazdevirt
 				// If only showing identified instructions, remove all non-identified and sort by name
 				if (options.OnlyIdentified)
 				{
-					vInstructions = new List<EazVirtualInstruction>(vInstructions
+					vInstructions = new List<VirtualOpCode>(vInstructions
 						.Where((instruction) => { return instruction.IsIdentified; })
 						.OrderBy((instruction) => { return instruction.OpCode.ToString(); }));
 				}
@@ -64,7 +64,7 @@ namespace eazdevirt
 				// If only showing instructions with specific virtual operand types, filter
 				if (options.OperandTypeWhitelist != Int32.MinValue)
 				{
-					vInstructions = new List<EazVirtualInstruction>(vInstructions
+					vInstructions = new List<VirtualOpCode>(vInstructions
 						.Where((instruction) =>
 						{
 							return options.OperandTypeWhitelist == instruction.VirtualOperandType;
@@ -91,9 +91,9 @@ namespace eazdevirt
 
 						if (v.IsIdentified || !options.OnlyIdentified)
 						{
-							if (v.HasVirtualOpCode)
+							if (v.HasVirtualCode)
 							{
-								Console.WriteLine("--> Virtual OpCode:  {0} ({0:X8})", v.VirtualOpCode);
+								Console.WriteLine("--> Virtual OpCode:  {0} ({0:X8})", v.VirtualCode);
 								Console.WriteLine("--> Operand type:    {0}", v.VirtualOperandType);
 							}
 

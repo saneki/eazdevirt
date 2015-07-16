@@ -10,7 +10,7 @@ namespace eazdevirt
 	/// <summary>
 	/// Contains information about a specific virtual instruction.
 	/// </summary>
-	public partial class EazVirtualInstruction
+	public partial class VirtualOpCode
 	{
 		/// <summary>
 		/// Parent module.
@@ -30,7 +30,7 @@ namespace eazdevirt
 		/// <summary>
 		/// The virtual opcode, set when the instruction field is constructed.
 		/// </summary>
-		public Int32 VirtualOpCode { get; private set; }
+		public Int32 VirtualCode { get; private set; }
 
 		/// <summary>
 		/// The operand type, set when the instruction field is constructed.
@@ -51,7 +51,7 @@ namespace eazdevirt
 		/// <summary>
 		/// Whether or not the virtual opcode was successfully extracted from the container .ctor method.
 		/// </summary>
-		public Boolean HasVirtualOpCode { get; private set; }
+		public Boolean HasVirtualCode { get; private set; }
 
 		/// <summary>
 		/// Whether or not the virtual instruction was identified with a legitimate CIL opcode.
@@ -73,7 +73,7 @@ namespace eazdevirt
 
 		public Code OpCode { get; private set; }
 
-		public EazVirtualization Virtualization { get { return this.Module.Virtualization; } }
+		public VirtualMachineType Virtualization { get { return this.Module.Virtualization; } }
 
 		/// <summary>
 		/// OpCode pattern seen per dictionary add in the dictionary method.
@@ -94,7 +94,7 @@ namespace eazdevirt
 			Code.Callvirt
 		};
 
-		protected EazVirtualInstruction()
+		protected VirtualOpCode()
 		{
 		}
 
@@ -104,7 +104,7 @@ namespace eazdevirt
 		/// <param name="module">Module</param>
 		/// <param name="virtualizationType">Main virtualization type (class)</param>
 		/// <returns>All found virtualization instructions</returns>
-		public static IList<EazVirtualInstruction> FindAllInstructions(EazModule module, TypeDef virtualizationType)
+		public static IList<VirtualOpCode> FindAllInstructions(EazModule module, TypeDef virtualizationType)
 		{
 			if (module == null || virtualizationType == null)
 				throw new ArgumentNullException();
@@ -151,14 +151,14 @@ namespace eazdevirt
 			if (subsequences.Count != 203)
 				throw new Exception("Number of found subsequences (DictionaryAddPattern) != 203 (expected value)");
 
-			List<EazVirtualInstruction> vInstructions = new List<EazVirtualInstruction>();
+			List<VirtualOpCode> vInstructions = new List<VirtualOpCode>();
 
 			TypeDef containerType = null;
 
 			// Each series of instructions represents a virtualized instruction
 			foreach(var instrs in subsequences)
 			{
-				EazVirtualInstruction vInstruction = new EazVirtualInstruction();
+				VirtualOpCode vInstruction = new VirtualOpCode();
 
 				containerType = ((FieldDef)instrs[2].Operand).FieldType.TryGetTypeDef(); // ldfld
 				FieldDef instructionField = ((FieldDef)instrs[3].Operand); // ldfld
@@ -223,8 +223,8 @@ namespace eazdevirt
 				{
 					if(vInstr.InstructionField.MDToken == instructionField.MDToken)
 					{
-						vInstr.HasVirtualOpCode = true;
-						vInstr.VirtualOpCode = virtualOpCode;
+						vInstr.HasVirtualCode = true;
+						vInstr.VirtualCode = virtualOpCode;
 						vInstr.VirtualOperandType = operandType;
 						vInstr.TrySetIdentify(); // Try to identify and set original opcode
 						break;

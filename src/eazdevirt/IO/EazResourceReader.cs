@@ -19,7 +19,7 @@ namespace eazdevirt.IO
 		/// <summary>
 		/// Embedded resource stream.
 		/// </summary>
-		public EazCryptoStream Stream { get; private set; }
+		public CryptoStream Stream { get; private set; }
 
 		/// <summary>
 		/// Embedded Resource reader.
@@ -37,7 +37,7 @@ namespace eazdevirt.IO
 
 		private void Initialize()
 		{
-			this.Stream = (EazCryptoStream)this.Parent.GetResourceStream();
+			this.Stream = (CryptoStream)this.Parent.GetResourceStream();
 			this.Reader = new BinaryReader(this.Stream);
 		}
 	}

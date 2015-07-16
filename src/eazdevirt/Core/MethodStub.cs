@@ -4,11 +4,23 @@ using dnlib.DotNet;
 namespace eazdevirt
 {
 	/// <summary>
-	/// Represents a method virtualized by Eazfuscator.NET.
+	/// Represents a method stub of a method virtualized by Eazfuscator.NET.
 	/// </summary>
-	public class EazVirtualizedMethod
+	public class MethodStub
 	{
-		public EazModule Module { get; private set; }
+		/// <summary>
+		/// Parent.
+		/// </summary>
+		public EazModule Parent { get; private set; }
+
+		/// <summary>
+		/// Module.
+		/// </summary>
+		public ModuleDefMD Module { get { return this.Parent.Module; } }
+
+		/// <summary>
+		/// Underlying method.
+		/// </summary>
 		public MethodDef Method { get; private set; }
 
 		/// <summary>
@@ -35,30 +47,31 @@ namespace eazdevirt
 		public Int64 Position { get; private set; }
 
 		/// <summary>
-		/// String identifier of the ManifestResource which contains encrypted
+		/// String identifier of the embedded resource which contains encrypted
 		/// virtualized method info.
 		/// </summary>
 		public String ResourceStringId { get; private set; }
 
 		/// <summary>
-		/// Crypto key integer used to decrypt the ManifestResource.
+		/// Crypto key integer used to decrypt the embedded resource.
 		/// </summary>
 		public Int32 ResourceCryptoKey { get; private set; }
 
 		/// <summary>
-		/// Construct an EazVirtualizedMethod from an existing method.
+		/// Construct a MethodStub from an existing method.
 		/// </summary>
 		/// <param name="module">Parent module</param>
-		/// <param name="method">Virtualized method</param>
-		public EazVirtualizedMethod(EazModule module, MethodDef method)
+		/// <param name="method">Stub method</param>
+		public MethodStub(EazModule module, MethodDef method)
 		{
-			this.Module = module;
+			this.Parent = module;
 			this.Method = method;
 			this.Initialize();
 		}
 
 		/// <summary>
-		/// Try to find all helpful information about the virtualized method.
+		/// Try to find all helpful information about the method stub and
+		/// virtualized method.
 		/// </summary>
 		private void Initialize()
 		{
@@ -123,7 +136,7 @@ namespace eazdevirt
 			this.ResourceCryptoKey = FindResourceCryptoKey(this.VirtualCallMethod);
 
 			// Set position from position string + crypto key
-			this.Position = EazPosition.FromString(this.PositionString, this.ResourceCryptoKey);
+			this.Position = eazdevirt.Position.FromString(this.PositionString, this.ResourceCryptoKey);
 		}
 
 		/// <summary>

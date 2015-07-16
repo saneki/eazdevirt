@@ -4,9 +4,9 @@ namespace eazdevirt
 {
 	public class OriginalOpcodeUnknownException : Exception
 	{
-		public EazVirtualInstruction VirtualInstruction { get; private set; }
+		public VirtualOpCode VirtualInstruction { get; private set; }
 
-		public OriginalOpcodeUnknownException(EazVirtualInstruction instruction)
+		public OriginalOpcodeUnknownException(VirtualOpCode instruction)
 		{
 			this.VirtualInstruction = instruction;
 		}

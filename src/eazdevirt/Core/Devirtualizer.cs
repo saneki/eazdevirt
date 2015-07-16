@@ -6,7 +6,7 @@ using eazdevirt.IO;
 
 namespace eazdevirt
 {
-	public class EazDevirtualizer
+	public class Devirtualizer
 	{
 		/// <summary>
 		/// EazModule.
@@ -28,22 +28,22 @@ namespace eazdevirt
 		/// </summary>
 		public EazDevirtualizeOptions Options { get; set; }
 
-		public EazDevirtualizer(EazModule module)
+		public Devirtualizer(EazModule module)
 			: this(module, EazDevirtualizeOptions.Nothing)
 		{
 		}
 
-		public EazDevirtualizer(EazModule module, EazDevirtualizeOptions options)
+		public Devirtualizer(EazModule module, EazDevirtualizeOptions options)
 			: this(module, options, null)
 		{
 		}
 
-		public EazDevirtualizer(EazModule module, ILogger logger)
+		public Devirtualizer(EazModule module, ILogger logger)
 			: this(module, EazDevirtualizeOptions.Nothing, logger)
 		{
 		}
 
-		public EazDevirtualizer(EazModule module, EazDevirtualizeOptions options, ILogger logger)
+		public Devirtualizer(EazModule module, EazDevirtualizeOptions options, ILogger logger)
 		{
 			this.EazModule = module;
 			this.Options = options;
@@ -125,7 +125,7 @@ namespace eazdevirt
 		/// <summary>
 		/// The virtualized method associated with this attempt.
 		/// </summary>
-		public EazVirtualizedMethod VirtualizedMethod { get; private set; }
+		public MethodStub VirtualizedMethod { get; private set; }
 
 		public MethodDef Method { get { return this.VirtualizedMethod.Method; } }
 
@@ -152,7 +152,7 @@ namespace eazdevirt
 		/// </summary>
 		/// <param name="vmethod">Virtualized method</param>
 		/// <param name="exception">Exception that occurred while devirtualizing</param>
-		public EazDevirtualizeAttempt(EazVirtualizedMethod vmethod, Exception exception)
+		public EazDevirtualizeAttempt(MethodStub vmethod, Exception exception)
 		{
 			this.VirtualizedMethod = vmethod;
 			this.Exception = exception;
@@ -163,7 +163,7 @@ namespace eazdevirt
 		/// </summary>
 		/// <param name="vmethod">Virtualized method</param>
 		/// <param name="body">Devirtualized method body</param>
-		public EazDevirtualizeAttempt(EazVirtualizedMethod vmethod, CilBody body)
+		public EazDevirtualizeAttempt(MethodStub vmethod, CilBody body)
 		{
 			this.VirtualizedMethod = vmethod;
 			this.MethodBody = body;
@@ -183,12 +183,12 @@ namespace eazdevirt
 		/// <summary>
 		/// All virtualized methods.
 		/// </summary>
-		public IList<EazVirtualizedMethod> AllMethods { get; private set; }
+		public IList<MethodStub> AllMethods { get; private set; }
 
 		/// <summary>
 		/// All virtualized methods which were successfully devirtualized.
 		/// </summary>
-		public IList<EazVirtualizedMethod> DevirtualizedMethods { get; private set; }
+		public IList<MethodStub> DevirtualizedMethods { get; private set; }
 
 		/// <summary>
 		/// Count of all methods.
@@ -221,8 +221,8 @@ namespace eazdevirt
 
 		private void Initialize()
 		{
-			this.AllMethods = new List<EazVirtualizedMethod>();
-			this.DevirtualizedMethods = new List<EazVirtualizedMethod>();
+			this.AllMethods = new List<MethodStub>();
+			this.DevirtualizedMethods = new List<MethodStub>();
 
 			foreach (var attempt in this.Attempts)
 			{

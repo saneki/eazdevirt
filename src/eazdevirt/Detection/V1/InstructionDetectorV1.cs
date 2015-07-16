@@ -23,7 +23,7 @@ namespace eazdevirt.Detection.V1
 		/// </summary>
 		/// <param name="instruction">Virtual instruction</param>
 		/// <returns>true if detected, false if not</returns>
-		private delegate Boolean Detector(EazVirtualInstruction instruction);
+		private delegate Boolean Detector(VirtualOpCode instruction);
 
 		/// <summary>
 		/// Dictionary mapping CIL opcodes to their respective detector methods.
@@ -77,7 +77,7 @@ namespace eazdevirt.Detection.V1
 		}
 
 		/// <inheritdoc/>
-		public override Code Identify(EazVirtualInstruction instruction)
+		public override Code Identify(VirtualOpCode instruction)
 		{
 			foreach (var kvp in _detectors)
 			{
@@ -89,7 +89,7 @@ namespace eazdevirt.Detection.V1
 		}
 
 		/// <inheritdoc/>
-		public override DetectAttribute IdentifyFull(EazVirtualInstruction instruction)
+		public override DetectAttribute IdentifyFull(VirtualOpCode instruction)
 		{
 			foreach (var kvp in _detectors)
 			{

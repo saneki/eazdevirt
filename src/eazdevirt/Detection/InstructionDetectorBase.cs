@@ -14,7 +14,7 @@ namespace eazdevirt.Detection
 		/// <exception cref="eazdevirt.OriginalOpcodeUnknownException">
 		/// Thrown if original CIL opcode is unknown.
 		/// </exception>
-		public abstract Code Identify(EazVirtualInstruction instruction);
+		public abstract Code Identify(VirtualOpCode instruction);
 
 		/// <summary>
 		/// Try to identify a virtual instruction.
@@ -22,7 +22,7 @@ namespace eazdevirt.Detection
 		/// <param name="instruction">Virtual instruction</param>
 		/// <param name="code">Detected CIL opcode if successful</param>
 		/// <returns>true if successful, false if not</returns>
-		public virtual Boolean TryIdentify(EazVirtualInstruction instruction, out Code code)
+		public virtual Boolean TryIdentify(VirtualOpCode instruction, out Code code)
 		{
 			try
 			{
@@ -44,7 +44,7 @@ namespace eazdevirt.Detection
 		/// <exception cref="eazdevirt.OriginalOpcodeUnknownException">
 		/// Thrown if original CIL opcode is unknown.
 		/// </exception>
-		public abstract DetectAttribute IdentifyFull(EazVirtualInstruction instruction);
+		public abstract DetectAttribute IdentifyFull(VirtualOpCode instruction);
 
 		/// <summary>
 		/// Try to identify a virtual instruction, getting the entire attribute of the detection method.
@@ -52,7 +52,7 @@ namespace eazdevirt.Detection
 		/// <param name="instruction">Virtual instruction</param>
 		/// <param name="attribute">DetectAttribute of detection method if successful</param>
 		/// <returns>true if successful, false if not</returns>
-		public virtual Boolean TryIdentifyFull(EazVirtualInstruction instruction, out DetectAttribute attribute)
+		public virtual Boolean TryIdentifyFull(VirtualOpCode instruction, out DetectAttribute attribute)
 		{
 			try
 			{

@@ -7,17 +7,26 @@ using eazdevirt.Util;
 
 namespace eazdevirt
 {
-	public class EazVirtualization
+	/// <summary>
+	/// Class that contains data extracted from the "VType" (virtual machine type)
+	/// found in Eazfuscator.NET-protected assemblies with virtualized methods.
+	/// </summary>
+	public class VirtualMachineType
 	{
 		/// <summary>
-		/// The parent module.
+		/// Parent.
 		/// </summary>
-		public EazModule Module { get; set; }
+		public EazModule Parent { get; private set; }
+
+		/// <summary>
+		/// Module.
+		/// </summary>
+		public ModuleDefMD Module { get { return this.Parent.Module; } }
 
 		/// <summary>
 		/// Main virtualization type.
 		/// </summary>
-		public TypeDef VirtualizationType { get; set; }
+		public TypeDef VirtualizationType { get; private set; }
 
 		/// <summary>
 		/// The field used to store the arguments.
@@ -30,27 +39,38 @@ namespace eazdevirt
 		public FieldDef LocalsField { get; private set; }
 
 		/// <summary>
+		/// Logger.
+		/// </summary>
+		public ILogger Logger { get; private set; }
+
+		/// <summary>
 		/// A few Type fields are set in .cctor.
 		/// </summary>
 		public Dictionary<FieldDef, ITypeDefOrRef> TypeFields { get; private set; }
 
-		public EazVirtualization(EazModule module)
+		public VirtualMachineType(EazModule module)
 			: this(module, null)
 		{
 		}
 
-		public EazVirtualization(EazModule module, ILogger logger)
+		public VirtualMachineType(EazModule module, ILogger logger)
 		{
 			if (module == null)
 				throw new ArgumentNullException();
 
-			this.Module = module;
+			this.Parent = module;
+			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
+
 			this.Initialize();
 		}
 
+		/// <summary>
+		/// Find the VType and extract info from it.
+		/// </summary>
 		private void Initialize()
 		{
-			var vmethod = this.Module.FindFirstVirtualizedMethod();
+			// Finds the type from the first virtualized method
+			var vmethod = this.Parent.FindFirstVirtualizedMethod();
 			if (vmethod == null)
 				throw new MethodStubNotFoundException();
 

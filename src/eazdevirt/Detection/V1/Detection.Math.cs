@@ -17,19 +17,19 @@ namespace eazdevirt.Detection.V1.Ext
 		};
 
 		[Detect(Code.Sub)]
-		public static Boolean Is_Sub(this EazVirtualInstruction ins)
+		public static Boolean Is_Sub(this VirtualOpCode ins)
 		{
 			return ins.MatchesIndirectWithBoolean2(false, false, Pattern_Sub);
 		}
 
 		[Detect(Code.Sub_Ovf)]
-		public static Boolean Is_Sub_Ovf(this EazVirtualInstruction ins)
+		public static Boolean Is_Sub_Ovf(this VirtualOpCode ins)
 		{
 			return ins.MatchesIndirectWithBoolean2(true, false, Pattern_Sub);
 		}
 
 		[Detect(Code.Sub_Ovf_Un)]
-		public static Boolean Is_Sub_Ovf_Un(this EazVirtualInstruction ins)
+		public static Boolean Is_Sub_Ovf_Un(this VirtualOpCode ins)
 		{
 			return ins.MatchesIndirectWithBoolean2(true, true, Pattern_Sub);
 		}
@@ -43,19 +43,19 @@ namespace eazdevirt.Detection.V1.Ext
 		};
 
 		[Detect(Code.Add)]
-		public static Boolean Is_Add(this EazVirtualInstruction ins)
+		public static Boolean Is_Add(this VirtualOpCode ins)
 		{
 			return ins.MatchesIndirectWithBoolean2(false, false, Pattern_Add);
 		}
 
 		[Detect(Code.Add_Ovf)]
-		public static Boolean Is_Add_Ovf(this EazVirtualInstruction ins)
+		public static Boolean Is_Add_Ovf(this VirtualOpCode ins)
 		{
 			return ins.MatchesIndirectWithBoolean2(true, false, Pattern_Add);
 		}
 
 		[Detect(Code.Add_Ovf_Un)]
-		public static Boolean Is_Add_Ovf_Un(this EazVirtualInstruction ins)
+		public static Boolean Is_Add_Ovf_Un(this VirtualOpCode ins)
 		{
 			return ins.MatchesIndirectWithBoolean2(true, true, Pattern_Add);
 		}
@@ -69,25 +69,25 @@ namespace eazdevirt.Detection.V1.Ext
 		};
 
 		[Detect(Code.Mul)]
-		public static Boolean Is_Mul(this EazVirtualInstruction ins)
+		public static Boolean Is_Mul(this VirtualOpCode ins)
 		{
 			return ins.MatchesIndirectWithBoolean2(false, false, Pattern_Mul);
 		}
 
 		[Detect(Code.Mul_Ovf)]
-		public static Boolean Is_Mul_Ovf(this EazVirtualInstruction ins)
+		public static Boolean Is_Mul_Ovf(this VirtualOpCode ins)
 		{
 			return ins.MatchesIndirectWithBoolean2(true, false, Pattern_Mul);
 		}
 
 		[Detect(Code.Mul_Ovf_Un)]
-		public static Boolean Is_Mul_Ovf_Un(this EazVirtualInstruction ins)
+		public static Boolean Is_Mul_Ovf_Un(this VirtualOpCode ins)
 		{
 			return ins.MatchesIndirectWithBoolean2(true, true, Pattern_Mul);
 		}
 
 		[Detect(Code.Neg)]
-		public static Boolean Is_Neg(this EazVirtualInstruction ins)
+		public static Boolean Is_Neg(this VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.MatchesIndirect(
 				Code.Ldloc_0, Code.Ldloc_S, Code.Neg, Code.Callvirt, Code.Ldloc_0, Code.Ret
@@ -102,13 +102,13 @@ namespace eazdevirt.Detection.V1.Ext
 		};
 
 		[Detect(Code.Rem)]
-		public static Boolean Is_Rem(this EazVirtualInstruction ins)
+		public static Boolean Is_Rem(this VirtualOpCode ins)
 		{
 			return ins.MatchesIndirectWithBoolean(false, Pattern_Rem);
 		}
 
 		[Detect(Code.Rem_Un)]
-		public static Boolean Is_Rem_Un(this EazVirtualInstruction ins)
+		public static Boolean Is_Rem_Un(this VirtualOpCode ins)
 		{
 			return ins.MatchesIndirectWithBoolean(true, Pattern_Rem);
 		}
@@ -121,13 +121,13 @@ namespace eazdevirt.Detection.V1.Ext
 		};
 
 		[Detect(Code.Div)]
-		public static Boolean Is_Div(this EazVirtualInstruction ins)
+		public static Boolean Is_Div(this VirtualOpCode ins)
 		{
 			return ins.MatchesIndirectWithBoolean(false, Pattern_Div);
 		}
 
 		[Detect(Code.Div_Un)]
-		public static Boolean Is_Div_Un(this EazVirtualInstruction ins)
+		public static Boolean Is_Div_Un(this VirtualOpCode ins)
 		{
 			return ins.MatchesIndirectWithBoolean(true, Pattern_Div);
 		}

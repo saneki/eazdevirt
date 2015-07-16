@@ -7,7 +7,7 @@ namespace eazdevirt
 	/// Crypto stream used to read resources containing information about
 	/// virtualized methods. Requires an integer key.
 	/// </summary>
-	public class EazCryptoStream : Stream
+	public class CryptoStream : Stream
 	{
 		/// <summary>
 		/// Key used for crypto.
@@ -51,7 +51,7 @@ namespace eazdevirt
 			}
 		}
 
-		public EazCryptoStream(Stream baseStream, Int32 key)
+		public CryptoStream(Stream baseStream, Int32 key)
 		{
 			_stream = baseStream;
 			this.Key = key;

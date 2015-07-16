@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using dnlib.DotNet;
 using eazdevirt.IO;
 
 namespace eazdevirt
@@ -12,11 +13,13 @@ namespace eazdevirt
 		/// <param name="options">Options</param>
 		static void DoFindMethods(FindMethodsSubOptions options)
 		{
+			ILogger logger = GetLogger(options);
+
 			EazModule module;
-			if (!TryLoadModule(options.AssemblyPath, out module))
+			if (!TryLoadModule(options.AssemblyPath, logger, out module))
 				return;
 
-			EazVirtualizedMethod[] methods = module.FindVirtualizedMethods();
+			MethodStub[] methods = module.FindVirtualizedMethods();
 
 			if (methods.Length > 0) Console.WriteLine("Virtualized methods found: {0}", methods.Length);
 			else Console.WriteLine("No virtualized methods found");
@@ -65,12 +68,12 @@ namespace eazdevirt
 						else if (threwUnknownOpcodeException)
 						{
 							var matches = module.VirtualInstructions
-								.Where((instr) => { return instr.VirtualOpCode == reader.LastVirtualOpCode; })
+								.Where((instr) => { return instr.VirtualCode == reader.LastVirtualOpCode; })
 								.ToArray();
 
 							if (matches.Length > 0)
 							{
-								EazVirtualInstruction v = matches[0];
+								VirtualOpCode v = matches[0];
 								Console.WriteLine("--> Not yet devirtualizable (contains unknown virtual instruction)");
 								Console.WriteLine("-----> Virtual OpCode = {0} @ [{1}] (0x{2:X8})",
 									reader.LastVirtualOpCode, reader.CurrentInstructionOffset, reader.CurrentVirtualOffset);

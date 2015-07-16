@@ -26,7 +26,7 @@ namespace eazdevirt.Detection.V1.Ext
 		};
 
 		[Detect(Code.Starg)]
-		public static Boolean Is_Starg(this EazVirtualInstruction ins)
+		public static Boolean Is_Starg(this VirtualOpCode ins)
 		{
 			var sub = ins.Find(Pattern_Starg);
 			return sub != null && sub[3].Operand is MethodDef
@@ -35,7 +35,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Starg_S)]
-		public static Boolean Is_Starg_S(this EazVirtualInstruction ins)
+		public static Boolean Is_Starg_S(this VirtualOpCode ins)
 		{
 			var sub = ins.Find(Pattern_Starg);
 			return sub != null && sub[3].Operand is MethodDef
@@ -51,7 +51,7 @@ namespace eazdevirt.Detection.V1.Ext
 			Code.Callvirt, Code.Call, Code.Ret
 		};
 
-		private static Boolean Is_Ldarg_C(EazVirtualInstruction ins, Code code)
+		private static Boolean Is_Ldarg_C(VirtualOpCode ins, Code code)
 		{
 			// Ldarg_C delegates will reference the arguments field in their Ldfld, which sets them apart from
 			// other very similar delegates
@@ -60,25 +60,25 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldarg_0)]
-		public static Boolean Is_Ldarg_0(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldarg_0(this VirtualOpCode ins)
 		{
 			return Is_Ldarg_C(ins, Code.Ldc_I4_0);
 		}
 
 		[Detect(Code.Ldarg_1)]
-		public static Boolean Is_Ldarg_1(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldarg_1(this VirtualOpCode ins)
 		{
 			return Is_Ldarg_C(ins, Code.Ldc_I4_1);
 		}
 
 		[Detect(Code.Ldarg_2)]
-		public static Boolean Is_Ldarg_2(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldarg_2(this VirtualOpCode ins)
 		{
 			return Is_Ldarg_C(ins, Code.Ldc_I4_2);
 		}
 
 		[Detect(Code.Ldarg_3)]
-		public static Boolean Is_Ldarg_3(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldarg_3(this VirtualOpCode ins)
 		{
 			return Is_Ldarg_C(ins, Code.Ldc_I4_3);
 		}
@@ -93,7 +93,7 @@ namespace eazdevirt.Detection.V1.Ext
 
 		[Detect(Code.Ldarga)]
 		/// <remarks>Unsure</remarks>
-		public static Boolean Is_Ldarga(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldarga(this VirtualOpCode ins)
 		{
 			var sub = ins.Find(Pattern_Ldarga);
 			return sub != null
@@ -103,7 +103,7 @@ namespace eazdevirt.Detection.V1.Ext
 
 		[Detect(Code.Ldarga_S)]
 		/// <remarks>Unsure</remarks>
-		public static Boolean Is_Ldarga_S(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldarga_S(this VirtualOpCode ins)
 		{
 			var sub = ins.Find(Pattern_Ldarga);
 			return sub != null
@@ -122,7 +122,7 @@ namespace eazdevirt.Detection.V1.Ext
 		};
 
 		[Detect(Code.Ldarg)]
-		public static Boolean Is_Ldarg(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldarg(this VirtualOpCode ins)
 		{
 			return ins.MatchesEntire(Pattern_Ldarg)
 				&& ((MethodDef)ins.DelegateMethod.Body.Instructions[7].Operand)
@@ -132,7 +132,7 @@ namespace eazdevirt.Detection.V1.Ext
 		}
 
 		[Detect(Code.Ldarg_S)]
-		public static Boolean Is_Ldarg_S(this EazVirtualInstruction ins)
+		public static Boolean Is_Ldarg_S(this VirtualOpCode ins)
 		{
 			return ins.MatchesEntire(Pattern_Ldarg)
 				&& ((MethodDef)ins.DelegateMethod.Body.Instructions[7].Operand)

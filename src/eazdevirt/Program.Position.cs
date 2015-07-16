@@ -15,7 +15,7 @@ namespace eazdevirt
 			if (options.Key.HasValue)
 			{
 				// This doesn't work yet: Command line parser can't parse Nullable?
-				position = EazPosition.FromString(options.PositionString, options.Key.Value);
+				position = Position.FromString(options.PositionString, options.Key.Value);
 			}
 			else if (options.AssemblyPath != null)
 			{
@@ -23,12 +23,12 @@ namespace eazdevirt
 				if (!TryLoadModule(options.AssemblyPath, out module))
 					return;
 
-				EazVirtualizedMethod method = module.FindFirstVirtualizedMethod();
+				MethodStub method = module.FindFirstVirtualizedMethod();
 				if (method != null)
 				{
 					try
 					{
-						position = EazPosition.FromString(options.PositionString, method.ResourceCryptoKey);
+						position = Position.FromString(options.PositionString, method.ResourceCryptoKey);
 					}
 					catch (FormatException e)
 					{

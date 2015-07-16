@@ -10,7 +10,7 @@ using eazdevirt.Util;
 
 namespace eazdevirt
 {
-	public partial class EazVirtualInstruction
+	public partial class VirtualOpCode
 	{
 		/// <summary>
 		/// Try to set indentify-related info to the instruction (original opcode).
@@ -188,7 +188,7 @@ namespace eazdevirt
 		/// <remarks>Partially copied from DotNetUtils.GetCalledMethods()</remarks>
 		public IList<IMethod> GetCalledMethods()
 		{
-			ModuleDefMD module = this.Module.Module;
+			ModuleDef module = this.Module.Module;
 			MethodDef method = this.DelegateMethod;
 
 			List<IMethod> methods = new List<IMethod>();

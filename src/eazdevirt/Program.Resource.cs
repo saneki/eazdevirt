@@ -19,7 +19,7 @@ namespace eazdevirt
 			if (!options.Extract)
 				options.Extract = true;
 
-			EazVirtualizedMethod method = module.FindFirstVirtualizedMethod();
+			MethodStub method = module.FindFirstVirtualizedMethod();
 			if (method != null)
 			{
 				if (options.Extract)
