@@ -60,6 +60,7 @@
     <Compile Include="Detection\V1\Detection.Ldc.cs" />
     <Compile Include="Detection\V1\Detection.Math.cs" />
     <Compile Include="Detection\V1\Detection.Misc.cs" />
+    <Compile Include="Detection\V1\Detection.Prefix.cs" />
     <Compile Include="Detection\V1\Detection.Unsupported.cs" />
     <Compile Include="Detection\V1\InstructionDetectorV1.cs" />
     <Compile Include="Detection\V1\Detection.cs" />
