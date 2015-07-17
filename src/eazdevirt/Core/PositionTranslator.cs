@@ -4,15 +4,17 @@ using System.IO;
 namespace eazdevirt
 {
 	/// <summary>
-	/// Static helper for dealing with position strings.
+	/// Translates strings into positions.
 	/// </summary>
-	public static class Position
+	public class PositionTranslator : IPositionTranslator
 	{
+		public static readonly PositionTranslator DefaultInstance = new PositionTranslator();
+
 		/// <summary>
 		/// Although these values appear "random," they are consistent across
 		/// all samples I've observed.
 		/// </summary>
-		private static uint[] PseudoRandomInts = new uint[]
+		private static UInt32[] DefaultPseudoRandomInts = new uint[]
 		{
 			52200625u,
 			614125u,
@@ -22,12 +24,34 @@ namespace eazdevirt
 		};
 
 		/// <summary>
+		/// Random integers used in translation.
+		/// </summary>
+		private UInt32[] _randomInts;
+
+		/// <summary>
+		/// Construct a PositionTranslator with the default random integers.
+		/// </summary>
+		public PositionTranslator()
+			: this(DefaultPseudoRandomInts)
+		{
+		}
+
+		/// <summary>
+		/// Construct a PositionTranslator.
+		/// </summary>
+		/// <param name="randomInts">Random integers used in translation</param>
+		public PositionTranslator(UInt32[] randomInts)
+		{
+			_randomInts = randomInts;
+		}
+
+		/// <summary>
 		/// Given the crypto key, convert a position string into a position.
 		/// </summary>
 		/// <param name="s">Position string</param>
 		/// <param name="cryptoKey">Crypto key</param>
 		/// <returns>Position</returns>
-		public static Int64 FromString(String s, Int32 cryptoKey)
+		public Int64 ToPosition(String s, Int32 cryptoKey)
 		{
 			byte[] array = Convert(s);
 			MemoryStream memoryStream = new MemoryStream(array);
@@ -44,7 +68,7 @@ namespace eazdevirt
 		/// <param name="str">Position string</param>
 		/// <remarks>Most of this is copied from decompilation</remarks>
 		/// <returns>Byte array</returns>
-		private static Byte[] Convert(String str)
+		private Byte[] Convert(String str)
 		{
 			if (str == null)
 				throw new ArgumentNullException();
@@ -75,7 +99,7 @@ namespace eazdevirt
 						}
 						checked
 						{
-							num2 += (uint)(unchecked((ulong)PseudoRandomInts[num]) * (ulong)unchecked((long)checked(c - '!')));
+							num2 += (uint)(unchecked((ulong)_randomInts[num]) * (ulong)unchecked((long)checked(c - '!')));
 						}
 						num++;
 						if (num == 5)
@@ -98,7 +122,7 @@ namespace eazdevirt
 					{
 						checked
 						{
-							num2 += 84u * PseudoRandomInts[j];
+							num2 += 84u * _randomInts[j];
 						}
 					}
 					WriteValue(memoryStream, num2, 5 - num);
@@ -114,7 +138,7 @@ namespace eazdevirt
 			return result;
 		}
 
-		﻿private static void WriteValue(Stream stream, uint val, int int_0)
+		private static void WriteValue(Stream stream, uint val, int int_0)
 		{
 			stream.WriteByte((byte)(val >> 24));
 			if (int_0 == 3)

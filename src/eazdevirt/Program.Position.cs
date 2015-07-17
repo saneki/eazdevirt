@@ -10,12 +10,14 @@ namespace eazdevirt
 		/// <param name="options">Options</param>
 		static void DoPosition(PositionSubOptions options)
 		{
+			IPositionTranslator translator = PositionTranslator.DefaultInstance;
+
 			Int64 position = 0;
 
 			if (options.Key.HasValue)
 			{
 				// This doesn't work yet: Command line parser can't parse Nullable?
-				position = Position.FromString(options.PositionString, options.Key.Value);
+				position = translator.ToPosition(options.PositionString, options.Key.Value);
 			}
 			else if (options.AssemblyPath != null)
 			{
@@ -28,7 +30,7 @@ namespace eazdevirt
 				{
 					try
 					{
-						position = Position.FromString(options.PositionString, method.ResourceCryptoKey);
+						position = translator.ToPosition(options.PositionString, method.ResourceCryptoKey);
 					}
 					catch (FormatException e)
 					{

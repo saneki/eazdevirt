@@ -47,6 +47,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\IPositionTranslator.cs" />
+    <Compile Include="Core\PositionTranslator.cs" />
     <Compile Include="Detection\InstructionDetectorBase.cs" />
     <Compile Include="Detection\IInstructionDetector.cs" />
     <Compile Include="Detection\V1\Detection.Arg.cs" />
@@ -85,7 +87,6 @@
     <Compile Include="Util\DotNetUtils.cs" />
     <Compile Include="Core\CryptoStream.cs" />
     <Compile Include="Core\EazModule.cs" />
-    <Compile Include="Core\Position.cs" />
     <Compile Include="Core\VirtualOpCode.cs" />
     <Compile Include="Core\MethodStub.cs" />
     <Compile Include="Core\Helpers.cs" />
