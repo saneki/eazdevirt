@@ -8,20 +8,22 @@ namespace eazdevirt
 	/// </summary>
 	public class PositionTranslator : IPositionTranslator
 	{
-		public static readonly PositionTranslator DefaultInstance = new PositionTranslator();
-
 		/// <summary>
 		/// Although these values appear "random," they are consistent across
 		/// all samples I've observed.
 		/// </summary>
-		private static UInt32[] DefaultPseudoRandomInts = new uint[]
-		{
+		private static UInt32[] DefaultPseudoRandomInts = new UInt32[] {
 			52200625u,
 			614125u,
 			7225u,
 			85u,
 			1u
 		};
+
+		/// <summary>
+		/// PositionTranslator instance with default integers.
+		/// </summary>
+		public static readonly PositionTranslator DefaultInstance = new PositionTranslator();
 
 		/// <summary>
 		/// Random integers used in translation.
@@ -42,6 +44,12 @@ namespace eazdevirt
 		/// <param name="randomInts">Random integers used in translation</param>
 		public PositionTranslator(UInt32[] randomInts)
 		{
+			if (randomInts == null)
+				throw new ArgumentNullException();
+
+			if (randomInts.Length != 5)
+				throw new Exception("Integer array must have a length of 5");
+
 			_randomInts = randomInts;
 		}
 
@@ -53,7 +61,7 @@ namespace eazdevirt
 		/// <returns>Position</returns>
 		public Int64 ToPosition(String s, Int32 cryptoKey)
 		{
-			byte[] array = Convert(s);
+			byte[] array = this.Convert(s);
 			MemoryStream memoryStream = new MemoryStream(array);
 			CryptoStream stream = new CryptoStream(memoryStream, cryptoKey);
 			BinaryReader binaryReader = new BinaryReader(stream);
