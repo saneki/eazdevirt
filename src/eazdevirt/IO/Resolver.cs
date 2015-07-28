@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using de4dot.blocks;
 using dnlib.DotNet;
 using dnlib.DotNet.MD;
@@ -21,10 +22,21 @@ namespace eazdevirt.IO
 		/// </summary>
 		private Object _lock = new Object();
 
+		/// <summary>
+		/// AssemblyResolver.
+		/// </summary>
+		private AssemblyResolver _asmResolver;
+
 		public Resolver(EazModule module, ILogger logger)
 			: base(module)
 		{
 			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
+			this.InitializeAssemblyResolver();
+		}
+
+		private void InitializeAssemblyResolver()
+		{
+			_asmResolver = new AssemblyResolver();
 		}
 
 		/// <summary>
@@ -86,6 +98,141 @@ namespace eazdevirt.IO
 			}
 		}
 
+		IMethod ResolveMethod_NoLock(TypeDef declaringDef, MethodData data)
+		{
+			// If declaring type is a TypeDef, it is defined inside this module, so a
+			// MethodDef should be attainable. However, the method may have generic parameters.
+
+			// This signature may not be exact:
+			// If `MyMethod<T>(T something): Void` is called as MyMethod<Int32>(100),
+			// signature will appear as `System.Void <!!0>(System.Int32)` instead of `System.Void <!!0>(T)`
+			var sig = GetMethodSig(data);
+
+			// Try to easily find the method by name + signature
+			var foundMethod = declaringDef.FindMethod(data.Name, sig);
+			if (foundMethod != null)
+				return foundMethod;
+
+			var methods = declaringDef.FindMethods(data.Name);
+			foreach (var method in methods)
+			{
+				if (method.IsStatic != data.IsStatic)
+					continue;
+
+				if (Matches(method, sig))
+				{
+					// This should only happen for generic inst methods
+					return ToMethodSpec(method, data);
+				}
+			}
+
+			throw new Exception("[ResolveMethod_NoLock] Unable to resolve method from declaring TypeDef");
+		}
+
+		IMethod ResolveMethod_NoLock(TypeRef declaringRef, MethodData data)
+		{
+			MethodSig methodSig = GetMethodSig(data);
+			MemberRef memberRef = new MemberRefUser(this.Module, data.Name, methodSig, declaringRef);
+			return memberRef;
+		}
+
+		IMethod ResolveMethod_NoLock(TypeSpec declaringSpec, MethodData data)
+		{
+			// If declaring type is a TypeSpec, it should have generic types associated
+			// with it. This doesn't mean the method itself will, though.
+
+			var comparer = new SignatureEqualityComparer(SigComparerOptions.SubstituteGenericParameters);
+			MethodSig methodSig = GetMethodSig(data);
+
+			// TEST
+			//var allAssemblyRefs = this.Module.GetAssemblyRefs();
+			//this.Logger.Info(this, "Module count: {0}", allAssemblyRefs.Count());
+			//foreach (var a in allAssemblyRefs)
+			//{
+			//	this.Logger.Info(this, " {0}", a);
+			//
+			//	AssemblyResolver resolver = new AssemblyResolver();
+			//	var assembly = resolver.Resolve(a, this.Module);
+			//	var module = assembly.ManifestModule;
+			//
+			//	this.Logger.Info(this, " Types: {0}", module.Types.Count);
+			//}
+			// END TEST
+
+			if (declaringSpec.TypeSig.IsGenericInstanceType)
+			{
+				this.Logger.Verbose(this, "Comparing against possible method sigs: {0}", data.Name);
+
+				//TypeDef declaringDef = declaringSpec.ResolveTypeDefThrow();
+				TypeDef declaringDef = ResolveTypeDefThrow(declaringSpec);
+				AssemblyRef assemblyRef = this.Module.GetAssemblyRefs().First((mr) => {
+					return (mr.FullName.Equals(declaringDef.Module.Assembly.FullName));
+				});
+
+				TypeRef declaringRef = new TypeRefUser(this.Module,
+					declaringDef.Namespace, declaringDef.Name, assemblyRef);
+
+				Console.WriteLine("declaringRef: {0}", declaringRef);
+
+				var methods = declaringDef.FindMethods(data.Name);
+				var possibleMethodSigs = CreateMethodSigs(declaringSpec, methodSig, data);
+
+				foreach (var possibleMethodSig in possibleMethodSigs)
+					this.Logger.Verbose(this, "Possible method sig: {0}", possibleMethodSig.ToString());
+
+				foreach (var possibleMethodSig in possibleMethodSigs)
+				{
+					MethodDef found = declaringDef.FindMethod(data.Name, possibleMethodSig);
+					//MemberRef foundRef = new MemberRefUser(this.Module, found.Name, found.MethodSig, declaringRef);
+
+					if (found != null)
+					{
+						this.Logger.Verbose(this, "Signature match: {0}", possibleMethodSig.ToString());
+
+						var hasMvar = found.MethodSig.Params.Any((p) => {
+							return p.IsGenericMethodParameter;
+						});
+
+						if (hasMvar)
+						{
+							return ToMethodSpec(found, data);
+							//MemberRef memberRef = new MemberRefUser(this.Module, found.Name, found.MethodSig, declaringRef);
+							//return ToMethodSpec(memberRef, data);
+						}
+						else
+						{
+							var memberRef = new MemberRefUser(this.Module, found.Name, possibleMethodSig, declaringSpec);
+						}
+					}
+				}
+
+				//foreach (var method in methods)
+				//{
+				//	if (Equals(declaringSpec, method.MethodSig, methodSig))
+				//	{
+				//		return ToMethodSpec(
+				//			new MemberRefUser(this.Module, data.Name, method.MethodSig, declaringSpec),
+				//			data);
+				//	}
+				//}
+			}
+
+			throw new Exception(String.Format(
+				"[ResolveMethod_NoLock] Unable to resolve {0} method from declaring TypeSpec {1}",
+				data.Name, declaringSpec.ToString()));
+
+			//if (data.HasGenericArguments)
+			//{
+			//	MemberRef memberRef = new MemberRefUser(this.Module, data.Name, methodSig, declaringSpec);
+			//	return ToMethodSpec(memberRef, data);
+			//}
+			//else
+			//{
+			//	MemberRef memberRef = new MemberRefUser(this.Module, data.Name, methodSig, declaringSpec);
+			//	return memberRef;
+			//}
+		}
+
 		IMethod ResolveMethod_NoLock(Int32 position)
 		{
 			this.Stream.Position = position;
@@ -110,103 +257,53 @@ namespace eazdevirt.IO
 
 				if (declaring is TypeDef)
 				{
-					// If declaring type is a TypeDef, it is defined inside this module, so a
-					// MethodDef should be attainable. However, the method may have generic parameters.
-
 					TypeDef declaringDef = declaring as TypeDef;
-
-					// This signature may not be exact:
-					// If `MyMethod<T>(T something): Void` is called as MyMethod<Int32>(100),
-					// signature will appear as `System.Void <!!0>(System.Int32)` instead of `System.Void <!!0>(T)`
-					var sig = GetMethodSig(data);
-
-					// Try to easily find the method by name + signature
-					var foundMethod = declaringDef.FindMethod(data.Name, sig);
-					if (foundMethod != null)
-						return foundMethod;
-
-					var methods = declaringDef.FindMethods(data.Name);
-					foreach (var method in methods)
-					{
-						if (method.IsStatic != data.IsStatic)
-							continue;
-
-						if (Matches(method, sig))
-						{
-							// This should only happen for generic inst methods
-							return ToMethodSpec(method, data);
-						}
-					}
-
-					throw new Exception("[ResolveMethod_NoLock] Unable to resolve method from declaring TypeDef");
+					return this.ResolveMethod_NoLock(declaringDef, data);
 				}
 				else if (declaring is TypeRef)
 				{
 					TypeRef declaringRef = declaring as TypeRef;
-					MethodSig methodSig = GetMethodSig(data);
-					MemberRef memberRef = new MemberRefUser(this.Module, data.Name, methodSig, declaringRef);
-					return memberRef;
+					return this.ResolveMethod_NoLock(declaringRef, data);
 				}
 				else if (declaring is TypeSpec)
 				{
-					// If declaring type is a TypeSpec, it should have generic types associated
-					// with it. This doesn't mean the method itself will, though.
-
-					var comparer = new SignatureEqualityComparer(SigComparerOptions.SubstituteGenericParameters);
-
 					TypeSpec declaringSpec = declaring as TypeSpec;
-					MethodSig methodSig = GetMethodSig(data);
-
-					//if (declaringSpec.TypeSig.IsGenericInstanceType)
-					if (declaringSpec.TypeSig.IsGenericInstanceType)
-					{
-						this.Logger.Verbose(this, "Comparing against possible method sigs: {0}", data.Name);
-
-						TypeDef declaringDef = declaringSpec.ResolveTypeDefThrow();
-						var methods = declaringDef.FindMethods(data.Name);
-						var possibleMethodSigs = CreateMethodSigs(declaringSpec, methodSig, data);
-
-						foreach (var possibleMethodSig in possibleMethodSigs)
-							this.Logger.Verbose(this, " Possible method sig: {0}", possibleMethodSig.ToString());
-
-						foreach (var possibleMethodSig in possibleMethodSigs)
-						{
-							//Console.WriteLine("Possible method sig: {0}", possibleMethodSig.ToString());
-
-							MethodDef found = declaringDef.FindMethod(data.Name, possibleMethodSig);
-							if (found != null)
-							{
-								return ToMethodSpec(found, data);
-								//MemberRef memberRef = new MemberRefUser(this.Module, data.Name, found.MethodSig, declaringSpec);
-								//return ToMethodSpec(memberRef, data);
-							}
-						}
-
-						//foreach (var method in methods)
-						//{
-						//	if (Equals(declaringSpec, method.MethodSig, methodSig))
-						//	{
-						//		return ToMethodSpec(
-						//			new MemberRefUser(this.Module, data.Name, method.MethodSig, declaringSpec),
-						//			data);
-						//	}
-						//}
-					}
-
-					if (data.HasGenericArguments)
-					{
-						MemberRef memberRef = new MemberRefUser(this.Module, data.Name, methodSig, declaringSpec);
-						return ToMethodSpec(memberRef, data);
-					}
-					else
-					{
-						MemberRef memberRef = new MemberRefUser(this.Module, data.Name, methodSig, declaringSpec);
-						return memberRef;
-					}
+					return this.ResolveMethod_NoLock(declaringSpec, data);
 				}
 
 				throw new Exception("[ResolveMethod_NoLock] Expected declaring type to be a TypeDef, TypeRef or TypeSpec");
 			}
+		}
+
+		TypeDef ResolveTypeDefThrow(TypeSpec typeSpec)
+		{
+			var assembly = _asmResolver.ResolveThrow(typeSpec.DefinitionAssembly, this.Module);
+			var module = assembly.ManifestModule;
+			var name = FixTypeSpecName(typeSpec.FullName);
+
+			var type = module.Find(name, false);
+			if (type == null)
+				throw new Exception(String.Format(
+					"Unable to find TypeDef in module: {0}", name));
+
+			return type;
+		}
+
+		String FixTypeSpecName(String fullName)
+		{
+			Regex regex = new Regex("\\<[^\\<]+\\>");
+			String newName = fullName;
+
+			while (true)
+			{
+				newName = regex.Replace(fullName, "");
+				if (newName.Equals(fullName))
+					break;
+
+				fullName = newName;
+			}
+
+			return newName;
 		}
 
 		/// <summary>
@@ -502,11 +599,6 @@ namespace eazdevirt.IO
 			//GenericInstSig genericSig = new GenericInstSig(typeSig, types);
 			//TypeSpec typeSpec = new TypeSpecUser(genericSig);
 			//return typeSpec;
-		}
-
-		IMethod ApplyGenerics(IMethodDefOrRef method, IList<TypeSig> generics)
-		{
-			return null;
 		}
 
 		/// <summary>
