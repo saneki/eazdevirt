@@ -28,16 +28,6 @@ namespace eazdevirt.Detection.V1.Ext
 			});
 		}
 
-		// This appears to actually be a virtual instruction specific to Eazfuscator.NET?
-		//private static Boolean _Is_Call_2(this VirtualOpCode ins)
-		//{
-		//	var sub = ins.DelegateMethod.Find(new Code[] {
-		//		Code.Ldc_I4, Code.And, Code.Ldc_I4_0, Code.Ceq, Code.Ldc_I4_0, Code.Ceq
-		//	});
-		//	return sub != null
-		//		&& ((Int32)sub[0].Operand) == -2147483648;
-		//}
-
 		[Detect(Code.Callvirt)]
 		public static Boolean Is_Callvirt(this VirtualOpCode ins)
 		{

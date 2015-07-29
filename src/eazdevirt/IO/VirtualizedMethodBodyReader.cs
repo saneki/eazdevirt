@@ -290,23 +290,9 @@ namespace eazdevirt.IO
 			this.FullyRead = true;
 		}
 
-		/// <summary>
-		/// Read a virtual instruction as a CIL instruction.
-		/// </summary>
-		/// <returns>CIL instruction</returns>
-		protected Instruction ReadOneInstruction()
+		protected Instruction ReadOneInstruction_CIL(VirtualOpCode virtualInstruction)
 		{
-			Int32 virtualOpcode = this.Reader.ReadInt32();
-			this.LastVirtualOpCode = virtualOpcode;
-
-			VirtualOpCode virtualInstruction;
-			if (!this.Parent.IdentifiedOpCodes.TryGetValue(virtualOpcode, out virtualInstruction))
-				//throw new Exception(String.Format("Unknown virtual opcode: {0}", virtualOpcode));
-				throw new OriginalOpcodeUnknownException(virtualInstruction);
-
 			OpCode opcode = virtualInstruction.OpCode.ToOpCode();
-
-			this.VirtualOffsets.Add(this.CurrentILOffset, this.CurrentVirtualOffset);
 
 			Instruction instruction = new Instruction(opcode);
 			instruction.Offset = this.CurrentILOffset;
@@ -323,25 +309,49 @@ namespace eazdevirt.IO
 			{
 				this.CurrentILOffset += (UInt32)instruction.GetSize();
 				this.CurrentVirtualOffset += (UInt32)virtualInstruction.GetSize(instruction.Operand);
-				// Doesn't apply, all virtual opcodes are size 4:
-				// this.CurrentOffset += (UInt32)instruction.GetSize();
 			}
 
 			this.CurrentInstructionOffset++;
 
-			/*
-			if(opcode.OperandType != OperandType.InlineNone
-			&& opcode.OperandType != OperandType.NOT_USED_8
-			&& opcode.OperandType != OperandType.InlinePhi)
-			{
-				Object operand = this.ReadOperand(opcode.Code, opcode.OperandType);
-				instruction = new Instruction(opcode, operand);
-			}
-			else
-				instruction = new Instruction(opcode);
-			*/
-
 			return instruction;
+		}
+
+		protected Instruction ReadOneInstruction_Special(VirtualOpCode virtualInstruction)
+		{
+			throw new Exception(String.Format(
+				"Cannot yet parse special opcodes ({0})",
+				virtualInstruction.SpecialOpCode.ToString()
+			));
+
+			//SpecialCode opcode = virtualInstruction.SpecialOpCode;
+			//Object operand = this.ReadSpecialOperand(virtualInstruction);
+
+			//Instruction instruction = new Instruction(opcode);
+			//instruction.Offset = this.CurrentILOffset;
+			//instruction.OpCode = opcode;
+			//instruction.Operand = this.ReadOperand(instruction);
+		}
+
+		/// <summary>
+		/// Read a virtual instruction as a CIL instruction.
+		/// </summary>
+		/// <returns>CIL instruction</returns>
+		protected Instruction ReadOneInstruction()
+		{
+			Int32 virtualOpcode = this.Reader.ReadInt32();
+			this.LastVirtualOpCode = virtualOpcode;
+
+			VirtualOpCode virtualInstruction;
+			if (!this.Parent.IdentifiedOpCodes.TryGetValue(virtualOpcode, out virtualInstruction))
+				//throw new Exception(String.Format("Unknown virtual opcode: {0}", virtualOpcode));
+				throw new OriginalOpcodeUnknownException(virtualInstruction);
+
+			this.VirtualOffsets.Add(this.CurrentILOffset, this.CurrentVirtualOffset);
+
+			if (virtualInstruction.HasCILOpCode)
+				return ReadOneInstruction_CIL(virtualInstruction);
+			else
+				return ReadOneInstruction_Special(virtualInstruction);
 		}
 
 		/// <summary>
@@ -402,6 +412,24 @@ namespace eazdevirt.IO
 				case OperandType.InlineString:
 					//return module.ReadUserString(reader.ReadUInt32());
 					return this.ReadInlineString(instr);
+			}
+
+			return null;
+		}
+
+		/// <summary>
+		/// Read a virtual operand of a special instruction.
+		/// </summary>
+		/// <param name="virtualOpCode">Special virtual opcode</param>
+		/// <returns>Operand object, or null if unsupported operand type</returns>
+		protected Object ReadSpecialOperand(VirtualOpCode virtualOpCode)
+		{
+			switch (virtualOpCode.SpecialOpCode)
+			{
+				case SpecialCode.Eaz_Call:
+					Int32 val = this.Reader.ReadInt32();
+					// ...
+					break;
 			}
 
 			return null;

@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\SpecialCode.cs" />
     <Compile Include="Core\IPositionTranslator.cs" />
     <Compile Include="Core\PositionTranslator.cs" />
     <Compile Include="Detection\InstructionDetectorBase.cs" />
@@ -58,6 +59,7 @@
     <Compile Include="Detection\V1\Detection.Math.cs" />
     <Compile Include="Detection\V1\Detection.Misc.cs" />
     <Compile Include="Detection\V1\Detection.Prefix.cs" />
+    <Compile Include="Detection\V1\Detection.Special.cs" />
     <Compile Include="Detection\V1\Detection.Unsupported.cs" />
     <Compile Include="Detection\V1\InstructionDetectorV1.cs" />
     <Compile Include="Detection\V1\Detection.cs" />

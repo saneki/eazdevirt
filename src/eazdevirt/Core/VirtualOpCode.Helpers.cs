@@ -22,7 +22,6 @@ namespace eazdevirt
 			if (this.TryIdentifyFull(out attr))
 			{
 				this.DetectAttribute = attr;
-				this.OpCode = attr.OpCode;
 				this.IsIdentified = true;
 			}
 			else

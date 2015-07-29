@@ -76,7 +76,36 @@ namespace eazdevirt
 			}
 		}
 
-		public Code OpCode { get; private set; }
+		public Boolean HasCILOpCode
+		{
+			get { return !this.DetectAttribute.IsSpecial; }
+		}
+
+		/// <summary>
+		/// Identified CIL opcode, if any.
+		/// </summary>
+		public Code OpCode
+		{
+			get
+			{
+				if (!this.DetectAttribute.IsSpecial)
+					return this.DetectAttribute.OpCode;
+				else throw new Exception("VirtualOpCode is special (non-CIL), no corresponding CIL opcode");
+			}
+		}
+
+		/// <summary>
+		/// Identified special opcode, if any.
+		/// </summary>
+		public SpecialCode SpecialOpCode
+		{
+			get
+			{
+				if (this.DetectAttribute.IsSpecial)
+					return this.DetectAttribute.SpecialOpCode;
+				else throw new Exception("VirtualOpCode is not special (non-CIL), no special opcode");
+			}
+		}
 
 		public VirtualMachineType VType { get { return this.Parent.VType; } }
 
@@ -101,6 +130,24 @@ namespace eazdevirt
 
 		protected VirtualOpCode()
 		{
+		}
+
+		/// <summary>
+		/// Check whether or not this virtual opcode identifies the same as another
+		/// virtual opcode.
+		/// </summary>
+		/// <param name="vopcode">Other virtual opcode to compare against</param>
+		/// <returns>true if identifies the same, false if not</returns>
+		public Boolean IdentityEquals(VirtualOpCode vopcode)
+		{
+			if (vopcode == null)
+				throw new ArgumentNullException();
+
+			return this.IsIdentified && vopcode.IsIdentified &&
+				(this.HasCILOpCode == vopcode.HasCILOpCode && (
+					(this.HasCILOpCode && this.OpCode == vopcode.OpCode) ||
+					(!this.HasCILOpCode && this.SpecialOpCode == vopcode.SpecialOpCode)
+			));
 		}
 
 		/// <summary>

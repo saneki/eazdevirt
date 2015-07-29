@@ -246,7 +246,7 @@ namespace eazdevirt
 				Boolean containsVirtual = this.IdentifiedOpCodes.ContainsKey(instruction.VirtualCode);
 
 				VirtualOpCode existing = this.IdentifiedOpCodes.Where((kvp, index) => {
-					return kvp.Value.OpCode == instruction.OpCode;
+					return kvp.Value.IdentityEquals(instruction);
 				}).FirstOrDefault().Value;
 				Boolean containsActual = (existing != null);
 
@@ -256,8 +256,14 @@ namespace eazdevirt
 
 				if (containsActual && !instruction.ExpectsMultiple)
 				{
+					String opcodeName;
+
+					if (instruction.HasCILOpCode)
+						opcodeName = instruction.OpCode.ToString();
+					else opcodeName = instruction.SpecialOpCode.ToString();
+
 					this.Logger.Warning(this, "WARNING: Multiple virtual opcodes map to the same actual opcode ({0}, {1} => {2})",
-						existing.VirtualCode, instruction.VirtualCode, instruction.OpCode.ToString());
+						existing.VirtualCode, instruction.VirtualCode, opcodeName);
 				}
 
 				if (!warningOccurred)
