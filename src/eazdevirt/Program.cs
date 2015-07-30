@@ -34,13 +34,9 @@ namespace eazdevirt
 			String description = descAttr.Description;
 
 			// Get version
-			String version;
-			var versionAttr = (AssemblyVersionAttribute)assembly.GetCustomAttribute(typeof(AssemblyVersionAttribute));
-			if (versionAttr != null)
-				version = versionAttr.Version;
-			else version = "0.0.0.0";
+			Version version = Assembly.GetExecutingAssembly().GetName().Version;
 
-			return String.Format("eazdevirt {0} - {1}", version, description);
+			return String.Format("eazdevirt {0} - {1}", version.ToString(), description);
 		}
 
 		/// <summary>
