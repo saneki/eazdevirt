@@ -11,7 +11,8 @@ namespace eazdevirt
 		/// Perform "instructions" verb.
 		/// </summary>
 		/// <param name="options">Options</param>
-		static void DoInstructions(InstructionsSubOptions options)
+		static void DoInstructions(MonoOptions options
+			/* InstructionsSubOptions options */)
 		{
 			EazModule module;
 			if (!TryLoadModule(options.AssemblyPath, out module))
@@ -50,7 +51,7 @@ namespace eazdevirt
 				Console.WriteLine("{0}/{1} instruction types identified ({2})",
 					identified, vInstructions.Count, percentIdentified);
 
-				if (!options.ExtraOutput)
+				if (!options.Verbose)
 					Console.WriteLine();
 
 				// If only showing identified instructions, remove all non-identified and sort by name
@@ -73,7 +74,7 @@ namespace eazdevirt
 
 				foreach (var v in vInstructions)
 				{
-					if (!options.ExtraOutput) // Simple output
+					if (!options.Verbose) // Simple output
 					{
 						if (v.IsIdentified)
 							Console.WriteLine("Instruction: {0}, Method: {1}", v.OpCode, v.DelegateMethod.FullName);

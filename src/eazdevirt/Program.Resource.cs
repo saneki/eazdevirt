@@ -9,20 +9,21 @@ namespace eazdevirt
 		/// Perform "resource" verb.
 		/// </summary>
 		/// <param name="options">Options</param>
-		static void DoResource(ResourceSubOptions options)
+		static void DoResource(MonoOptions options
+			/* ResourceSubOptions options */)
 		{
 			EazModule module;
 			if (!TryLoadModule(options.AssemblyPath, out module))
 				return;
 
 			// If no action set, set the default action (extract)
-			if (!options.Extract)
-				options.Extract = true;
+			//if (!options.Extract)
+			//	options.Extract = true;
 
 			MethodStub method = module.FindFirstVirtualizedMethod();
 			if (method != null)
 			{
-				if (options.Extract)
+				if (true /* options.Extract */)
 				{
 					String outputPath = options.OutputPath;
 					if (outputPath == null || outputPath.Equals(""))

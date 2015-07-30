@@ -11,7 +11,8 @@ namespace eazdevirt
 		/// Perform "find-methods" verb.
 		/// </summary>
 		/// <param name="options">Options</param>
-		static void DoFindMethods(FindMethodsSubOptions options)
+		static void DoFindMethods(MonoOptions options
+			/* FindMethodsSubOptions options */)
 		{
 			ILogger logger = GetLogger(options);
 
@@ -33,7 +34,7 @@ namespace eazdevirt
 				Console.WriteLine("--> Resource: {0}", method.ResourceStringId);
 				Console.WriteLine("--> Crypto key: {0}", method.ResourceCryptoKey);
 
-				if (options.ExtraOutput)
+				if (options.Verbose)
 				{
 					var reader = new VirtualizedMethodBodyReader(method);
 					Boolean threwUnknownOpcodeException = false, threwException = false;

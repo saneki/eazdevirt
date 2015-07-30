@@ -76,6 +76,8 @@
     <Compile Include="Logging\ConsoleLogger.cs" />
     <Compile Include="Core\MethodStubNotFoundException.cs" />
     <Compile Include="Core\OriginalOpcodeUnknownException.cs" />
+    <Compile Include="MonoOptions.cs" />
+    <Compile Include="Mono\Mono.Options.cs" />
     <Compile Include="Program.Devirtualize.cs" />
     <Compile Include="Program.Generate.cs" />
     <Compile Include="Program.GetKey.cs" />
