@@ -20,8 +20,16 @@ namespace eazdevirt
 			Console.WriteLine(GetDescriptorString());
 			Console.WriteLine();
 
+			Console.WriteLine("usage: eazdevirt [-dgikmpr] [options] <assembly>");
+			Console.WriteLine();
+
 			String generatedHelp = parsed.OptionDescriptors;
 			Console.Write(generatedHelp);
+			Console.WriteLine();
+
+			Console.WriteLine("examples:");
+			Console.WriteLine("  eazdevirt -d MyAssembly.exe");
+			Console.WriteLine("  eazdevirt -r --keep-encrypted MyAssembly.exe");
 		}
 
 		static String GetDescriptorString()
@@ -67,27 +75,36 @@ namespace eazdevirt
 					v => options.Action = ProgramAction.Resource },
 
 				// `generate` options
-				{ "I=|instruction-set=", v => options.InstructionSet = v },
+				{ "I=|instruction-set=", "name of \"instruction sets\" to generate",
+					v => options.InstructionSet = v },
 
 				// `instructions` options
-				{ "only-identified=", v => options.OnlyIdentified = true },
-				{ "operands=", v => { } },
-				{ "operand-type=", v => { } },
+				{ "only-identified", "only show identified opcodes",
+					v => options.OnlyIdentified = true },
+				{ "operands", "print info about operand types",
+					v => options.Operands = true },
+				{ "operand-type=", "operand type whitelist",
+					(Int32 v) => options.OperandTypeWhitelist = v },
 
 				// `position` options
-				{ "K=|key=", (Int32 v) => options.Key = v },
-				{ "P=|position-string=", v => options.PositionString = v },
+				{ "K=|key=", "integer crypto key used to translate a position string",
+					(Int32 v) => options.Key = v },
+				{ "P=|position-string=", "position string to translate",
+					v => options.PositionString = v },
 
 				// `resource` options
-				{ "o=|destination=", v => options.Destination = v },
-				{ "f|force", v => { } },
-				{ "x|extract", v => { } },
-				{ "D|keep-encrypted", v => { } },
+				{ "o=|destination=", "destination file (type of file depends on program action)",
+					v => options.Destination = v },
+				{ "f|force", "overwrite destination file if it exists",
+					v => options.OverwriteExisting = true },
+				{ "x|extract", v => options.ExtractResource = true },
+				{ "D|keep-encrypted", "don't decrypt the resource file when extracting",
+					v => options.KeepEncrypted = true },
 
 				// Other options
-				{ "L|no-logo", v => options.NoLogo = true },
-				{ "h|?|help", v => options.Help = true },
-				{ "v|verbose", v => options.VerboseLevel++ }
+				{ "L|no-logo", "don't show the ascii logo", v => options.NoLogo = true },
+				{ "h|?|help", "show help/usage info and exit", v => options.Help = true },
+				{ "v|verbose", "more output", v => options.VerboseLevel++ }
 			};
 
 			options.Extra = optionSet.Parse(args);
