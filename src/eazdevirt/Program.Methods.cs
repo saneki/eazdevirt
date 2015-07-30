@@ -11,8 +11,7 @@ namespace eazdevirt
 		/// Perform "find-methods" verb.
 		/// </summary>
 		/// <param name="options">Options</param>
-		static void DoFindMethods(MonoOptions options
-			/* FindMethodsSubOptions options */)
+		static void DoFindMethods(MonoOptions options)
 		{
 			ILogger logger = GetLogger(options);
 

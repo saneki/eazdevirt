@@ -8,8 +8,7 @@ namespace eazdevirt
 		/// Perform "get-key" verb.
 		/// </summary>
 		/// <param name="options">Options</param>
-		static void DoGetKey(MonoOptions options
-			/* GetKeySubOptions options */)
+		static void DoGetKey(MonoOptions options)
 		{
 			EazModule module;
 			if (!TryLoadModule(options.AssemblyPath, out module))

@@ -10,8 +10,7 @@ namespace eazdevirt
 		/// Perform "devirtualize" verb.
 		/// </summary>
 		/// <param name="options">Options</param>
-		static void DoDevirtualize(MonoOptions options
-			/* DevirtualizeSubOptions options */)
+		static void DoDevirtualize(MonoOptions options)
 		{
 			ILogger logger = GetLogger(options);
 

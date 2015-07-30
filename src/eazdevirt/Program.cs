@@ -4,8 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using CommandLine;
-using CommandLine.Text;
 using dnlib.DotNet;
 using Mono.Options;
 using eazdevirt.IO;
@@ -157,107 +155,6 @@ namespace eazdevirt
 			return 0;
 		}
 
-		static void _Main(String[] args)
-		{
-			var parser = CreateParser();
-
-			var result = parser.ParseArguments
-				<DSubOptions,
-				 DevirtSubOptions,
-				 DevirtualizeSubOptions,
-				 FindMethodsSubOptions,
-				 GSubOptions,
-				 GenSubOptions,
-				 GenerateSubOptions,
-				 GetKeySubOptions,
-				 ISubOptions,
-				 InstructionsSubOptions,
-				 MSubOptions,
-				 PositionSubOptions,
-				 ResourceSubOptions,
-				 ResSubOptions,
-				 RSubOptions>(args);
-
-			if (!result.Errors.Any())
-			{
-				BaseOptions options = (BaseOptions)result.Value;
-
-				if(!options.NoLogo)
-					WriteAsciiLogo();
-
-				if (result.Value is DevirtualizeSubOptions)
-				{
-					// DoDevirtualize((DevirtualizeSubOptions)result.Value);
-				}
-				else if (result.Value is FindMethodsSubOptions)
-				{
-					// DoFindMethods((FindMethodsSubOptions)result.Value);
-				}
-				else if (result.Value is GenerateSubOptions)
-				{
-					// DoGenerate((GenerateSubOptions)result.Value);
-				}
-				else if (result.Value is GetKeySubOptions)
-				{
-					// DoGetKey((GetKeySubOptions)result.Value);
-				}
-				else if (result.Value is InstructionsSubOptions)
-				{
-					// DoInstructions((InstructionsSubOptions)result.Value);
-				}
-				else if (result.Value is PositionSubOptions)
-				{
-					// DoPosition((PositionSubOptions)result.Value);
-				}
-				else if (result.Value is ResourceSubOptions)
-				{
-					// DoResource((ResourceSubOptions)result.Value);
-				}
-			}
-			else
-			{
-				WriteHelpText(args, parser, result);
-			}
-		}
-
-		/// <summary>
-		/// Create a custom command line parser.
-		/// </summary>
-		/// <returns>Parser</returns>
-		static Parser CreateParser()
-		{
-			return new Parser((settings) =>
-			{
-				// Will handle writing help ourself
-				settings.HelpWriter = null;
-			});
-		}
-
-		/// <summary>
-		/// Write help text to console.
-		/// </summary>
-		/// <param name="args">Args</param>
-		/// <param name="parser">Parser</param>
-		/// <param name="result">Parse result</param>
-		static void WriteHelpText(String[] args, Parser parser, ParserResult<Object> result)
-		{
-			// Get description from assembly attribute
-			Assembly assembly = Assembly.GetEntryAssembly() ?? Assembly.GetExecutingAssembly();
-			var descAttr = (AssemblyDescriptionAttribute)assembly.GetCustomAttribute(typeof(AssemblyDescriptionAttribute));
-			String description = descAttr.Description;
-
-			// Append description to heading
-			HeadingInfo headingInfo = HeadingInfo.Default;
-			StringBuilder headingBuilder = new StringBuilder(headingInfo.ToString());
-			headingBuilder.Append(" - ");
-			headingBuilder.Append(description);
-
-			HelpText helpText = HelpText.AutoBuild(result);
-			helpText.AdditionalNewLineAfterOption = false;
-			helpText.Heading = headingBuilder.ToString();
-			Console.WriteLine(helpText);
-		}
-
 		static ILogger GetLogger(MonoOptions options)
 		{
 			LoggerEvent e = LoggerEvent.Info;
@@ -266,18 +163,6 @@ namespace eazdevirt
 				e = LoggerEvent.Verbose;
 			else if (options.VerboseLevel > 1)
 				e = LoggerEvent.VeryVerbose;
-
-			return new ConsoleLogger(e);
-		}
-
-		static ILogger GetLogger(BaseOptions options)
-		{
-			LoggerEvent e = LoggerEvent.Info;
-
-			if (options.VeryVerbose)
-				e = LoggerEvent.VeryVerbose;
-			else if (options.Verbose)
-				e = LoggerEvent.Verbose;
 
 			return new ConsoleLogger(e);
 		}

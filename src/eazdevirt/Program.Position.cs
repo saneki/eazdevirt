@@ -8,8 +8,7 @@ namespace eazdevirt
 		/// Perform "position" verb.
 		/// </summary>
 		/// <param name="options">Options</param>
-		static void DoPosition(MonoOptions options
-			/* PositionSubOptions options */)
+		static void DoPosition(MonoOptions options)
 		{
 			IPositionTranslator translator = PositionTranslator.DefaultInstance;
 

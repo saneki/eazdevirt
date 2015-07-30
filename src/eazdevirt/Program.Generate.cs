@@ -10,8 +10,7 @@ namespace eazdevirt
 		/// Perform "generate" verb.
 		/// </summary>
 		/// <param name="options">Options</param>
-		static void DoGenerate(MonoOptions options
-			/* GenerateSubOptions options */)
+		static void DoGenerate(MonoOptions options)
 		{
 			var generator = new VirtualizableAssemblyGenerator();
 

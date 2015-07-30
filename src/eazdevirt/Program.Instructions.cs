@@ -11,8 +11,7 @@ namespace eazdevirt
 		/// Perform "instructions" verb.
 		/// </summary>
 		/// <param name="options">Options</param>
-		static void DoInstructions(MonoOptions options
-			/* InstructionsSubOptions options */)
+		static void DoInstructions(MonoOptions options)
 		{
 			EazModule module;
 			if (!TryLoadModule(options.AssemblyPath, out module))

@@ -9,8 +9,7 @@ namespace eazdevirt
 		/// Perform "resource" verb.
 		/// </summary>
 		/// <param name="options">Options</param>
-		static void DoResource(MonoOptions options
-			/* ResourceSubOptions options */)
+		static void DoResource(MonoOptions options)
 		{
 			EazModule module;
 			if (!TryLoadModule(options.AssemblyPath, out module))
