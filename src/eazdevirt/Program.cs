@@ -92,7 +92,7 @@ namespace eazdevirt
 
 				// `resource` options
 				{ "o=|destination=", "destination file (type of file depends on program action)",
-					v => options.Destination = v },
+					v => options.OutputPath = v },
 				{ "f|force", "overwrite destination file if it exists",
 					v => options.OverwriteExisting = true },
 				{ "x|extract", v => options.ExtractResource = true },

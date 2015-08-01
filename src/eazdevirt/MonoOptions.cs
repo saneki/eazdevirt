@@ -39,7 +39,7 @@ namespace eazdevirt
 		/// </remarks>
 		public Nullable<Int32> Key { get; set; }
 
-		public String Destination = null;
+		//public String Destination = null;
 		public Boolean OverwriteExisting = false;
 		public Boolean ExtractResource = true;
 		public Boolean KeepEncrypted = false;
