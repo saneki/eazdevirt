@@ -68,6 +68,14 @@ namespace eazdevirt
 		/// </summary>
 		public DetectAttribute DetectAttribute { get; private set; }
 
+		/// <summary>
+		/// Get the OpCode name (if CIL), or SpecialOpCode name (if special).
+		/// </summary>
+		public String Name
+		{
+			get { return (this.HasCILOpCode ? this.OpCode.ToString() : this.SpecialOpCode.ToString()); }
+		}
+
 		public Boolean ExpectsMultiple
 		{
 			get

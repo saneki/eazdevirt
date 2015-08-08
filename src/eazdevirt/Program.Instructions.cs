@@ -58,7 +58,7 @@ namespace eazdevirt
 				{
 					vInstructions = new List<VirtualOpCode>(vInstructions
 						.Where((instruction) => { return instruction.IsIdentified; })
-						.OrderBy((instruction) => { return instruction.OpCode.ToString(); }));
+						.OrderBy((instruction) => { return instruction.Name; }));
 				}
 
 				// If only showing instructions with specific virtual operand types, filter
@@ -76,7 +76,7 @@ namespace eazdevirt
 					if (!options.Verbose) // Simple output
 					{
 						if (v.IsIdentified)
-							Console.WriteLine("Instruction: {0}, Method: {1}", v.OpCode, v.DelegateMethod.FullName);
+							Console.WriteLine("Instruction: {0}, Method: {1}", v.Name, v.DelegateMethod.FullName);
 						else
 							Console.WriteLine("Instruction: Unknown, Method: {0}", v.DelegateMethod.FullName);
 					}
@@ -85,7 +85,7 @@ namespace eazdevirt
 						Console.WriteLine();
 
 						if (v.IsIdentified)
-							Console.WriteLine("Instruction: {0}", v.OpCode);
+							Console.WriteLine("Instruction: {0}", v.Name);
 						else
 							Console.WriteLine("Instruction: Unknown");
 
