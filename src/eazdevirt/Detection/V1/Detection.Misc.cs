@@ -52,8 +52,21 @@ namespace eazdevirt.Detection.V1.Ext
 				&& ((IMethod)sub[2].Operand).DeclaringType.FullName.Contains("System.InvalidCastException");
 		}
 
-		[Detect(Code.Ceq)]
-		public static Boolean Is_Ceq(this VirtualOpCode ins)
+		private static Boolean _Is_Ceq_50(VirtualOpCode ins)
+		{
+			return ins.DelegateMethod.Matches(
+				Code.Ldloc_2, Code.Ldloc_1, Code.Ldloc_0, Code.Call, Code.Brtrue_S,
+				Code.Ldc_I4_0, Code.Br_S, Code.Ldc_I4_1
+			) && ins.DelegateMethod.MatchesIndirect(
+				// Helper changed in 5.0
+				Code.Ceq, Code.Stloc_0, Code.Br_S, Code.Ldarg_0, Code.Castclass,
+				Code.Stloc_S, Code.Ldarg_1, Code.Castclass, Code.Stloc_S,
+				Code.Ldloc_S, Code.Ldloc_S, Code.Callvirt, Code.Stloc_0, Code.Ldloc_0,
+				Code.Ret
+			);
+		}
+
+		private static Boolean _Is_Ceq_49(VirtualOpCode ins)
 		{
 			return ins.DelegateMethod.Matches(
 				Code.Ldloc_2, Code.Ldloc_1, Code.Ldloc_0, Code.Call, Code.Brtrue_S,
@@ -62,6 +75,12 @@ namespace eazdevirt.Detection.V1.Ext
 				Code.Ldloc_1, Code.Callvirt, Code.Call, Code.Ldarg_1, Code.Callvirt, Code.Call,
 				Code.Ceq, Code.Stloc_0, Code.Ldloc_0, Code.Ret
 			);
+		}
+
+		[Detect(Code.Ceq)]
+		public static Boolean Is_Ceq(this VirtualOpCode ins)
+		{
+			return _Is_Ceq_49(ins) || _Is_Ceq_50(ins);
 		}
 
 		/// <summary>

@@ -62,9 +62,18 @@ namespace eazdevirt.Detection.V1.Ext
 		/// <summary>
 		/// OpCode pattern seen in the Beq, Bne_Un helper methods.
 		/// </summary>
-		private static readonly Code[] Pattern_Br_Equality = new Code[] {
+		private static readonly Code[] Pattern_Br_Equality_49 = new Code[] {
 			Code.Ldloc_1, Code.Callvirt, Code.Call, Code.Ldarg_1, Code.Callvirt,
 			Code.Call, Code.Ceq, Code.Stloc_0, Code.Ldloc_0, Code.Ret
+		};
+
+		/// <summary>
+		/// Pattern_Br_Equality_49 updated for 5.0.
+		/// </summary>
+		private static readonly Code[] Pattern_Br_Equality_50 = new Code[] {
+			Code.Ceq, Code.Stloc_0, Code.Br_S, Code.Ldarg_0, Code.Castclass, Code.Stloc_S,
+			Code.Ldarg_1, Code.Castclass, Code.Stloc_S, Code.Ldloc_S, Code.Ldloc_S,
+			Code.Callvirt, Code.Stloc_0, Code.Ldloc_0, Code.Ret
 		};
 
 		/// <summary>
@@ -101,7 +110,8 @@ namespace eazdevirt.Detection.V1.Ext
 
 		private static Boolean _Is_Br_Equality(VirtualOpCode ins)
 		{
-			return ins.DelegateMethod.MatchesIndirect(Pattern_Br_Equality);
+			return ins.DelegateMethod.MatchesIndirect(Pattern_Br_Equality_49)
+				|| ins.DelegateMethod.MatchesIndirect(Pattern_Br_Equality_50);
 		}
 
 		[Detect(Code.Beq)]
