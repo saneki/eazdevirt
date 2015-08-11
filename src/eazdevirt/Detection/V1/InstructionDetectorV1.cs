@@ -31,6 +31,11 @@ namespace eazdevirt.Detection.V1
 		private Dictionary<Code, Detector> _detectors = new Dictionary<Code, Detector>();
 
 		/// <summary>
+		/// Dictionary mapping special opcodes to their respective detector methods.
+		/// </summary>
+		private Dictionary<SpecialCode, Detector> _specialDetectors = new Dictionary<SpecialCode, Detector>();
+
+		/// <summary>
 		/// Construct an InstructionDetectorV1.
 		/// </summary>
 		private InstructionDetectorV1()
@@ -67,12 +72,25 @@ namespace eazdevirt.Detection.V1
 		/// <param name="callback">Detector delegate</param>
 		private void AddDetector(DetectAttribute attr, Detector callback)
 		{
-			if (!_detectors.ContainsKey(attr.OpCode))
-				_detectors.Add(attr.OpCode, callback);
+			if (attr.IsSpecial)
+			{
+				if (!_specialDetectors.ContainsKey(attr.SpecialOpCode))
+					_specialDetectors.Add(attr.SpecialOpCode, callback);
+				else
+				{
+					Console.WriteLine ("[WARNING] More than one detector method found for special opcode {0}", attr.SpecialOpCode);
+					_specialDetectors[attr.SpecialOpCode] = callback;
+				}
+			}
 			else
 			{
-				Console.WriteLine("[WARNING] More than one detector method found for opcode {0}", attr.OpCode);
-				_detectors[attr.OpCode] = callback;
+				if (!_detectors.ContainsKey(attr.OpCode))
+					_detectors.Add(attr.OpCode, callback);
+				else
+				{
+					Console.WriteLine ("[WARNING] More than one detector method found for CIL opcode {0}", attr.OpCode);
+					_detectors[attr.OpCode] = callback;
+				}
 			}
 		}
 
@@ -92,6 +110,12 @@ namespace eazdevirt.Detection.V1
 		public override DetectAttribute IdentifyFull(VirtualOpCode instruction)
 		{
 			foreach (var kvp in _detectors)
+			{
+				if (kvp.Value(instruction))
+					return (DetectAttribute)kvp.Value.Method.GetCustomAttribute(typeof(DetectAttribute));
+			}
+
+			foreach (var kvp in _specialDetectors)
 			{
 				if (kvp.Value(instruction))
 					return (DetectAttribute)kvp.Value.Method.GetCustomAttribute(typeof(DetectAttribute));
