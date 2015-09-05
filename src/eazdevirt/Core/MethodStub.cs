@@ -102,6 +102,8 @@ namespace eazdevirt
 
 			// Get the position string
 			int expectedLdstrIndex = (this.VirtualCallIndex - 2);
+			if(this.VirtualCallMethod.Parameters.Count >= 6)
+				expectedLdstrIndex -= 3;
 			if (expectedLdstrIndex >= 0
 			&& instrs[expectedLdstrIndex].OpCode.Code == dnlib.DotNet.Emit.Code.Ldstr)
 			{
@@ -232,11 +234,11 @@ namespace eazdevirt
 			ParameterList p = method.Parameters;
 
 			TypeSig[] types = null;
-			if (p.Count == 3)
+			if (p.Count == 3 || p.Count == 6)
 			{
 				types = new TypeSig[] { p[0].Type, p[1].Type, p[2].Type };
 			}
-			else if (p.Count == 4)
+			else if (p.Count == 4 || p.Count == 7)
 			{
 				types = new TypeSig[] { p[1].Type, p[2].Type, p[3].Type };
 			}
