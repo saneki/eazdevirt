@@ -318,18 +318,42 @@ namespace eazdevirt.IO
 
 		protected Instruction ReadOneInstruction_Special(VirtualOpCode virtualInstruction)
 		{
-			throw new Exception(String.Format(
-				"Cannot yet parse special opcodes ({0})",
-				virtualInstruction.SpecialOpCode.ToString()
-			));
+			//throw new Exception(String.Format(
+			//	"Cannot yet parse special opcodes ({0}, delegate MDToken = 0x{1:X8})",
+			//	virtualInstruction.SpecialOpCode.ToString(),
+			//	virtualInstruction.DelegateMethod.MDToken.Raw
+			//));
 
-			//SpecialCode opcode = virtualInstruction.SpecialOpCode;
-			//Object operand = this.ReadSpecialOperand(virtualInstruction);
+			// Have a method for this?
+			OpCode opcode = null;
+			switch(virtualInstruction.SpecialOpCode)
+			{
+				case SpecialCode.Eaz_Call:
+					opcode = Code.Call.ToOpCode(); // Or Callvirt?
+					break;
+			}
 
-			//Instruction instruction = new Instruction(opcode);
-			//instruction.Offset = this.CurrentILOffset;
-			//instruction.OpCode = opcode;
-			//instruction.Operand = this.ReadOperand(instruction);
+			if(opcode == null)
+			{
+				throw new Exception(String.Format(
+					"Cannot convert SpecialOpCode to CIL OpCode: {0}",
+					virtualInstruction.SpecialOpCode
+				));
+			}
+
+			Object operand = this.ReadSpecialOperand(virtualInstruction);
+
+			Instruction instruction = new Instruction(opcode);
+			instruction.Offset = this.CurrentILOffset;
+			instruction.OpCode = opcode;
+			instruction.Operand = operand; // this.ReadOperand(instruction);
+
+			this.CurrentILOffset += (UInt32)instruction.GetSize();
+			this.CurrentVirtualOffset += (UInt32)virtualInstruction.GetSize(instruction.Operand);
+
+			this.CurrentInstructionOffset++;
+
+			return instruction;
 		}
 
 		/// <summary>
@@ -427,9 +451,7 @@ namespace eazdevirt.IO
 			switch (virtualOpCode.SpecialOpCode)
 			{
 				case SpecialCode.Eaz_Call:
-					Int32 val = this.Reader.ReadInt32();
-					// ...
-					break;
+					return this.Resolver.ResolveEazCall(this.Reader.ReadInt32());
 			}
 
 			return null;

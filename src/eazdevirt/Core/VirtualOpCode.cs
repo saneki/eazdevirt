@@ -307,9 +307,24 @@ namespace eazdevirt
 			if (!this.IsIdentified)
 				throw new Exception("Cannot get a virtual instruction's size if not identified");
 
-			// Instruction instruction = this.OpCode.ToOpCode().ToInstruction();
-			Instruction instruction = new Instruction(this.OpCode.ToOpCode(), operand);
-			return (instruction.GetSize() - instruction.OpCode.Size) + 4;
+			if (this.HasCILOpCode)
+			{
+				// Instruction instruction = this.OpCode.ToOpCode().ToInstruction();
+				Instruction instruction = new Instruction(this.OpCode.ToOpCode(), operand);
+				return (instruction.GetSize() - instruction.OpCode.Size) + 4;
+			}
+			else
+			{
+				switch(this.SpecialOpCode)
+				{
+					case SpecialCode.Eaz_Call:
+						return 8;
+				}
+
+				throw new Exception(String.Format(
+					"Cannot get size of virtual instruction: {0}",
+					this.Name));
+			}
 		}
 
 		/// <summary>

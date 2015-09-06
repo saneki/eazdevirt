@@ -502,6 +502,60 @@ namespace eazdevirt.IO
 			}
 		}
 
+		public IMethod ResolveEazCall(Int32 value)
+		{
+			lock (_lock)
+			{
+				return this.ResolveEazCall_NoLock(value);
+			}
+		}
+
+		IMethod ResolveEazCall_NoLock(Int32 value)
+		{
+			// Currently unsure what these two flags do
+			Boolean flag1 = (value & 0x80000000) != 0; // Probably indicates the method has no generic vars
+			Boolean flag2 = (value & 0x40000000) != 0;
+			Int32 position = value & 0x3FFFFFFF; // Always a stream position
+
+			if (flag1)
+			{
+				//throw new Exception(String.Format(
+				//	"Unsure what to do if EazCall operand flag1 is set (operand = 0x{0:X8})",
+				//	value
+				//));
+
+				// void DoSomething(Int32, Type[], Type[], Boolean):
+				// -> DoSomething(position, null, null, flag2);
+
+				return ResolveEazCall_Helper(position, null, null, flag1);
+			}
+			else
+			{
+				this.Stream.Position = position;
+
+				InlineOperand operand = new InlineOperand(this.Reader);
+				UnknownType7 data = operand.Data as UnknownType7;
+
+				Int32 num = data.Unknown1;
+				// This method is used to get generics info?
+				IMethod method = this.ResolveMethod_NoLock(data.Unknown2);
+				Type[] genericTypes = null; // Todo
+				Type[] declaringGenericTypes = null; // Todo
+
+				Boolean subflag1 = (num & 0x40000000) != 0;
+				num &= unchecked((Int32)0xBFFFFFFF);
+
+				// -> DoSomething(num, genericTypes, declaringGenericTypes, subflag1);
+				return ResolveEazCall_Helper(num, genericTypes, declaringGenericTypes, subflag1);
+			}
+		}
+
+		IMethod ResolveEazCall_Helper(
+			Int32 value, Type[] genericTypes, Type[] declaringGenericTypes, Boolean flag)
+		{
+			throw new Exception("Dunno");
+		}
+
 		/// <summary>
 		/// Resolve a type from a deserialized inline operand, which should
 		/// have a direct token (position).
