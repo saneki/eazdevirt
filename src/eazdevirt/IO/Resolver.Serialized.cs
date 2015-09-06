@@ -423,5 +423,67 @@ namespace eazdevirt.IO
 				this.Unknown2 = reader.ReadInt32();
 			}
 		}
+
+		public class UnknownType8
+		{
+			/// <summary>
+			/// Whether or not the respective method is an instance (non-static) method.
+			/// </summary>
+			public Boolean IsInstance { get; private set; }
+
+			public Int32 Unknown2 { get; private set; }
+			public Int32 Unknown3 { get; private set; }
+			public String Name { get; private set; }
+			public UnknownType9[] Unknown5 { get; private set; }
+			public Int32[] Unknown6 { get; private set; }
+
+			public UnknownType8(BinaryReader reader)
+			{
+				this.Deserialize(reader);
+			}
+
+			protected void Deserialize(BinaryReader reader)
+			{
+				this.IsInstance = reader.ReadBoolean();
+				this.Unknown2 = reader.ReadInt32();
+				this.Unknown3 = reader.ReadInt32();
+				this.Name = reader.ReadString();
+
+				this.Unknown5 = UnknownType9.ReadArray(reader);
+
+				this.Unknown6 = new Int32[reader.ReadUInt16()];
+				for (Int32 i = 0; i < this.Unknown6.Length; i++)
+					this.Unknown6[i] = reader.ReadInt32();
+			}
+		}
+
+		// Parameter?
+		public class UnknownType9
+		{
+			public Int32 Unknown1 { get; private set; } // Probably a Type to be resolved
+			public Boolean Unknown2 { get; private set; } // Probably in/out
+
+			public UnknownType9(BinaryReader reader)
+			{
+				this.Deserialize(reader);
+			}
+
+			protected void Deserialize(BinaryReader reader)
+			{
+				this.Unknown1 = reader.ReadInt32();
+				this.Unknown2 = reader.ReadBoolean();
+			}
+
+			public static UnknownType9[] ReadArray(BinaryReader reader)
+			{
+				Int32 count = reader.ReadInt16();
+				UnknownType9[] arr = new UnknownType9[count];
+
+				for (Int32 i = 0; i < arr.Length; i++)
+					arr[i] = new UnknownType9(reader);
+
+				return arr;
+			}
+		}
 	}
 }

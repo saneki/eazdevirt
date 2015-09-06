@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using dnlib.DotNet;
@@ -553,7 +554,18 @@ namespace eazdevirt.IO
 		IMethod ResolveEazCall_Helper(
 			Int32 value, Type[] genericTypes, Type[] declaringGenericTypes, Boolean flag)
 		{
-			throw new Exception("Dunno");
+			this.Stream.Position = value;
+
+			// The virtual machine does this check:
+			if (this.Reader.ReadByte() != 0)
+				throw new InvalidDataException();
+
+			UnknownType8 unknown = new UnknownType8(this.Reader);
+
+			throw new Exception(String.Format(
+				"Dunno [Value = 0x{0:X8}, Flag = {1}] (IsInstance = {2}, Name = {3})",
+				value, flag, unknown.IsInstance, unknown.Name
+			));
 		}
 
 		/// <summary>
