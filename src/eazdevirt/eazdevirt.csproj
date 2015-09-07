@@ -43,6 +43,7 @@
     <Compile Include="Core\SpecialCode.cs" />
     <Compile Include="Core\IPositionTranslator.cs" />
     <Compile Include="Core\PositionTranslator.cs" />
+    <Compile Include="Core\StackTypeHelper.cs" />
     <Compile Include="Detection\InstructionDetectorBase.cs" />
     <Compile Include="Detection\IInstructionDetector.cs" />
     <Compile Include="Detection\V1\Detection.Arg.cs" />

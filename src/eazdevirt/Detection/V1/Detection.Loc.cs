@@ -75,14 +75,35 @@ namespace eazdevirt.Detection.V1.Ext
 				   .MDToken == ins.VType.LocalsField.MDToken;
 		}
 
+		/// <summary>
+		/// OpCode pattern matching the Ldloca, Ldloca_S delegate methods.
+		/// </summary>
+		private static readonly Code[] Pattern_Ldloca = new Code[] {
+			// The Castclass operand will be UInt16 stacktype for Ldloca,
+			// and Byte stacktype for Ldloca_S
+			Code.Ldarg_1, Code.Castclass, Code.Stloc_0, Code.Ldarg_0, Code.Newobj,
+			Code.Stloc_1, Code.Ldloc_1, Code.Ldloc_0, Code.Callvirt, Code.Callvirt,
+			Code.Ldloc_1, Code.Call, Code.Ret
+		};
+
+		private static Boolean _Is_Ldloca(VirtualOpCode ins, String typeName)
+		{
+			TypeDef stackType;
+			return ins.DelegateMethod.MatchesEntire(Pattern_Ldloca)
+				&& (stackType = ins.DelegateMethod.Body.Instructions[1].Operand as TypeDef) != null
+				&& StackTypeHelper.GetUnderlyingType(stackType).FullName.Equals(typeName);
+		}
+
+		[Detect(Code.Ldloca)]
+		public static Boolean Is_Ldloca(this VirtualOpCode ins)
+		{
+			return _Is_Ldloca(ins, "System.UInt16");
+		}
+
 		[Detect(Code.Ldloca_S)]
 		public static Boolean Is_Ldloca_S(this VirtualOpCode ins)
 		{
-			return ins.DelegateMethod.MatchesEntire(
-				Code.Ldarg_1, Code.Castclass, Code.Stloc_0, Code.Ldarg_0, Code.Newobj,
-				Code.Stloc_1, Code.Ldloc_1, Code.Ldloc_0, Code.Callvirt, Code.Callvirt,
-				Code.Ldloc_1, Code.Call, Code.Ret
-			);
+			return _Is_Ldloca(ins, "System.Byte");
 		}
 
 		/// <summary>
