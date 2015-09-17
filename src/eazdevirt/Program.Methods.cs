@@ -27,7 +27,7 @@ namespace eazdevirt
 			foreach (var method in methods)
 			{
 				Console.WriteLine();
-				Console.WriteLine(method.Method.FullName);
+				Console.WriteLine("{0} (MDToken = 0x{1:X8})", method.Method.FullName, method.Method.MDToken.Raw);
 				Console.WriteLine("--> Position string: {0}", method.PositionString);
 				Console.WriteLine("--> Position: {0} (0x{0:X8})", method.Position);
 				Console.WriteLine("--> Resource: {0}", method.ResourceStringId);
@@ -95,6 +95,7 @@ namespace eazdevirt
 							Console.WriteLine("--> Not yet devirtualizable (threw exception)");
 							Console.WriteLine();
 							Console.Write(exception);
+							Console.WriteLine();
 						}
 					}
 				}
