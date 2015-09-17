@@ -354,7 +354,27 @@ namespace eazdevirt.IO
 				if (typeDef != null)
 					return typeDef.FindField(data.Name);
 
-				throw new Exception("[ResolveField_NoLock] Currently unable to resolve a field from an unresolvable TypeRef");
+				TypeRef typeRef = type as TypeRef;
+
+				// Try to resolve TypeRef from references (AssemblyRefs)
+				var module = ((ModuleDefMD)typeRef.Module);
+				var assemblies = module.GetAssemblyRefs();
+				foreach (var asm in assemblies)
+				{
+					var resolved = _asmResolver.Resolve(asm, module);
+					if (resolved == null)
+						continue;
+
+					typeDef = resolved.FindReflection(typeRef.ReflectionFullName);
+					if (typeDef == null)
+						continue;
+
+					return typeDef.FindField(data.Name);
+				}
+
+				throw new Exception(String.Format(
+					"[ResolveField_NoLock] Unable to resolve field: DeclaringType={0}, Field={1}",
+					typeRef.ReflectionFullName, data.Name));
 			}
 		}
 
