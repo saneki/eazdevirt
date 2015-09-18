@@ -518,14 +518,10 @@ namespace eazdevirt.IO
 				}
 
 				// If all else fails, make our own typeref
-				this.Logger.Verbose(this, "[ResolveType_NoLock] WARNING: Creating TypeRef for: {0}", data.Name);
+				this.Logger.Verbose(this, "Creating TypeRef for: {0}", data.Name);
 				AssemblyRef assemblyRef = GetAssemblyRef(data.AssemblyFullName);
-				typeRef = new TypeRefUser(this.Module, data.Namespace, data.TypeNameWithoutNamespace, assemblyRef);
-				if (typeRef != null)
-					return typeRef;
-
-				throw new Exception(String.Format(
-					"[ResolveType_NoLock] Couldn't resolve type {0} @ {1} (0x{1:X8})", typeName, position));
+				this.Logger.Verbose(this, "--> Using AssemblyRef: {0}", assemblyRef.FullName);
+				return new TypeRefUser(this.Module, data.Namespace, data.TypeNameWithoutNamespace, assemblyRef);
 			}
 		}
 
@@ -1004,12 +1000,25 @@ namespace eazdevirt.IO
 			return typeSig;
 		}
 
-		AssemblyRef GetAssemblyRef(String fullname)
+		/// <summary>
+		/// Get the AssemblyRef of the module from the assembly full name, adding
+		/// our own AssemblyRef if none found.
+		/// </summary>
+		/// <param name="fullName">Assembly full name</param>
+		/// <returns>AssemblyRef</returns>
+		AssemblyRef GetAssemblyRef(String fullName)
 		{
-			return this.Module.GetAssemblyRefs().FirstOrDefault((ar) =>
+			// Try to find AssemblyRef via full name
+			var assemblyRef = this.Module.GetAssemblyRefs().FirstOrDefault((ar) =>
 			{
-				return ar.FullName.Equals(fullname);
+				return ar.FullName.Equals(fullName);
 			});
+
+			if (assemblyRef != null)
+				return assemblyRef;
+
+			// If unable to find, add our own AssemblyRef from the full name
+			return new AssemblyRefUser(new System.Reflection.AssemblyName(fullName));
 		}
 	}
 }
