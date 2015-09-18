@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using dnlib.DotNet;
 using dnlib.DotNet.MD;
+using eazdevirt.Util;
 
 namespace eazdevirt.IO
 {
@@ -134,7 +135,60 @@ namespace eazdevirt.IO
 			return memberRef;
 		}
 
+		TypeDef ResolveTypeSpec(TypeSpec typeSpec)
+		{
+			var module = (ModuleDefMD)typeSpec.Module;
+			var assemblies = module.GetAssemblyRefs();
+			var genericArgCount = typeSpec.TryGetGenericInstSig().GenericArguments.Count;
+			var fixedName = typeSpec.ReflectionFullName.Split('`')[0] + "`" + genericArgCount;
+
+			foreach (var asm in assemblies)
+			{
+				var resolved = _asmResolver.Resolve(asm, module);
+
+				TypeDef typeDef = resolved.FindNormal(fixedName);
+				if (typeDef == null)
+					continue;
+
+				return typeDef;
+			}
+
+			return null;
+		}
+
 		IMethod ResolveMethod_NoLock(TypeSpec declaringSpec, MethodData data)
+		{
+			MethodSig methodSig = GetMethodSig(data);
+
+			var typeDef = ResolveTypeSpec(declaringSpec);
+			if (typeDef == null)
+			{
+				throw new Exception(String.Format(
+					"[ResolveMethod_NoLock] Unable to resolve TypeDef from TypeSpec: {0}",
+					declaringSpec));
+			}
+
+			//Console.WriteLine("Finding methods of {0}", typeDef.ReflectionFullName);
+			//Console.WriteLine("Method name: {0}", data.Name);
+
+			var possibleSigs = CreateMethodSigs(declaringSpec, methodSig, data);
+			foreach (var possibleSig in possibleSigs)
+			{
+				//Console.WriteLine("Possible sig: " + possibleSig);
+				MethodDef method = typeDef.FindMethodCheckBaseType(data.Name, possibleSig);
+				if (method != null)
+				{
+					//Console.WriteLine("Found method: " + method);
+					return method;
+				}
+			}
+
+			throw new Exception(String.Format(
+				"[ResolveMethod_NoLock] No methods: {0} {1}",
+				typeDef.ReflectionFullName, data.Name));
+		}
+
+		IMethod ResolveMethod_NoLock_(TypeSpec declaringSpec, MethodData data)
 		{
 			// If declaring type is a TypeSpec, it should have generic types associated
 			// with it. This doesn't mean the method itself will, though.
@@ -738,74 +792,6 @@ namespace eazdevirt.IO
 				&& method.MethodSig.GenParamCount == signature.GenParamCount;
 		}
 
-		/// <summary>
-		/// Create a list of all possible combinations of types/generic types that would make
-		/// sense as parameters. This is necessary because the serialized method data does not
-		/// contain information about which parameters map to which generic types (indices),
-		/// neither GenericVars (declaring type) or GenericMVars (method itself).
-		///
-		/// TODO: Factor in context generics (generics from virtualized method itself and
-		/// declaring type?)
-		/// </summary>
-		/// <param name="parameters">Parameters (with no generic type information)</param>
-		/// <param name="generics">Generics visible to the method</param>
-		/// <returns>Combinations with at least one item (original parameters)</returns>
-		IList<IList<TypeSig>> CreateGenericParameterCombinations(IList<TypeSig> parameters,
-			IList<TypeSig> typeGenerics, IList<TypeSig> methodGenerics)
-		{
-			IList<IList<TypeSig>> list = new List<IList<TypeSig>>();
-			list.Add(parameters);
-
-			for (UInt16 p = 0; p < parameters.Count; p++)
-			{
-				var ptype = parameters[p];
-
-				for (UInt16 g = 0; g < typeGenerics.Count; g++)
-				{
-					var gtype = typeGenerics[g];
-
-					// Better comparison?
-					if (ptype.FullName.Equals(gtype.FullName))
-					{
-						Int32 length = list.Count;
-						for (Int32 i = 0; i < length; i++)
-						{
-							// Copy param list
-							List<TypeSig> newParams = new List<TypeSig>();
-							newParams.AddRange(list[i]);
-
-							GenericVar gvar = new GenericVar(g);
-							newParams[p] = gvar;
-
-							list.Add(newParams);
-						}
-					}
-				}
-
-				for (UInt16 g = 0; g < methodGenerics.Count; g++)
-				{
-					var gtype = methodGenerics[g];
-
-					if (ptype.FullName.Equals(gtype.FullName))
-					{
-						Int32 length = list.Count;
-						for (Int32 i = 0; i < length; i++)
-						{
-							List<TypeSig> newParams = new List<TypeSig>();
-							newParams.AddRange(list[i]);
-
-							GenericMVar gmvar = new GenericMVar(g);
-							newParams[p] = gmvar;
-
-							list.Add(newParams);
-						}
-					}
-				}
-			}
-
-			return list;
-		}
-
 		IList<MethodSig> CreateMethodSigs(ITypeDefOrRef declaringType, MethodSig sig, MethodData data)
 		{
 			// Setup generic types
@@ -844,6 +830,7 @@ namespace eazdevirt.IO
 			// Todo: Combinations factoring in the possibility that return type might match
 			// a generic type
 			TypeSig returnType = ResolveType(data.ReturnType);
+			IList<TypeSig> returnTypes = GenericUtils.CreateGenericReturnTypePossibilities(returnType, typeGenerics, methodGenerics);
 
 			TypeSig[] paramTypes = new TypeSig[data.Parameters.Length];
 			for (Int32 i = 0; i < paramTypes.Length; i++)
@@ -854,30 +841,33 @@ namespace eazdevirt.IO
 			UInt32 genericTypeCount = (UInt32)data.GenericArguments.Length;
 
 			IList<MethodSig> signatures = new List<MethodSig>();
-			var paramCombos = CreateGenericParameterCombinations(paramTypes, typeGenerics, methodGenerics);
+			var paramCombos = GenericUtils.CreateGenericParameterCombinations(paramTypes, typeGenerics, methodGenerics);
 
-			foreach (var combo in paramCombos)
+			foreach (var rType in returnTypes)
 			{
-				var paramCombo = combo.ToArray();
-
-				MethodSig methodSig;
-
-				if (genericTypeCount == 0)
+				foreach (var combo in paramCombos)
 				{
-					if (data.IsStatic)
-						methodSig = MethodSig.CreateStatic(returnType, paramCombo);
-					else
-						methodSig = MethodSig.CreateInstance(returnType, paramCombo);
-				}
-				else
-				{
-					if (data.IsStatic)
-						methodSig = MethodSig.CreateStaticGeneric(genericTypeCount, returnType, paramCombo);
-					else
-						methodSig = MethodSig.CreateInstanceGeneric(genericTypeCount, returnType, paramCombo);
-				}
+					var paramCombo = combo.ToArray();
 
-				signatures.Add(methodSig);
+					MethodSig methodSig;
+
+					if (genericTypeCount == 0)
+					{
+						if (data.IsStatic)
+							methodSig = MethodSig.CreateStatic(rType, paramCombo);
+						else
+							methodSig = MethodSig.CreateInstance(rType, paramCombo);
+					}
+					else
+					{
+						if (data.IsStatic)
+							methodSig = MethodSig.CreateStaticGeneric(genericTypeCount, rType, paramCombo);
+						else
+							methodSig = MethodSig.CreateInstanceGeneric(genericTypeCount, rType, paramCombo);
+					}
+
+					signatures.Add(methodSig);
+				}
 			}
 
 			return signatures;
