@@ -507,7 +507,9 @@ namespace eazdevirt.IO
 						"Unable to apply generic types: {0}", typeName.FullName
 						));
 
-				// Todo: Stack?
+				// Apply [], *, &
+				typeDefOrRef = this.ApplyTypeModifiers(
+					typeDefOrRef.ToTypeSig(), typeName.Modifiers).ToTypeDefOrRef();
 
 				return typeDefOrRef;
 			}

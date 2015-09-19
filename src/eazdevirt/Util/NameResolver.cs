@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using dnlib.DotNet;
 
@@ -97,6 +98,7 @@ namespace eazdevirt.Util
 
 		public TypeName(String fullName)
 		{
+			Console.WriteLine("FullName: {0}", fullName);
 			this.FullName = fullName;
 		}
 
@@ -164,8 +166,27 @@ namespace eazdevirt.Util
 			get
 			{
 				if (this.FullName.Contains(", "))
-					return this.FullName.Split(',')[0];
+				{
+					// return this.FullName.Split(',')[0];
+					String fixedName, typeName = this.FullName.Split(',')[0];
+					this.GetModifiersStack(typeName, out fixedName);
+					return fixedName;
+				}
 				else return this.FullName;
+			}
+		}
+
+		public Stack<String> Modifiers
+		{
+			get
+			{
+				if (this.FullName.Contains(", "))
+				{
+					String fixedName, typeName = this.FullName.Split(',')[0];
+					return this.GetModifiersStack(typeName, out fixedName);
+				}
+				else
+					return null;
 			}
 		}
 
@@ -208,6 +229,38 @@ namespace eazdevirt.Util
 				else
 					return null;
 			}
+		}
+
+		/// <summary>
+		/// Get a modifiers stack from a deserialized type name, and also
+		/// provide the fixed name.
+		/// </summary>
+		/// <param name="rawName">Deserialized name</param>
+		/// <param name="fixedName">Fixed name</param>
+		/// <returns>Modifiers stack</returns>
+		Stack<String> GetModifiersStack(String rawName, out String fixedName)
+		{
+			var stack = new Stack<String>();
+
+			while (true)
+			{
+				if (rawName.EndsWith("*"))
+					stack.Push("*");
+				else if (rawName.EndsWith("&"))
+					stack.Push("&");
+				else break;
+
+				rawName = rawName.Substring(0, rawName.Length - 1);
+			}
+
+			while (rawName.EndsWith("[]"))
+			{
+				stack.Push("[]");
+				rawName = rawName.Substring(0, rawName.Length - 2);
+			}
+
+			fixedName = rawName;
+			return stack;
 		}
 	}
 }
