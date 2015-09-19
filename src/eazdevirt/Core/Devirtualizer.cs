@@ -102,10 +102,10 @@ namespace eazdevirt
 					method.Method.FreeMethodBody();
 					method.Method.Body = body;
 
-					attempt = new DevirtualizeAttempt(method, body);
+					attempt = new DevirtualizeAttempt(method, reader, body);
 				}
 				else
-					attempt = new DevirtualizeAttempt(method, exception);
+					attempt = new DevirtualizeAttempt(method, reader, exception);
 
 				// Add attempt to list and fire callback
 				attempts.Add(attempt);
@@ -135,6 +135,8 @@ namespace eazdevirt
 
 		public CilBody MethodBody { get; private set; }
 
+		public VirtualizedMethodBodyReader Reader { get; private set; }
+
 		/// <summary>
 		/// Whether or not the exception (if any) was due to an unknown instruction type.
 		/// </summary>
@@ -151,10 +153,12 @@ namespace eazdevirt
 		/// Constructs a failed devirtualize attempt.
 		/// </summary>
 		/// <param name="vmethod">Virtualized method</param>
+		/// <param name="reader">Method body reader</param>
 		/// <param name="exception">Exception that occurred while devirtualizing</param>
-		public DevirtualizeAttempt(MethodStub vmethod, Exception exception)
+		public DevirtualizeAttempt(MethodStub vmethod, VirtualizedMethodBodyReader reader, Exception exception)
 		{
 			this.VirtualizedMethod = vmethod;
+			this.Reader = reader;
 			this.Exception = exception;
 		}
 
@@ -162,10 +166,12 @@ namespace eazdevirt
 		/// Constructs a successful devirtualize attempt.
 		/// </summary>
 		/// <param name="vmethod">Virtualized method</param>
+		/// <param name="reader">Method body reader</param>
 		/// <param name="body">Devirtualized method body</param>
-		public DevirtualizeAttempt(MethodStub vmethod, CilBody body)
+		public DevirtualizeAttempt(MethodStub vmethod, VirtualizedMethodBodyReader reader, CilBody body)
 		{
 			this.VirtualizedMethod = vmethod;
+			this.Reader = reader;
 			this.MethodBody = body;
 		}
 	}

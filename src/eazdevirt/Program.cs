@@ -142,7 +142,7 @@ namespace eazdevirt
 					DoInstructions(options);
 					break;
 				case ProgramAction.Methods:
-					DoFindMethods(options);
+					DoMethods(options);
 					break;
 				case ProgramAction.Position:
 					DoPosition(options);
