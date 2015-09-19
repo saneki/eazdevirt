@@ -135,22 +135,28 @@ namespace eazdevirt.IO
 			return memberRef;
 		}
 
+		/// <summary>
+		/// Resolve a TypeDef from a TypeSpec.
+		/// </summary>
+		/// <param name="typeSpec">TypeSpec to resolve from</param>
+		/// <returns>TypeDef, or null if none found</returns>
 		TypeDef ResolveTypeSpec(TypeSpec typeSpec)
 		{
-			var module = (ModuleDefMD)typeSpec.Module;
-			var assemblies = module.GetAssemblyRefs();
-			var genericArgCount = typeSpec.TryGetGenericInstSig().GenericArguments.Count;
-			var fixedName = typeSpec.ReflectionFullName.Split('`')[0] + "`" + genericArgCount;
-
-			foreach (var asm in assemblies)
-			{
-				var resolved = _asmResolver.Resolve(asm, module);
-
-				TypeDef typeDef = resolved.FindNormal(fixedName);
-				if (typeDef == null)
-					continue;
-
+			// Attempt to immediately resolve it
+			TypeDef typeDef = typeSpec.ResolveTypeDef();
+			if (typeDef != null)
 				return typeDef;
+
+			var assemblies = this.Module.GetAssemblyRefs();
+			var fixedName = typeSpec.ReflectionFullName.Split('[')[0].Replace('+', '/');
+
+			foreach (var asmRef in assemblies)
+			{
+				var asmDef = this.Module.Context.AssemblyResolver.Resolve(asmRef, this.Module);
+
+				typeDef = asmDef.FindNormal(fixedName);
+				if (typeDef != null)
+					return typeDef;
 			}
 
 			return null;
@@ -473,6 +479,56 @@ namespace eazdevirt.IO
 				else if (token.Table == Table.TypeSpec)
 					return this.Module.ResolveTypeSpec(token.Rid);
 
+				throw new Exception("Unable to resolve type: bad MDToken table");
+			}
+			else
+			{
+				TypeData data = operand.Data as TypeData;
+
+				// Make sure we have an AssemblyRef to the assembly in which the type can be found
+				TypeName typeName = new TypeName(data.Name);
+				//AssemblyRef assemblyRef = GetAssemblyRef(typeName.AssemblyFullName);
+
+				// Resolve
+				var nameResolver = new NameResolver(this.Module);
+				ITypeDefOrRef typeDefOrRef = nameResolver.ResolveTypeDefOrRef(typeName);
+
+				if (typeDefOrRef == null)
+					throw new Exception(String.Format(
+						"Unable to resolve ITypeDefOrRef from given name: {0}",
+						typeName.FullName));
+
+				// Apply generics, if any
+				if (data.GenericTypes.Length > 0)
+					typeDefOrRef = ApplyGenerics(typeDefOrRef, data);
+
+				if (typeDefOrRef == null)
+					throw new Exception(String.Format(
+						"Unable to apply generic types: {0}", typeName.FullName
+						));
+
+				// Todo: Stack?
+
+				return typeDefOrRef;
+			}
+		}
+
+		ITypeDefOrRef ResolveType_NoLock_(Int32 position)
+		{
+			this.Stream.Position = position;
+
+			InlineOperand operand = new InlineOperand(this.Reader);
+			if (operand.IsToken)
+			{
+				MDToken token = new MDToken(operand.Token);
+
+				if (token.Table == Table.TypeDef)
+					return this.Module.ResolveTypeDef(token.Rid);
+				else if (token.Table == Table.TypeRef)
+					return this.Module.ResolveTypeRef(token.Rid);
+				else if (token.Table == Table.TypeSpec)
+					return this.Module.ResolveTypeSpec(token.Rid);
+
 				throw new Exception("[ResolveType_NoLock] Bad MDToken table");
 			}
 			else
@@ -518,9 +574,11 @@ namespace eazdevirt.IO
 				}
 
 				// If all else fails, make our own typeref
-				this.Logger.Verbose(this, "Creating TypeRef for: {0}", data.Name);
+				this.Logger.Verbose(this, "Creating TypeRef for:  {0}", data.Name);
 				AssemblyRef assemblyRef = GetAssemblyRef(data.AssemblyFullName);
 				this.Logger.Verbose(this, "--> Using AssemblyRef: {0}", assemblyRef.FullName);
+				this.Logger.Verbose(this, "--> Using Namespace:   {0}", data.Namespace);
+				this.Logger.Verbose(this, "--> Using Type name:   {0}", data.TypeNameWithoutNamespace);
 				return new TypeRefUser(this.Module, data.Namespace, data.TypeNameWithoutNamespace, assemblyRef);
 			}
 		}

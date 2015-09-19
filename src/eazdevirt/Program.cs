@@ -176,7 +176,14 @@ namespace eazdevirt
 		{
 			try
 			{
-				module = new EazModule(path, logger);
+				ModuleDefMD moduleDef = ModuleDefMD.Load(path);
+				AssemblyResolver asmResolver = new AssemblyResolver();
+				ModuleContext modCtx = new ModuleContext(asmResolver);
+				// All resolved assemblies will also get this same modCtx
+				asmResolver.DefaultModuleContext = modCtx;
+				moduleDef.Context = modCtx;
+
+				module = new EazModule(moduleDef, logger);
 			}
 			catch (IOException e)
 			{
