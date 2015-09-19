@@ -71,7 +71,7 @@ namespace eazdevirt
 			{
 				String outputPath = GetDevirtualizedModulePath(options.AssemblyPath);
 				Console.WriteLine("Saving {0}", outputPath);
-				module.Write(outputPath);
+				module.Write(outputPath, options.NoThrow);
 			}
 		}
 

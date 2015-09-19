@@ -24,6 +24,11 @@ namespace eazdevirt
 		public UInt32 VerboseLevel = 0;
 
 		/// <summary>
+		/// Whether or not to not throw when writing.
+		/// </summary>
+		public Boolean NoThrow = false;
+
+		/// <summary>
 		/// Used for: generate.
 		/// </summary>
 		public String InstructionSet = null;

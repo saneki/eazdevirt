@@ -73,11 +73,14 @@ namespace eazdevirt
 			this.InitializeIdentifiedOpCodes();
 		}
 
-		public void Write(String filepath)
+		public void Write(String filepath, Boolean noThrow = false)
 		{
 			var options = new ModuleWriterOptions(this.Module);
 			options.MetaDataOptions.Flags |= MetaDataFlags.PreserveAll;
-			// options.Logger = DummyLogger.NoThrowInstance;
+
+			if (noThrow)
+				options.Logger = DummyLogger.NoThrowInstance;
+
 			this.Module.Write(filepath, options);
 		}
 

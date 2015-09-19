@@ -72,6 +72,8 @@ namespace eazdevirt
 				{ "r|resource", "extract the embedded resource from a protected assembly",
 					v => options.Action = ProgramAction.Resource },
 
+				{ "N|no-throw", "don't throw when writing a module", v => options.NoThrow = true },
+
 				// `generate` options
 				{ "I=|instruction-set=", "name of \"instruction sets\" to generate",
 					v => options.InstructionSet = v },
