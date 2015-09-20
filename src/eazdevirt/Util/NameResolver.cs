@@ -98,7 +98,6 @@ namespace eazdevirt.Util
 
 		public TypeName(String fullName)
 		{
-			Console.WriteLine("FullName: {0}", fullName);
 			this.FullName = fullName;
 		}
 

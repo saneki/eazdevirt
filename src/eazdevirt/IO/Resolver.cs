@@ -164,6 +164,8 @@ namespace eazdevirt.IO
 
 		IMethod ResolveMethod_NoLock(TypeSpec declaringSpec, MethodData data)
 		{
+			this.Logger.Verbose(this, "Resolving TypeSpec method: {0} {1}", declaringSpec, data.Name);
+
 			MethodSig methodSig = GetMethodSig(data);
 
 			var typeDef = ResolveTypeSpec(declaringSpec);
@@ -174,24 +176,21 @@ namespace eazdevirt.IO
 					declaringSpec));
 			}
 
-			//Console.WriteLine("Finding methods of {0}", typeDef.ReflectionFullName);
-			//Console.WriteLine("Method name: {0}", data.Name);
-
+			// Find a method that matches the signature (factoring in possible generic vars/mvars)
+			MethodDef method = null;
 			var possibleSigs = CreateMethodSigs(declaringSpec, methodSig, data);
-			foreach (var possibleSig in possibleSigs)
+			var matchedSig = possibleSigs.FirstOrDefault((sig) => {
+				return (method = typeDef.FindMethodCheckBaseType(data.Name, sig)) != null;
+			});
+
+			if (matchedSig == null || method == null)
 			{
-				//Console.WriteLine("Possible sig: " + possibleSig);
-				MethodDef method = typeDef.FindMethodCheckBaseType(data.Name, possibleSig);
-				if (method != null)
-				{
-					//Console.WriteLine("Found method: " + method);
-					return method;
-				}
+				throw new Exception(String.Format("[ResolveMethod_NoLock] No methods: {0} {1}",
+					typeDef.ReflectionFullName, data.Name));
 			}
 
-			throw new Exception(String.Format(
-				"[ResolveMethod_NoLock] No methods: {0} {1}",
-				typeDef.ReflectionFullName, data.Name));
+			// Todo: Check for GenericMVars and return a MethodSpec if needed
+			return new MemberRefUser(this.Module, method.Name, matchedSig, declaringSpec);
 		}
 
 		IMethod ResolveMethod_NoLock_(TypeSpec declaringSpec, MethodData data)
@@ -485,27 +484,28 @@ namespace eazdevirt.IO
 			{
 				TypeData data = operand.Data as TypeData;
 
-				// Make sure we have an AssemblyRef to the assembly in which the type can be found
+				// Resolve via name
 				TypeName typeName = new TypeName(data.Name);
-				//AssemblyRef assemblyRef = GetAssemblyRef(typeName.AssemblyFullName);
-
-				// Resolve
-				var nameResolver = new NameResolver(this.Module);
+				NameResolver nameResolver = new NameResolver(this.Module);
 				ITypeDefOrRef typeDefOrRef = nameResolver.ResolveTypeDefOrRef(typeName);
 
 				if (typeDefOrRef == null)
+				{
 					throw new Exception(String.Format(
 						"Unable to resolve ITypeDefOrRef from given name: {0}",
 						typeName.FullName));
+				}
 
-				// Apply generics, if any
+				// Apply generics, if any (resulting in a TypeSpec)
 				if (data.GenericTypes.Length > 0)
 					typeDefOrRef = ApplyGenerics(typeDefOrRef, data);
 
 				if (typeDefOrRef == null)
+				{
 					throw new Exception(String.Format(
 						"Unable to apply generic types: {0}", typeName.FullName
 						));
+				}
 
 				// Apply [], *, &
 				typeDefOrRef = this.ApplyTypeModifiers(
@@ -754,7 +754,7 @@ namespace eazdevirt.IO
 			return comparer.Equals(s1.RetType, s2.RetType);
 		}
 
-		ITypeDefOrRef ApplyGenerics(ITypeDefOrRef type, IList<TypeSig> generics)
+		TypeSpec ApplyGenerics(ITypeDefOrRef type, IList<TypeSig> generics)
 		{
 			ClassOrValueTypeSig typeSig = type.ToTypeSig().ToClassOrValueTypeSig();
 			GenericInstSig genericSig = new GenericInstSig(typeSig, generics);
@@ -768,7 +768,7 @@ namespace eazdevirt.IO
 		/// <param name="type">Existing type</param>
 		/// <param name="data">Deserialized data with generic types</param>
 		/// <returns>GenericInstSig</returns>
-		ITypeDefOrRef ApplyGenerics(ITypeDefOrRef type, TypeData data)
+		TypeSpec ApplyGenerics(ITypeDefOrRef type, TypeData data)
 		{
 			List<TypeSig> generics = new List<TypeSig>();
 			foreach (var g in data.GenericTypes)
