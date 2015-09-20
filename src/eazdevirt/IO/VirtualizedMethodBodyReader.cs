@@ -152,10 +152,14 @@ namespace eazdevirt.IO
 				handler.CatchType = this.Resolver.ResolveType(deserialized.VirtualCatchType);
 
 			handler.TryStart = GetInstruction(this.GetRealOffset(deserialized.VirtualTryStart));
+
+			// VirtualTryEnd actually points to virtual instruction before the actual end
 			handler.TryEnd = GetInstruction(this.GetRealOffset(deserialized.VirtualTryEnd));
+			handler.TryEnd = GetInstructionAfter(handler.TryEnd);
+
 			handler.HandlerStart = GetInstruction(this.GetRealOffset(deserialized.VirtualHandlerStart));
 
-			// VirtualHandlerEnd actually points to virtual instruction before the actual end
+			// VirtualHandlerEnd does the same as VirtualTryEnd
 			handler.HandlerEnd = GetInstruction(this.GetRealOffset(deserialized.VirtualHandlerEnd));
 			handler.HandlerEnd = GetInstructionAfter(handler.HandlerEnd);
 
