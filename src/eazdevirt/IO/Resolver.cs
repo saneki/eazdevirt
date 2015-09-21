@@ -602,8 +602,9 @@ namespace eazdevirt.IO
 			{
 				if (operand.Data.Type == InlineOperandType.Type)
 					return this.ResolveType_NoLock(operand.Position);
+				// Apparently if the InlineOperandType is Field it really wants a Type?
 				else if (operand.Data.Type == InlineOperandType.Field)
-					return this.ResolveField_NoLock(operand.Position);
+					return this.ResolveType_NoLock(operand.Position);
 				else if (operand.Data.Type == InlineOperandType.Method)
 					return this.ResolveMethod_NoLock(operand.Position);
 				else throw new InvalidOperationException(String.Format(
