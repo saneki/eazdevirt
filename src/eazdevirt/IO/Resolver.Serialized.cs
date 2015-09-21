@@ -445,8 +445,8 @@ namespace eazdevirt.IO
 			protected void Deserialize(BinaryReader reader)
 			{
 				this.IsInstance = reader.ReadBoolean();
-				this.Unknown2 = reader.ReadInt32();
-				this.Unknown3 = reader.ReadInt32();
+				this.Unknown2 = reader.ReadInt32(); // Return type
+				this.Unknown3 = reader.ReadInt32(); // Declaring type
 				this.Name = reader.ReadString();
 
 				this.Unknown5 = UnknownType9.ReadArray(reader);
