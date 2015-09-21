@@ -164,8 +164,6 @@ namespace eazdevirt.IO
 
 		IMethod ResolveMethod_NoLock(TypeSpec declaringSpec, MethodData data)
 		{
-			this.Logger.Verbose(this, "Resolving TypeSpec method: {0} {1}", declaringSpec, data.Name);
-
 			MethodSig methodSig = GetMethodSig(data);
 
 			var typeDef = ResolveTypeSpec(declaringSpec);
@@ -875,17 +873,6 @@ namespace eazdevirt.IO
 					var gtype = this.ResolveType_NoLock(operand.Position);
 					methodGenerics.Add(gtype.ToTypeSig());
 				}
-			}
-
-			if (!this.Logger.IgnoresEvent(LoggerEvent.Verbose))
-			{
-				this.Logger.Verbose(this, "Type Generics");
-				foreach (var t in typeGenerics)
-					this.Logger.Verbose(this, " {0}", t);
-
-				this.Logger.Verbose(this, "Method Generics");
-				foreach (var m in methodGenerics)
-					this.Logger.Verbose(this, " {0}", m);
 			}
 
 			// Todo: Combinations factoring in the possibility that return type might match

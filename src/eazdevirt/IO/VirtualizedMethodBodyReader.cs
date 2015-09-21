@@ -322,16 +322,10 @@ namespace eazdevirt.IO
 
 		protected Instruction ReadOneInstruction_Special(VirtualOpCode virtualInstruction)
 		{
-			//throw new Exception(String.Format(
-			//	"Cannot yet parse special opcodes ({0}, delegate MDToken = 0x{1:X8})",
+			//this.Logger.Verbose(this, "Special Opcode ({0}, delegate MDToken = 0x{1:X8})",
 			//	virtualInstruction.SpecialOpCode.ToString(),
 			//	virtualInstruction.DelegateMethod.MDToken.Raw
-			//));
-
-			this.Logger.Verbose(this, "Special Opcode ({0}, delegate MDToken = 0x{1:X8})",
-				virtualInstruction.SpecialOpCode.ToString(),
-				virtualInstruction.DelegateMethod.MDToken.Raw
-			);
+			//);
 
 			// Have a method for this?
 			OpCode opcode = null;

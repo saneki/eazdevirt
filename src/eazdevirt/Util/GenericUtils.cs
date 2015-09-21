@@ -18,8 +18,6 @@ namespace eazdevirt.Util
 				var combos = GenericUtils.CreateGenericParameterCombinations(
 					genericSig.GenericArguments, typeGenerics, methodGenerics);
 
-				Console.WriteLine("GenericType: " + genericSig.GenericType);
-
 				foreach(var combo in combos)
 				{
 					var sig = new GenericInstSig(genericSig.GenericType, combo);
