@@ -32,7 +32,7 @@ One way around this is the following:
 
 ```sh
 de4dot --dont-rename --keep-types --preserve-table all MyAssembly.exe
-eazdevirt devirtualize MyAssembly-cleaned.exe
+eazdevirt -d MyAssembly-cleaned.exe
 de4dot MyAssembly-cleaned-devirtualized.exe
 ```
 
