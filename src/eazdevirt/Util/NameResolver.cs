@@ -14,6 +14,42 @@ namespace eazdevirt.Util
 			_module = module;
 		}
 
+		public IField ResolveField(ITypeDefOrRef declaringType, String fieldName)
+		{
+			TypeDef typeDef = declaringType as TypeDef;
+			if (typeDef != null)
+				return typeDef.FindField(fieldName);
+
+			typeDef = (declaringType as TypeRef).ResolveTypeDef();
+			if (typeDef != null)
+				return typeDef.FindField(fieldName);
+
+			TypeRef typeRef = declaringType as TypeRef;
+
+			// Try to resolve TypeRef from references (AssemblyRefs)
+			//var module = ((ModuleDefMD)typeRef.Module);
+			var assemblies = _module.GetAssemblyRefs();
+			foreach (var asm in assemblies)
+			{
+				var resolved = _module.Context.AssemblyResolver.Resolve(asm, _module);
+				if (resolved == null)
+					continue;
+
+				typeDef = resolved.FindReflection(typeRef.ReflectionFullName);
+				if (typeDef == null)
+					continue;
+
+				FieldDef fieldDef = typeDef.FindField(fieldName);
+				if (fieldDef == null)
+					continue;
+
+				Importer importer = new Importer(_module, ImporterOptions.TryToUseFieldDefs);
+				return importer.Import(fieldDef);
+			}
+
+			return null;
+		}
+
 		/// <summary>
 		/// Resolve a TypeDef or TypeRef from its name. If neither a TypeDef or TypeRef are found
 		/// in the module, search its references (AssemblyRefs) and if a match is found, add a TypeRef
@@ -98,7 +134,9 @@ namespace eazdevirt.Util
 
 		public TypeName(String fullName)
 		{
-			this.FullName = fullName;
+			// Eazfuscator.NET uses '+' to indicate a nested type name follows, while
+			// dnlib uses '/'
+			this.FullName = fullName.Replace('+', '/');
 		}
 
 		/// <summary>
@@ -130,8 +168,8 @@ namespace eazdevirt.Util
 		{
 			get
 			{
-				if (this.Name.Contains('+'))
-					return this.Name.Split('+').Last();
+				//if (this.Name.Contains('/'))
+				//	return this.Name.Split('/').Last();
 
 				if (this.Name.Contains('.'))
 					return this.Name.Split('.').Last();
@@ -196,7 +234,7 @@ namespace eazdevirt.Util
 		{
 			get
 			{
-				return this.Name.Contains('+');
+				return this.Name.Contains('/');
 			}
 		}
 
@@ -209,8 +247,8 @@ namespace eazdevirt.Util
 			{
 				// Return name without last "+TypeName"
 				if (this.IsNested)
-					return String.Join("+",
-						this.Name.Split('+').Reverse().Skip(1).Reverse().ToArray());
+					return String.Join("/",
+						this.Name.Split('/').Reverse().Skip(1).Reverse().ToArray());
 				else
 					return null;
 			}
@@ -224,7 +262,7 @@ namespace eazdevirt.Util
 			get
 			{
 				if (this.IsNested)
-					return this.Name.Split('+').Last();
+					return this.Name.Split('/').Last();
 				else
 					return null;
 			}

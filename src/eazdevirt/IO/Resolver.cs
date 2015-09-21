@@ -401,39 +401,18 @@ namespace eazdevirt.IO
 			else
 			{
 				FieldData data = operand.Data as FieldData;
-				ITypeDefOrRef type = this.ResolveType_NoLock(data.FieldType.Position);
-				if (type == null)
+				ITypeDefOrRef declaringType = this.ResolveType_NoLock(data.FieldType.Position);
+				if (declaringType == null)
 					throw new Exception("[ResolveField_NoLock] Unable to resolve type as TypeDef or TypeRef");
 
-				TypeDef typeDef = type as TypeDef;
-				if (typeDef != null)
-					return typeDef.FindField(data.Name);
-
-				typeDef = (type as TypeRef).ResolveTypeDef();
-				if (typeDef != null)
-					return typeDef.FindField(data.Name);
-
-				TypeRef typeRef = type as TypeRef;
-
-				// Try to resolve TypeRef from references (AssemblyRefs)
-				var module = ((ModuleDefMD)typeRef.Module);
-				var assemblies = module.GetAssemblyRefs();
-				foreach (var asm in assemblies)
-				{
-					var resolved = _asmResolver.Resolve(asm, module);
-					if (resolved == null)
-						continue;
-
-					typeDef = resolved.FindReflection(typeRef.ReflectionFullName);
-					if (typeDef == null)
-						continue;
-
-					return typeDef.FindField(data.Name);
-				}
+				NameResolver nameResolver = new NameResolver(this.Module);
+				IField field = nameResolver.ResolveField(declaringType, data.Name);
+				if (field != null)
+					return field;
 
 				throw new Exception(String.Format(
 					"[ResolveField_NoLock] Unable to resolve field: DeclaringType={0}, Field={1}",
-					typeRef.ReflectionFullName, data.Name));
+					declaringType.ReflectionFullName, data.Name));
 			}
 		}
 
