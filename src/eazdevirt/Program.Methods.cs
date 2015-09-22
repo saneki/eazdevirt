@@ -73,15 +73,17 @@ namespace eazdevirt
 					{
 						Console.WriteLine("--> Not yet devirtualizable (contains unexpected virtual instruction @ [{0}] (0x{1:X8}))",
 							reader.CurrentInstructionOffset, reader.CurrentVirtualOffset);
+
+						if (reader.CurrentInstructionOffset > 0)
+							WritePartiallyDevirtualizedMethod(reader);
 					}
 				}
 				else
 				{
 					Console.WriteLine("--> Not yet devirtualizable (threw exception)");
-					Console.WriteLine();
 					WritePartiallyDevirtualizedMethod(reader);
-					Console.WriteLine();
 					Console.Write(attempt.Exception);
+					Console.WriteLine();
 					Console.WriteLine();
 				}
 			});
