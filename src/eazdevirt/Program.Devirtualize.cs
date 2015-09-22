@@ -44,6 +44,26 @@ namespace eazdevirt
 							Console.WriteLine();
 						}
 
+						if (body.HasExceptionHandlers)
+						{
+							Int32 index = 0;
+							Console.WriteLine("Exception Handlers:");
+							Console.WriteLine("-------------------");
+							foreach (var handler in body.ExceptionHandlers)
+							{
+								if (handler.CatchType != null)
+									Console.WriteLine("handler[{0}]: HandlerType = {1}, CatchType = {2}",
+										index++, handler.HandlerType, handler.CatchType);
+								else
+									Console.WriteLine("handler[{0}]: HandlerType = {1}",
+										index++, handler.HandlerType);
+								Console.WriteLine("--> Try:     [{0}, {1}]", handler.TryStart, handler.TryEnd);
+								Console.WriteLine("--> Handler: [{0}, {1}]", handler.HandlerStart, handler.HandlerEnd);
+								Console.WriteLine("--> Filter:  {0}", handler.FilterStart);
+							}
+							Console.WriteLine();
+						}
+
 						// Print instructions
 						Console.WriteLine("Instructions:");
 						Console.WriteLine("-------------");
