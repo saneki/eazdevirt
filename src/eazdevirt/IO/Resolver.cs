@@ -138,7 +138,7 @@ namespace eazdevirt.IO
 		}
 
 		/// <summary>
-		/// Find a MethodDef from a declaring TypeDef and some MethodData. Will generate
+		/// Find a MethodDef from a declaring type and some MethodData. Will generate
 		/// a list of possible MethodSigs and check against each of them, returning the
 		/// first-found MethodDef that matches the method name and signature.
 		/// </summary>
@@ -146,13 +146,19 @@ namespace eazdevirt.IO
 		/// <param name="data">MethodData</param>
 		/// <param name="detectedSig">The detected MethodSig</param>
 		/// <returns>MethodDef if found, null if none found</returns>
-		MethodDef FindMethodCheckBaseType(TypeDef declaringType, MethodData data, out MethodSig detectedSig)
+		MethodDef FindMethodCheckBaseType(ITypeDefOrRef declaringType, MethodData data, out MethodSig detectedSig)
 		{
+			detectedSig = null;
+
+			TypeDef declaringDef = declaringType.ResolveTypeDef();
+			if (declaringDef == null)
+				return null;
+
 			MethodDef method = null;
 			MethodSig methodSig = GetMethodSig(data);
 			var possibleSigs = PossibleMethodSigs(declaringType, methodSig, data);
 			detectedSig = possibleSigs.FirstOrDefault(sig => {
-				return (method = declaringType.FindMethodCheckBaseType(data.Name, sig)) != null;
+				return (method = declaringDef.FindMethodCheckBaseType(data.Name, sig)) != null;
 			});
 
 			return method;
@@ -182,56 +188,19 @@ namespace eazdevirt.IO
 			return ResolveMethod_NoLock(typeDef, data);
 		}
 
-		/// <summary>
-		/// Resolve a TypeDef from a TypeSpec.
-		/// </summary>
-		/// <param name="typeSpec">TypeSpec to resolve from</param>
-		/// <returns>TypeDef, or null if none found</returns>
-		TypeDef ResolveTypeSpec(TypeSpec typeSpec)
-		{
-			// Attempt to immediately resolve it
-			TypeDef typeDef = typeSpec.ResolveTypeDef();
-			if (typeDef != null)
-				return typeDef;
-
-			var assemblies = this.Module.GetAssemblyRefs();
-			var fixedName = typeSpec.ReflectionFullName.Split('[')[0].Replace('+', '/');
-
-			foreach (var asmRef in assemblies)
-			{
-				var asmDef = this.Module.Context.AssemblyResolver.Resolve(asmRef, this.Module);
-
-				typeDef = asmDef.FindNormal(fixedName);
-				if (typeDef != null)
-					return typeDef;
-			}
-
-			return null;
-		}
-
 		IMethod ResolveMethod_NoLock(TypeSpec declaringSpec, MethodData data)
 		{
 			MethodSig methodSig = GetMethodSig(data);
 
-			var typeDef = ResolveTypeSpec(declaringSpec);
-			if (typeDef == null)
-			{
-				throw new Exception(String.Format(
-					"[ResolveMethod_NoLock] Unable to resolve TypeDef from TypeSpec: {0}",
-					declaringSpec));
-			}
-
 			// Find a method that matches the signature (factoring in possible generic vars/mvars)
-			MethodDef method = null;
-			var possibleSigs = PossibleMethodSigs(declaringSpec, methodSig, data);
-			var matchedSig = possibleSigs.FirstOrDefault((sig) => {
-				return (method = typeDef.FindMethodCheckBaseType(data.Name, sig)) != null;
-			});
+			MethodSig matchedSig = null;
+			MethodDef method = FindMethodCheckBaseType(declaringSpec, data, out matchedSig);
 
 			if (matchedSig == null || method == null)
 			{
-				throw new Exception(String.Format("[ResolveMethod_NoLock] No methods: {0} {1}",
-					typeDef.ReflectionFullName, data.Name));
+				throw new Exception(String.Format(
+					"Unable to find generic method from the declaring/base types: DeclaringType={0}, MethodName={1}",
+					declaringSpec.ReflectionFullName, data.Name));
 			}
 
 			// Todo: Check for GenericMVars and return a MethodSpec if needed
