@@ -105,33 +105,36 @@ namespace eazdevirt.IO
 
 		IMethod ResolveMethod_NoLock(TypeDef declaringDef, MethodData data)
 		{
-			// If declaring type is a TypeDef, it is defined inside this module, so a
-			// MethodDef should be attainable. However, the method may have generic parameters.
+			MethodSig methodSig = GetMethodSig(data);
 
-			// This signature may not be exact:
-			// If `MyMethod<T>(T something): Void` is called as MyMethod<Int32>(100),
-			// signature will appear as `System.Void <!!0>(System.Int32)` instead of `System.Void <!!0>(T)`
-			var sig = GetMethodSig(data);
-
-			// Try to easily find the method by name + signature
-			var foundMethod = declaringDef.FindMethod(data.Name, sig);
-			if (foundMethod != null)
-				return foundMethod;
-
-			var methods = declaringDef.FindMethods(data.Name);
-			foreach (var method in methods)
+			// Has a GenericMVar
+			if (data.HasGenericArguments)
 			{
-				if (method.IsStatic != data.IsStatic)
-					continue;
+				MethodSig detectedSig = null;
+				MethodDef method = FindMethodCheckBaseType(declaringDef, data, out detectedSig);
 
-				if (Matches(method, sig))
+				if (method == null)
 				{
-					// This should only happen for generic inst methods
-					return ToMethodSpec(method, data);
+					throw new Exception(String.Format(
+						"Unable to find generic method from the declaring/base types: DeclaringType={0}, MethodName={1}",
+						declaringDef.ReflectionFullName, data.Name));
 				}
-			}
 
-			throw new Exception("[ResolveMethod_NoLock] Unable to resolve method from declaring TypeDef");
+				MethodSpec methodSpec = new MethodSpecUser(method, ToGenericInstMethodSig(data));
+				return this.Importer.Import(methodSpec);
+			}
+			else // No GenericMVars
+			{
+				MethodDef method = declaringDef.FindMethodCheckBaseType(data.Name, methodSig);
+				if (method == null)
+				{
+					throw new Exception(String.Format(
+						"Unable to find method from the declaring/base types: DeclaringType={0}, MethodName={1}",
+						declaringDef.ReflectionFullName, data.Name));
+				}
+
+				return this.Importer.Import(method);
+			}
 		}
 
 		/// <summary>
@@ -176,36 +179,7 @@ namespace eazdevirt.IO
 		IMethod ResolveMethod_NoLock(TypeRef declaringRef, MethodData data)
 		{
 			TypeDef typeDef = declaringRef.ResolveTypeDefThrow();
-			MethodSig methodSig = GetMethodSig(data);
-
-			// Has a GenericMVar
-			if (data.HasGenericArguments)
-			{
-				MethodSig detectedSig = null;
-				MethodDef method = FindMethodCheckBaseType(typeDef, data, out detectedSig);
-
-				if (method == null)
-				{
-					throw new Exception(String.Format(
-						"Unable to find generic method from the declaring/base types: DeclaringType={0}, MethodName={1}",
-						typeDef.ReflectionFullName, data.Name));
-				}
-
-				MethodSpec methodSpec = new MethodSpecUser(method, ToGenericInstMethodSig(data));
-				return this.Importer.Import(methodSpec);
-			}
-			else // No GenericMVars
-			{
-				MethodDef method = typeDef.FindMethodCheckBaseType(data.Name, methodSig);
-				if (method == null)
-				{
-					throw new Exception(String.Format(
-						"Unable to find method from the declaring/base types: DeclaringType={0}, MethodName={1}",
-						typeDef.ReflectionFullName, data.Name));
-				}
-
-				return this.Importer.Import(method);
-			}
+			return ResolveMethod_NoLock(typeDef, data);
 		}
 
 		/// <summary>
