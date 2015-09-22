@@ -207,103 +207,6 @@ namespace eazdevirt.IO
 			return new MemberRefUser(this.Module, method.Name, matchedSig, declaringSpec);
 		}
 
-		IMethod ResolveMethod_NoLock_(TypeSpec declaringSpec, MethodData data)
-		{
-			// If declaring type is a TypeSpec, it should have generic types associated
-			// with it. This doesn't mean the method itself will, though.
-
-			var comparer = new SignatureEqualityComparer(SigComparerOptions.SubstituteGenericParameters);
-			MethodSig methodSig = GetMethodSig(data);
-
-			// TEST
-			//var allAssemblyRefs = this.Module.GetAssemblyRefs();
-			//this.Logger.Info(this, "Module count: {0}", allAssemblyRefs.Count());
-			//foreach (var a in allAssemblyRefs)
-			//{
-			//	this.Logger.Info(this, " {0}", a);
-			//
-			//	AssemblyResolver resolver = new AssemblyResolver();
-			//	var assembly = resolver.Resolve(a, this.Module);
-			//	var module = assembly.ManifestModule;
-			//
-			//	this.Logger.Info(this, " Types: {0}", module.Types.Count);
-			//}
-			// END TEST
-
-			if (declaringSpec.TypeSig.IsGenericInstanceType)
-			{
-				this.Logger.Verbose(this, "Comparing against possible method sigs: {0}", data.Name);
-
-				//TypeDef declaringDef = declaringSpec.ResolveTypeDefThrow();
-				TypeDef declaringDef = ResolveTypeDefThrow(declaringSpec);
-				AssemblyRef assemblyRef = this.Module.GetAssemblyRefs().First((mr) => {
-					return (mr.FullName.Equals(declaringDef.Module.Assembly.FullName));
-				});
-
-				TypeRef declaringRef = new TypeRefUser(this.Module,
-					declaringDef.Namespace, declaringDef.Name, assemblyRef);
-
-				Console.WriteLine("declaringRef: {0}", declaringRef);
-
-				var methods = declaringDef.FindMethods(data.Name);
-				var possibleMethodSigs = PossibleMethodSigs(declaringSpec, methodSig, data);
-
-				foreach (var possibleMethodSig in possibleMethodSigs)
-					this.Logger.Verbose(this, "Possible method sig: {0}", possibleMethodSig.ToString());
-
-				foreach (var possibleMethodSig in possibleMethodSigs)
-				{
-					MethodDef found = declaringDef.FindMethod(data.Name, possibleMethodSig);
-					//MemberRef foundRef = new MemberRefUser(this.Module, found.Name, found.MethodSig, declaringRef);
-
-					if (found != null)
-					{
-						this.Logger.Verbose(this, "Signature match: {0}", possibleMethodSig.ToString());
-
-						var hasMvar = found.MethodSig.Params.Any((p) => {
-							return p.IsGenericMethodParameter;
-						});
-
-						if (hasMvar)
-						{
-							return ToMethodSpec(found, data);
-							//MemberRef memberRef = new MemberRefUser(this.Module, found.Name, found.MethodSig, declaringRef);
-							//return ToMethodSpec(memberRef, data);
-						}
-						else
-						{
-							var memberRef = new MemberRefUser(this.Module, found.Name, possibleMethodSig, declaringSpec);
-						}
-					}
-				}
-
-				//foreach (var method in methods)
-				//{
-				//	if (Equals(declaringSpec, method.MethodSig, methodSig))
-				//	{
-				//		return ToMethodSpec(
-				//			new MemberRefUser(this.Module, data.Name, method.MethodSig, declaringSpec),
-				//			data);
-				//	}
-				//}
-			}
-
-			throw new Exception(String.Format(
-				"[ResolveMethod_NoLock] Unable to resolve {0} method from declaring TypeSpec {1}",
-				data.Name, declaringSpec.ToString()));
-
-			//if (data.HasGenericArguments)
-			//{
-			//	MemberRef memberRef = new MemberRefUser(this.Module, data.Name, methodSig, declaringSpec);
-			//	return ToMethodSpec(memberRef, data);
-			//}
-			//else
-			//{
-			//	MemberRef memberRef = new MemberRefUser(this.Module, data.Name, methodSig, declaringSpec);
-			//	return memberRef;
-			//}
-		}
-
 		IMethod ResolveMethod_NoLock(Int32 position)
 		{
 			this.Stream.Position = position;
@@ -344,37 +247,6 @@ namespace eazdevirt.IO
 
 				throw new Exception("[ResolveMethod_NoLock] Expected declaring type to be a TypeDef, TypeRef or TypeSpec");
 			}
-		}
-
-		TypeDef ResolveTypeDefThrow(TypeSpec typeSpec)
-		{
-			var assembly = _asmResolver.ResolveThrow(typeSpec.DefinitionAssembly, this.Module);
-			var module = assembly.ManifestModule;
-			var name = FixTypeSpecName(typeSpec.FullName);
-
-			var type = module.Find(name, false);
-			if (type == null)
-				throw new Exception(String.Format(
-					"Unable to find TypeDef in module: {0}", name));
-
-			return type;
-		}
-
-		String FixTypeSpecName(String fullName)
-		{
-			Regex regex = new Regex("\\<[^\\<]+\\>");
-			String newName = fullName;
-
-			while (true)
-			{
-				newName = regex.Replace(fullName, "");
-				if (newName.Equals(fullName))
-					break;
-
-				fullName = newName;
-			}
-
-			return newName;
 		}
 
 		/// <summary>
@@ -507,76 +379,6 @@ namespace eazdevirt.IO
 					typeDefOrRef.ToTypeSig(), typeName.Modifiers).ToTypeDefOrRef();
 
 				return typeDefOrRef;
-			}
-		}
-
-		ITypeDefOrRef ResolveType_NoLock_(Int32 position)
-		{
-			this.Stream.Position = position;
-
-			InlineOperand operand = new InlineOperand(this.Reader);
-			if (operand.IsToken)
-			{
-				MDToken token = new MDToken(operand.Token);
-
-				if (token.Table == Table.TypeDef)
-					return this.Module.ResolveTypeDef(token.Rid);
-				else if (token.Table == Table.TypeRef)
-					return this.Module.ResolveTypeRef(token.Rid);
-				else if (token.Table == Table.TypeSpec)
-					return this.Module.ResolveTypeSpec(token.Rid);
-
-				throw new Exception("[ResolveType_NoLock] Bad MDToken table");
-			}
-			else
-			{
-				TypeData data = operand.Data as TypeData;
-				String typeName = data.TypeName;
-
-				// Related to generic context
-				if (data.SomeIndex != -1)
-					this.Logger.Verbose(this, "[{0}] SomeIndex: {1}", data.TypeName, data.SomeIndex2);
-				if (data.SomeIndex2 != -1)
-					this.Logger.Verbose(this, "[{0}] SomeIndex2: {1}", data.TypeName, data.SomeIndex2);
-
-				// Get the type modifiers stack
-				Stack<String> modifiers = GetModifiersStack(data.TypeName, out typeName);
-
-				// Try to find typedef
-				TypeDef typeDef = this.Module.FindReflection(typeName);
-				if (typeDef != null)
-				{
-					ITypeDefOrRef result = typeDef;
-					if (data.GenericTypes.Length > 0)
-						result = ApplyGenerics(typeDef, data);
-
-					TypeSig sig = ApplyTypeModifiers(result.ToTypeSig(), modifiers);
-					return sig.ToTypeDefOrRef();
-				}
-
-				// Otherwise, try to find typeref
-				TypeRef typeRef = null;
-				typeRef = this.Module.GetTypeRefs().FirstOrDefault((t) =>
-				{
-					return t.ReflectionFullName.Equals(typeName);
-				});
-				if (typeRef != null)
-				{
-					ITypeDefOrRef result = typeRef;
-					if (data.GenericTypes.Length > 0)
-						result = ApplyGenerics(typeRef, data);
-
-					TypeSig sig = ApplyTypeModifiers(result.ToTypeSig(), modifiers);
-					return sig.ToTypeDefOrRef();
-				}
-
-				// If all else fails, make our own typeref
-				this.Logger.Verbose(this, "Creating TypeRef for:  {0}", data.Name);
-				AssemblyRef assemblyRef = GetAssemblyRef(data.AssemblyFullName);
-				this.Logger.Verbose(this, "--> Using AssemblyRef: {0}", assemblyRef.FullName);
-				this.Logger.Verbose(this, "--> Using Namespace:   {0}", data.Namespace);
-				this.Logger.Verbose(this, "--> Using Type name:   {0}", data.TypeNameWithoutNamespace);
-				return new TypeRefUser(this.Module, data.Namespace, data.TypeNameWithoutNamespace, assemblyRef);
 			}
 		}
 
@@ -731,50 +533,6 @@ namespace eazdevirt.IO
 			return type.ToTypeSig(true);
 		}
 
-		/// <summary>
-		/// Compare two method signatures, with the first having generic parameters
-		/// of types from the declaring type's generic arguments.
-		/// </summary>
-		/// <param name="s1">First signature</param>
-		/// <param name="s2">Second signature</param>
-		/// <returns>true if appear equal, false if not</returns>
-		/// <remarks>Make a comparer class for this later?</remarks>
-		Boolean Equals(TypeSpec declaringType, MethodSig s1, MethodSig s2)
-		{
-			// This is necessary because the serialized MethodData doesn't contain
-			// information (from what I can tell) about which parameters correspond
-			// to which generic arguments.
-
-			var comparer = new SigComparer();
-
-			var gsig = declaringType.TryGetGenericInstSig();
-			if (gsig == null)
-			{
-				// If declaring type isn't a generic instance, compare normally
-				return comparer.Equals(s1, s2);
-			}
-
-			if (s1.Params.Count != s2.Params.Count)
-				return false;
-
-			for (Int32 i = 0; i < s1.Params.Count; i++)
-			{
-				var p = s1.Params[i];
-				if (p.IsGenericTypeParameter)
-				{
-					var genericVar = p.ToGenericVar();
-					var genericNumber = genericVar.GenericParam.Number;
-					var genericArgument = gsig.GenericArguments[genericNumber];
-					p = genericArgument;
-				}
-
-				if(!comparer.Equals(p, s2.Params[i]))
-					return false;
-			}
-
-			return comparer.Equals(s1.RetType, s2.RetType);
-		}
-
 		TypeSpec ApplyGenerics(ITypeDefOrRef type, IList<TypeSig> generics)
 		{
 			ClassOrValueTypeSig typeSig = type.ToTypeSig().ToClassOrValueTypeSig();
@@ -813,60 +571,6 @@ namespace eazdevirt.IO
 			//GenericInstSig genericSig = new GenericInstSig(typeSig, types);
 			//TypeSpec typeSpec = new TypeSpecUser(genericSig);
 			//return typeSpec;
-		}
-
-		/// <summary>
-		/// Create a MethodSpec from a MethodDef and data with generic arguments.
-		/// If data contains no generic arguments, the passed method will be returned.
-		/// </summary>
-		/// <param name="method">Method</param>
-		/// <param name="data">Data</param>
-		/// <returns>MethodSpec or untouched Method if no generic arguments</returns>
-		IMethod ToMethodSpec(IMethodDefOrRef method, MethodData data)
-		{
-			if (!data.HasGenericArguments)
-				return method;
-
-			// Resolve all generic argument types
-			List<TypeSig> types = new List<TypeSig>();
-			foreach (var g in data.GenericArguments)
-			{
-				var gtype = this.ResolveType_NoLock(g.Position);
-				types.Add(gtype.ToTypeSig());
-			}
-
-			var sig = new GenericInstMethodSig(types);
-			return new MethodSpecUser(method, sig);
-		}
-
-		/// <summary>
-		/// Check whether or not a MethodDef matches some MethodSig.
-		/// </summary>
-		/// <param name="method">Method</param>
-		/// <param name="signature">Method signature</param>
-		/// <returns>true if matches, false if not</returns>
-		/// <remarks>Could use dnlib's SigComparer for this maybe?</remarks>
-		Boolean Matches(MethodDef method, MethodSig signature)
-		{
-			//This is imperfect and may confuse methods such as:
-			// `MyMethod<T>(T, int): void` and `MyMethod<T>(int, T)`
-
-			if (method.MethodSig.Params.Count != signature.Params.Count)
-				return false;
-
-			for (Int32 i = 0; i < method.MethodSig.Params.Count; i++)
-			{
-				TypeSig mp = method.MethodSig.Params[i];
-				TypeSig sp = signature.Params[i];
-
-				if (mp.IsGenericMethodParameter)
-					continue;
-				else if (!mp.MDToken.Equals(sp.MDToken))
-					return false;
-			}
-
-			return method.MethodSig.RetType.MDToken.Equals(signature.RetType.MDToken)
-				&& method.MethodSig.GenParamCount == signature.GenParamCount;
 		}
 
 		IList<MethodSig> PossibleMethodSigs(ITypeDefOrRef declaringType, MethodSig sig, MethodData data)
@@ -976,38 +680,6 @@ namespace eazdevirt.IO
 		}
 
 		/// <summary>
-		/// Get a modifiers stack from a deserialized type name, and also
-		/// provide the fixed name.
-		/// </summary>
-		/// <param name="rawName">Deserialized name</param>
-		/// <param name="fixedName">Fixed name</param>
-		/// <returns>Modifiers stack</returns>
-		Stack<String> GetModifiersStack(String rawName, out String fixedName)
-		{
-			var stack = new Stack<String>();
-
-			while(true)
-			{
-				if (rawName.EndsWith("*"))
-					stack.Push("*");
-				else if (rawName.EndsWith("&"))
-					stack.Push("&");
-				else break;
-
-				rawName = rawName.Substring(0, rawName.Length - 1);
-			}
-
-			while(rawName.EndsWith("[]"))
-			{
-				stack.Push("[]");
-				rawName = rawName.Substring(0, rawName.Length - 2);
-			}
-
-			fixedName = rawName;
-			return stack;
-		}
-
-		/// <summary>
 		/// Apply type "modifiers" to some TypeSig given a modifiers stack.
 		/// </summary>
 		/// <param name="typeSig">TypeSig</param>
@@ -1068,27 +740,6 @@ namespace eazdevirt.IO
 			}
 
 			return typeSig;
-		}
-
-		/// <summary>
-		/// Get the AssemblyRef of the module from the assembly full name, adding
-		/// our own AssemblyRef if none found.
-		/// </summary>
-		/// <param name="fullName">Assembly full name</param>
-		/// <returns>AssemblyRef</returns>
-		AssemblyRef GetAssemblyRef(String fullName)
-		{
-			// Try to find AssemblyRef via full name
-			var assemblyRef = this.Module.GetAssemblyRefs().FirstOrDefault((ar) =>
-			{
-				return ar.FullName.Equals(fullName);
-			});
-
-			if (assemblyRef != null)
-				return assemblyRef;
-
-			// If unable to find, add our own AssemblyRef from the full name
-			return new AssemblyRefUser(new System.Reflection.AssemblyName(fullName));
 		}
 	}
 }
