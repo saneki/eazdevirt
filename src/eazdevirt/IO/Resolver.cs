@@ -405,12 +405,14 @@ namespace eazdevirt.IO
 
 				NameResolver nameResolver = new NameResolver(this.Module);
 				IField field = nameResolver.ResolveField(declaringType, data.Name);
-				if (field != null)
-					return field;
-
-				throw new Exception(String.Format(
+				if (field == null)
+				{
+					throw new Exception(String.Format(
 					"[ResolveField_NoLock] Unable to resolve field: DeclaringType={0}, Field={1}",
 					declaringType.ReflectionFullName, data.Name));
+				}
+
+				return field;
 			}
 		}
 

@@ -8,46 +8,36 @@ namespace eazdevirt.Util
 	public class NameResolver
 	{
 		ModuleDefMD _module;
+		public Importer Importer { get; private set; }
 
 		public NameResolver(ModuleDefMD module)
 		{
 			_module = module;
+			this.Importer = new Importer(module, ImporterOptions.TryToUseDefs);
 		}
 
+		/// <summary>
+		/// Resolve an IField from its name and the resolved delcaring type.
+		/// </summary>
+		/// <param name="declaringType">Declaring type</param>
+		/// <param name="fieldName">Field name</param>
+		/// <returns>IField, or null if none found</returns>
 		public IField ResolveField(ITypeDefOrRef declaringType, String fieldName)
 		{
 			TypeDef typeDef = declaringType as TypeDef;
 			if (typeDef != null)
 				return typeDef.FindField(fieldName);
 
+			// Should resolve with type.Module being set to the correct module
 			typeDef = (declaringType as TypeRef).ResolveTypeDef();
-			if (typeDef != null)
-				return typeDef.FindField(fieldName);
+			if (typeDef == null)
+				return null;
 
-			TypeRef typeRef = declaringType as TypeRef;
+			FieldDef fieldDef = typeDef.FindField(fieldName);
+			if (fieldDef == null)
+				return null;
 
-			// Try to resolve TypeRef from references (AssemblyRefs)
-			//var module = ((ModuleDefMD)typeRef.Module);
-			var assemblies = _module.GetAssemblyRefs();
-			foreach (var asm in assemblies)
-			{
-				var resolved = _module.Context.AssemblyResolver.Resolve(asm, _module);
-				if (resolved == null)
-					continue;
-
-				typeDef = resolved.FindReflection(typeRef.ReflectionFullName);
-				if (typeDef == null)
-					continue;
-
-				FieldDef fieldDef = typeDef.FindField(fieldName);
-				if (fieldDef == null)
-					continue;
-
-				Importer importer = new Importer(_module, ImporterOptions.TryToUseFieldDefs);
-				return importer.Import(fieldDef);
-			}
-
-			return null;
+			return this.Importer.Import(fieldDef);
 		}
 
 		/// <summary>
