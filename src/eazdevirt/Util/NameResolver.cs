@@ -17,19 +17,14 @@ namespace eazdevirt.Util
 		}
 
 		/// <summary>
-		/// Resolve an IField from its name and the resolved delcaring type.
+		/// Resolve an IField from its name and a declaring TypeSpec.
 		/// </summary>
-		/// <param name="declaringType">Declaring type</param>
+		/// <param name="declaringType">Declaring TypeSpec</param>
 		/// <param name="fieldName">Field name</param>
 		/// <returns>IField, or null if none found</returns>
-		public IField ResolveField(ITypeDefOrRef declaringType, String fieldName)
+		public IField ResolveField(TypeSpec declaringType, String fieldName)
 		{
-			TypeDef typeDef = declaringType as TypeDef;
-			if (typeDef != null)
-				return typeDef.FindField(fieldName);
-
-			// Should resolve with type.Module being set to the correct module
-			typeDef = (declaringType as TypeRef).ResolveTypeDef();
+			TypeDef typeDef = declaringType.ResolveTypeDef();
 			if (typeDef == null)
 				return null;
 
@@ -37,7 +32,31 @@ namespace eazdevirt.Util
 			if (fieldDef == null)
 				return null;
 
-			return this.Importer.Import(fieldDef);
+			MemberRef memberRef = new MemberRefUser(_module, fieldDef.Name, fieldDef.FieldSig, declaringType);
+			return this.Importer.Import(memberRef);
+		}
+
+		/// <summary>
+		/// Resolve an IField from its name and the resolved delcaring type.
+		/// </summary>
+		/// <param name="declaringType">Declaring type</param>
+		/// <param name="fieldName">Field name</param>
+		/// <returns>IField, or null if none found</returns>
+		public IField ResolveField(ITypeDefOrRef declaringType, String fieldName)
+		{
+			if (declaringType is TypeSpec)
+				return ResolveField(declaringType as TypeSpec, fieldName);
+
+			TypeDef typeDef = null;
+			if (declaringType is TypeDef)
+				typeDef = declaringType as TypeDef;
+			else if (declaringType is TypeRef)
+				typeDef = (declaringType as TypeRef).ResolveTypeDef();
+
+			if (typeDef != null)
+				return this.Importer.Import(typeDef.FindField(fieldName));
+			else
+				return null;
 		}
 
 		/// <summary>
