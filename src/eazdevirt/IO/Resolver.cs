@@ -203,8 +203,11 @@ namespace eazdevirt.IO
 					declaringSpec.ReflectionFullName, data.Name));
 			}
 
-			// Todo: Check for GenericMVars and return a MethodSpec if needed
-			return new MemberRefUser(this.Module, method.Name, matchedSig, declaringSpec);
+			MemberRef memberRef = new MemberRefUser(this.Module, method.Name, matchedSig, declaringSpec);
+			if (data.HasGenericArguments)
+				return this.Importer.Import(new MethodSpecUser(memberRef, ToGenericInstMethodSig(data)));
+			else
+				return this.Importer.Import(memberRef);
 		}
 
 		IMethod ResolveMethod_NoLock(Int32 position)
