@@ -103,21 +103,22 @@ namespace eazdevirt.IO
 			}
 		}
 
-		IMethod ResolveMethod_NoLock(TypeDef declaringDef, MethodData data)
+		IMethod ResolveMethod_Helper(ITypeDefOrRef declaringType, MethodData data)
 		{
+			TypeDef declaringDef = declaringType.ResolveTypeDefThrow();
 			MethodSig methodSig = GetMethodSig(data);
 
 			// Has a GenericMVar
 			if (data.HasGenericArguments)
 			{
 				MethodSig detectedSig = null;
-				MethodDef method = FindMethodCheckBaseType(declaringDef, data, out detectedSig);
+				MethodDef method = FindMethodCheckBaseType(declaringType, data, out detectedSig);
 
-				if (method == null)
+				if (method == null || detectedSig == null)
 				{
 					throw new Exception(String.Format(
-						"Unable to find generic method from the declaring/base types: DeclaringType={0}, MethodName={1}",
-						declaringDef.ReflectionFullName, data.Name));
+						"Unable to find generic method from the declaring/base types: DeclaringType={0}, MethodName={1}, MethodSig={2}",
+						declaringType.ReflectionFullName, data.Name, methodSig));
 				}
 
 				MethodSpec methodSpec = new MethodSpecUser(method, ToGenericInstMethodSig(data));
@@ -129,12 +130,17 @@ namespace eazdevirt.IO
 				if (method == null)
 				{
 					throw new Exception(String.Format(
-						"Unable to find method from the declaring/base types: DeclaringType={0}, MethodName={1}",
-						declaringDef.ReflectionFullName, data.Name));
+						"Unable to find method from the declaring/base types: DeclaringType={0}, MethodName={1}, MethodSig={2}",
+						declaringType.ReflectionFullName, data.Name, methodSig));
 				}
 
 				return this.Importer.Import(method);
 			}
+		}
+
+		IMethod ResolveMethod_NoLock(TypeDef declaringDef, MethodData data)
+		{
+			return ResolveMethod_Helper(declaringDef, data);
 		}
 
 		/// <summary>
@@ -184,8 +190,7 @@ namespace eazdevirt.IO
 
 		IMethod ResolveMethod_NoLock(TypeRef declaringRef, MethodData data)
 		{
-			TypeDef typeDef = declaringRef.ResolveTypeDefThrow();
-			return ResolveMethod_NoLock(typeDef, data);
+			return ResolveMethod_Helper(declaringRef, data);
 		}
 
 		IMethod ResolveMethod_NoLock(TypeSpec declaringSpec, MethodData data)
