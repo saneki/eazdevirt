@@ -17,6 +17,11 @@ namespace eazdevirt.IO
 		public ILogger Logger { get; private set; }
 
 		/// <summary>
+		/// Importer.
+		/// </summary>
+		public Importer Importer { get; private set; }
+
+		/// <summary>
 		/// Lock used for all public resolve methods.
 		/// </summary>
 		private Object _lock = new Object();
@@ -30,6 +35,7 @@ namespace eazdevirt.IO
 			: base(module)
 		{
 			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
+			this.Importer = new Importer(this.Module, ImporterOptions.TryToUseDefs);
 			this.InitializeAssemblyResolver();
 		}
 
@@ -128,11 +134,78 @@ namespace eazdevirt.IO
 			throw new Exception("[ResolveMethod_NoLock] Unable to resolve method from declaring TypeDef");
 		}
 
+		/// <summary>
+		/// Find a MethodDef from a declaring TypeDef and some MethodData. Will generate
+		/// a list of possible MethodSigs and check against each of them, returning the
+		/// first-found MethodDef that matches the method name and signature.
+		/// </summary>
+		/// <param name="declaringType">Declaring type</param>
+		/// <param name="data">MethodData</param>
+		/// <param name="detectedSig">The detected MethodSig</param>
+		/// <returns>MethodDef if found, null if none found</returns>
+		MethodDef FindMethodCheckBaseType(TypeDef declaringType, MethodData data, out MethodSig detectedSig)
+		{
+			MethodDef method = null;
+			MethodSig methodSig = GetMethodSig(data);
+			var possibleSigs = PossibleMethodSigs(declaringType, methodSig, data);
+			detectedSig = possibleSigs.FirstOrDefault(sig => {
+				return (method = declaringType.FindMethodCheckBaseType(data.Name, sig)) != null;
+			});
+
+			return method;
+		}
+
+		/// <summary>
+		/// Get a GenericInstMethodSig containing the resolved types of the generic method vars
+		/// specified in the given MethodData.
+		/// </summary>
+		/// <param name="data">MethodData</param>
+		/// <returns>GenericInstMethodSig, or null if the given data contains no generic arguments</returns>
+		GenericInstMethodSig ToGenericInstMethodSig(MethodData data)
+		{
+			if (!data.HasGenericArguments)
+				return null;
+
+			IList<TypeSig> genericMVars = new List<TypeSig>();
+			for (Int32 i = 0; i < data.GenericArguments.Length; i++)
+				genericMVars.Add(this.ResolveType_NoLock(data.GenericArguments[i].Position).ToTypeSig());
+
+			return new GenericInstMethodSig(genericMVars);
+		}
+
 		IMethod ResolveMethod_NoLock(TypeRef declaringRef, MethodData data)
 		{
+			TypeDef typeDef = declaringRef.ResolveTypeDefThrow();
 			MethodSig methodSig = GetMethodSig(data);
-			MemberRef memberRef = new MemberRefUser(this.Module, data.Name, methodSig, declaringRef);
-			return memberRef;
+
+			// Has a GenericMVar
+			if (data.HasGenericArguments)
+			{
+				MethodSig detectedSig = null;
+				MethodDef method = FindMethodCheckBaseType(typeDef, data, out detectedSig);
+
+				if (method == null)
+				{
+					throw new Exception(String.Format(
+						"Unable to find generic method from the declaring/base types: DeclaringType={0}, MethodName={1}",
+						typeDef.ReflectionFullName, data.Name));
+				}
+
+				MethodSpec methodSpec = new MethodSpecUser(method, ToGenericInstMethodSig(data));
+				return this.Importer.Import(methodSpec);
+			}
+			else // No GenericMVars
+			{
+				MethodDef method = typeDef.FindMethodCheckBaseType(data.Name, methodSig);
+				if (method == null)
+				{
+					throw new Exception(String.Format(
+						"Unable to find method from the declaring/base types: DeclaringType={0}, MethodName={1}",
+						typeDef.ReflectionFullName, data.Name));
+				}
+
+				return this.Importer.Import(method);
+			}
 		}
 
 		/// <summary>

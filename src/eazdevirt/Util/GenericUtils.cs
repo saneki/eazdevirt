@@ -40,7 +40,7 @@ namespace eazdevirt.Util
 
 				for (UInt16 g = 0; g < methodGenerics.Count; g++)
 				{
-					var gtype = typeGenerics[g];
+					var gtype = methodGenerics[g];
 
 					if (returnType.FullName.Equals(gtype.FullName))
 					{
