@@ -200,11 +200,12 @@ namespace eazdevirt
 
 		static void WritePartiallyDevirtualizedMethod(VirtualizedMethodBodyReader reader)
 		{
+			if (!reader.HasInstructions)
+				return;
+
 			Console.WriteLine();
 			foreach(var instruction in reader.Instructions)
-			{
 				Console.WriteLine("{0}", instruction.ToString());
-			}
 			Console.WriteLine();
 		}
 
