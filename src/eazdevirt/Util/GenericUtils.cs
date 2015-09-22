@@ -7,15 +7,73 @@ namespace eazdevirt.Util
 {
 	public static class GenericUtils
 	{
+		public static TypeSig FromBaseSig(TypeSig baseSig, Stack<String> modifiers)
+		{
+			String mod;
+			while(modifiers.Count > 0)
+			{
+				mod = modifiers.Pop();
+				switch(mod)
+				{
+					case "[]": baseSig = new SZArraySig(baseSig); break;
+					case "*": baseSig = new PtrSig(baseSig); break;
+					case "&": baseSig = new ByRefSig(baseSig); break;
+					default:
+						throw new Exception(String.Format("Unknown modifier: {0}", mod));
+				}
+			}
+			return baseSig;
+		}
+
+		public static TypeSig ToBaseSig(TypeSig typeSig, out Stack<String> modifiers)
+		{
+			modifiers = new Stack<String>();
+
+			// While a non-leaf sig
+			while (typeSig.Next != null)
+			{
+				if (typeSig.IsSZArray)
+				{
+					modifiers.Push("[]");
+					typeSig = typeSig.Next;
+				}
+				else if (typeSig.IsPointer)
+				{
+					modifiers.Push("*");
+					typeSig = typeSig.Next;
+				}
+				else if (typeSig.IsByRef)
+				{
+					modifiers.Push("&");
+					typeSig = typeSig.Next;
+				}
+				//else if (typeSig.IsArray)
+				//{
+				//}
+				else
+					return null;
+			}
+
+			return typeSig;
+		}
+
 		public static IList<TypeSig> PossibleTypeSigs(TypeSig returnType,
 			IList<TypeSig> typeGenerics, IList<TypeSig> methodGenerics)
 		{
 			IList<TypeSig> list = new List<TypeSig>();
 
+			// Ignore [], &, * when comparing against generic types
+			// Otherwise, String[] Blah<String>(...) won't consider that the
+			// return type might be T[].
+			Stack<String> modifiers;
+			TypeSig returnTypeBase = ToBaseSig(returnType, out modifiers);
+			if (returnTypeBase == null)
+				throw new Exception(String.Format("Given TypeSig is not a TypeDefOrRefSig: {0}", returnType));
+
 			// Generic instance type
-			if (returnType.IsGenericInstanceType)
+			if (returnTypeBase.IsGenericInstanceType)
 			{
-				var genericSig = returnType.ToGenericInstSig();
+				var genericSig = returnTypeBase.ToGenericInstSig();
 				var combos = GenericUtils.CreateGenericParameterCombinations(
 					genericSig.GenericArguments, typeGenerics, methodGenerics);
 
@@ -31,21 +89,15 @@ namespace eazdevirt.Util
 				for (UInt16 g = 0; g < typeGenerics.Count; g++)
 				{
 					var gtype = typeGenerics[g];
-
-					if (returnType.FullName.Equals(gtype.FullName))
-					{
-						list.Add(new GenericVar(g));
-					}
+					if (returnTypeBase.FullName.Equals(gtype.FullName))
+						list.Add(FromBaseSig(new GenericVar(g), modifiers));
 				}
 
 				for (UInt16 g = 0; g < methodGenerics.Count; g++)
 				{
 					var gtype = methodGenerics[g];
-
-					if (returnType.FullName.Equals(gtype.FullName))
-					{
-						list.Add(new GenericMVar(g));
-					}
+					if (returnTypeBase.FullName.Equals(gtype.FullName))
+						list.Add(FromBaseSig(new GenericMVar(g), modifiers));
 				}
 
 				return list;
