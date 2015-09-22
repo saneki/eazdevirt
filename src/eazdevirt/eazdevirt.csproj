@@ -95,6 +95,7 @@
     <Compile Include="Util\Extensions.cs" />
     <Compile Include="Util\GenericUtils.cs" />
     <Compile Include="Util\NameResolver.cs" />
+    <Compile Include="Util\SigUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

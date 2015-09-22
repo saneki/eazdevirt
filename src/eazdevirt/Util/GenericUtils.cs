@@ -7,56 +7,6 @@ namespace eazdevirt.Util
 {
 	public static class GenericUtils
 	{
-		public static TypeSig FromBaseSig(TypeSig baseSig, Stack<String> modifiers)
-		{
-			String mod;
-			while(modifiers.Count > 0)
-			{
-				mod = modifiers.Pop();
-				switch(mod)
-				{
-					case "[]": baseSig = new SZArraySig(baseSig); break;
-					case "*": baseSig = new PtrSig(baseSig); break;
-					case "&": baseSig = new ByRefSig(baseSig); break;
-					default:
-						throw new Exception(String.Format("Unknown modifier: {0}", mod));
-				}
-			}
-			return baseSig;
-		}
-
-		public static TypeSig ToBaseSig(TypeSig typeSig, out Stack<String> modifiers)
-		{
-			modifiers = new Stack<String>();
-
-			// While a non-leaf sig
-			while (typeSig.Next != null)
-			{
-				if (typeSig.IsSZArray)
-				{
-					modifiers.Push("[]");
-					typeSig = typeSig.Next;
-				}
-				else if (typeSig.IsPointer)
-				{
-					modifiers.Push("*");
-					typeSig = typeSig.Next;
-				}
-				else if (typeSig.IsByRef)
-				{
-					modifiers.Push("&");
-					typeSig = typeSig.Next;
-				}
-				//else if (typeSig.IsArray)
-				//{
-				//}
-				else
-					return null;
-			}
-
-			return typeSig;
-		}
-
 		public static IList<TypeSig> PossibleTypeSigs(TypeSig returnType,
 			IList<TypeSig> typeGenerics, IList<TypeSig> methodGenerics)
 		{
@@ -66,7 +16,7 @@ namespace eazdevirt.Util
 			// Otherwise, String[] Blah<String>(...) won't consider that the
 			// return type might be T[].
 			Stack<String> modifiers;
-			TypeSig returnTypeBase = ToBaseSig(returnType, out modifiers);
+			TypeSig returnTypeBase = SigUtil.ToBaseSig(returnType, out modifiers);
 			if (returnTypeBase == null)
 				throw new Exception(String.Format("Given TypeSig is not a TypeDefOrRefSig: {0}", returnType));
 
@@ -90,14 +40,14 @@ namespace eazdevirt.Util
 				{
 					var gtype = typeGenerics[g];
 					if (returnTypeBase.FullName.Equals(gtype.FullName))
-						list.Add(FromBaseSig(new GenericVar(g), modifiers));
+						list.Add(SigUtil.FromBaseSig(new GenericVar(g), modifiers));
 				}
 
 				for (UInt16 g = 0; g < methodGenerics.Count; g++)
 				{
 					var gtype = methodGenerics[g];
 					if (returnTypeBase.FullName.Equals(gtype.FullName))
-						list.Add(FromBaseSig(new GenericMVar(g), modifiers));
+						list.Add(SigUtil.FromBaseSig(new GenericMVar(g), modifiers));
 				}
 
 				return list;
