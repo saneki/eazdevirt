@@ -155,13 +155,15 @@ namespace eazdevirt.IO
 
 			// VirtualTryEnd actually points to virtual instruction before the actual end
 			handler.TryEnd = GetInstruction(this.GetRealOffset(deserialized.VirtualTryEnd));
-			handler.TryEnd = GetInstructionAfter(handler.TryEnd);
+			if (GetInstructionAfter(handler.TryEnd) != null)
+				handler.TryEnd = GetInstructionAfter(handler.TryEnd);
 
 			handler.HandlerStart = GetInstruction(this.GetRealOffset(deserialized.VirtualHandlerStart));
 
 			// VirtualHandlerEnd does the same as VirtualTryEnd
 			handler.HandlerEnd = GetInstruction(this.GetRealOffset(deserialized.VirtualHandlerEnd));
-			handler.HandlerEnd = GetInstructionAfter(handler.HandlerEnd);
+			if (GetInstructionAfter(handler.HandlerEnd) != null)
+				handler.HandlerEnd = GetInstructionAfter(handler.HandlerEnd);
 
 			handler.FilterStart = GetInstruction(this.GetRealOffset(deserialized.VirtualFilterStart));
 
@@ -516,7 +518,7 @@ namespace eazdevirt.IO
 			for (Int32 i = 0; i < this.Instructions.Count; i++)
 			{
 				if (this.Instructions[i] == instruction
-					&& i < (this.Instructions.Count - 2))
+					&& i < (this.Instructions.Count - 1))
 					return this.Instructions[i + 1];
 			}
 
