@@ -176,7 +176,7 @@ namespace eazdevirt.IO
 
 			// Find a method that matches the signature (factoring in possible generic vars/mvars)
 			MethodDef method = null;
-			var possibleSigs = CreateMethodSigs(declaringSpec, methodSig, data);
+			var possibleSigs = PossibleMethodSigs(declaringSpec, methodSig, data);
 			var matchedSig = possibleSigs.FirstOrDefault((sig) => {
 				return (method = typeDef.FindMethodCheckBaseType(data.Name, sig)) != null;
 			});
@@ -230,7 +230,7 @@ namespace eazdevirt.IO
 				Console.WriteLine("declaringRef: {0}", declaringRef);
 
 				var methods = declaringDef.FindMethods(data.Name);
-				var possibleMethodSigs = CreateMethodSigs(declaringSpec, methodSig, data);
+				var possibleMethodSigs = PossibleMethodSigs(declaringSpec, methodSig, data);
 
 				foreach (var possibleMethodSig in possibleMethodSigs)
 					this.Logger.Verbose(this, "Possible method sig: {0}", possibleMethodSig.ToString());
@@ -600,14 +600,14 @@ namespace eazdevirt.IO
 			}
 			else
 			{
+				if (operand.Data.Type == InlineOperandType.Field)
+					return this.ResolveField_NoLock(position);
+				if (operand.Data.Type == InlineOperandType.Method)
+					return this.ResolveMethod_NoLock(position);
 				if (operand.Data.Type == InlineOperandType.Type)
-					return this.ResolveType_NoLock(operand.Position);
-				// Apparently if the InlineOperandType is Field it really wants a Type?
-				else if (operand.Data.Type == InlineOperandType.Field)
-					return this.ResolveType_NoLock(operand.Position);
-				else if (operand.Data.Type == InlineOperandType.Method)
-					return this.ResolveMethod_NoLock(operand.Position);
-				else throw new InvalidOperationException(String.Format(
+					return this.ResolveType_NoLock(position);
+
+				throw new InvalidOperationException(String.Format(
 					"Expected inline operand type of token to be either Type, Field or Method; instead got {0}",
 					operand.Data.Type));
 			}
@@ -853,7 +853,7 @@ namespace eazdevirt.IO
 				&& method.MethodSig.GenParamCount == signature.GenParamCount;
 		}
 
-		IList<MethodSig> CreateMethodSigs(ITypeDefOrRef declaringType, MethodSig sig, MethodData data)
+		IList<MethodSig> PossibleMethodSigs(ITypeDefOrRef declaringType, MethodSig sig, MethodData data)
 		{
 			// Setup generic types
 			IList<TypeSig> typeGenerics = new List<TypeSig>(), methodGenerics = new List<TypeSig>();
@@ -880,7 +880,7 @@ namespace eazdevirt.IO
 			// Todo: Combinations factoring in the possibility that return type might match
 			// a generic type
 			TypeSig returnType = ResolveType(data.ReturnType);
-			IList<TypeSig> returnTypes = GenericUtils.CreateGenericReturnTypePossibilities(returnType, typeGenerics, methodGenerics);
+			IList<TypeSig> returnTypes = GenericUtils.PossibleTypeSigs(returnType, typeGenerics, methodGenerics);
 
 			TypeSig[] paramTypes = new TypeSig[data.Parameters.Length];
 			for (Int32 i = 0; i < paramTypes.Length; i++)
