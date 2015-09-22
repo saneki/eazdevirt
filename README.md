@@ -18,8 +18,8 @@ Features
 Common Issues / Solutions
 =========================
 
-Resolution of Types / Methods
------------------------------
+Resolution of Types, Methods, etc.
+----------------------------------
 
 Because of how [Eazfuscator.NET]'s virtual machine works, resolving some types
 and methods requires that their names and MDTokens be as expected (more
@@ -28,15 +28,28 @@ that running [de4dot] against an executable with the default options before
 attempting to devirtualize said executable might cause certain types/methods to
 not resolve correctly.
 
+However, **eazdevirt** also requires (in most cases) the control flow of the
+program to be deobfuscated. Otherwise it might not detect certain virtual
+opcodes, and in some cases it might not work at all.
+
 One way around this is the following:
 
 ```sh
-de4dot --dont-rename --keep-types --preserve-table all MyAssembly.exe
+de4dot --dont-rename --keep-types --preserve-tokens MyAssembly.exe
 eazdevirt -d MyAssembly-cleaned.exe
 de4dot MyAssembly-cleaned-devirtualized.exe
 ```
 
 ... leaving the result as MyAssembly-cleaned-devirtualized-cleaned.exe
+
+If de4dot is having trouble decrypting strings, try appending `--strtyp none`
+after the input filename:
+
+```sh
+de4dot --dont-rename --keep-types --preserve-tokens MyAssembly.exe --strtyp none
+...
+de4dot MyAssembly-cleaned-devirtualized.exe --strtyp none
+```
 
 Building
 ========
