@@ -12,7 +12,8 @@ Features
 
 * Identify all methods (stubs) which have been virtualized
 * Devirtualize methods for which all virtual opcodes are understood
-* Identify and extract the embedded resource file containing virtualization info
+* Inject method attributes to make identifying devirtualized methods easier
+* Extract the embedded resource file containing virtualization info
 * List all virtual opcodes and indicate which are identified
 
 Common Issues / Solutions
