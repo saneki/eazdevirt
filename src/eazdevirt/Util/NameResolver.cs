@@ -290,19 +290,15 @@ namespace eazdevirt.Util
 
 			while (true)
 			{
-				if (rawName.EndsWith("*"))
+				if (rawName.EndsWith("[]"))
+					stack.Push("[]");
+				else if (rawName.EndsWith("*"))
 					stack.Push("*");
 				else if (rawName.EndsWith("&"))
 					stack.Push("&");
 				else break;
 
-				rawName = rawName.Substring(0, rawName.Length - 1);
-			}
-
-			while (rawName.EndsWith("[]"))
-			{
-				stack.Push("[]");
-				rawName = rawName.Substring(0, rawName.Length - 2);
+				rawName = rawName.Substring(0, rawName.Length - stack.Peek().Length);
 			}
 
 			fixedName = rawName;

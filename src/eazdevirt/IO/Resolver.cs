@@ -383,8 +383,8 @@ namespace eazdevirt.IO
 				}
 
 				// Apply [], *, &
-				typeDefOrRef = this.ApplyTypeModifiers(
-					typeDefOrRef.ToTypeSig(), typeName.Modifiers).ToTypeDefOrRef();
+				typeDefOrRef = SigUtil.FromBaseSig(typeDefOrRef.ToTypeSig(), typeName.Modifiers)
+					.ToTypeDefOrRef();
 
 				return typeDefOrRef;
 			}
