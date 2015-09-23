@@ -94,7 +94,7 @@ namespace eazdevirt
 			// Only save if at least one method devirtualized
 			if (results.DevirtualizedCount > 0)
 			{
-				String outputPath = GetDevirtualizedModulePath(options.AssemblyPath);
+				String outputPath = options.OutputPath ?? GetDevirtualizedModulePath(options.AssemblyPath);
 				Console.WriteLine("Saving {0}", outputPath);
 				module.Write(outputPath, options.NoThrow);
 			}
