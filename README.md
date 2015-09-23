@@ -73,7 +73,13 @@ as shown above).
 
 `msbuild eazdevirt.sln` should also work.
 
+Special Thanks
+==============
 
+* [0xd4d], for the amazing [dnlib]
+* Exclusive, for providing samples and helping debug along the way
+
+[0xd4d]:https://github.com/0xd4d
 [de4dot]:https://github.com/0xd4d/de4dot
 [dnlib]:https://github.com/0xd4d/dnlib
 [Eazfuscator.NET]:https://www.gapotchenko.com/eazfuscator.net
