@@ -24,6 +24,11 @@ namespace eazdevirt
 		public ILogger Logger { get; private set; }
 
 		/// <summary>
+		/// Attribute injector.
+		/// </summary>
+		public AttributeInjector Injector { get; private set; }
+
+		/// <summary>
 		/// Devirtualize options flag.
 		/// </summary>
 		public DevirtualizeOptions Options { get; set; }
@@ -47,6 +52,7 @@ namespace eazdevirt
 		{
 			this.Parent = module;
 			this.Options = options;
+			this.Injector = new AttributeInjector(module);
 			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
 		}
 
@@ -101,6 +107,10 @@ namespace eazdevirt
 
 					method.Method.FreeMethodBody();
 					method.Method.Body = body;
+
+					// Inject DevirtualizedAttribute if specified
+					if (options.HasFlag(DevirtualizeOptions.InjectAttributes))
+						this.Injector.InjectDevirtualized(method.Method);
 
 					attempt = new DevirtualizeAttempt(method, reader, body);
 				}
@@ -251,6 +261,11 @@ namespace eazdevirt
 		/// <summary>
 		/// Nothing.
 		/// </summary>
-		Nothing = 0
+		Nothing = 0,
+
+		/// <summary>
+		/// Inject attributes into devirtualized methods.
+		/// </summary>
+		InjectAttributes = 1
 	}
 }

@@ -74,6 +74,9 @@ namespace eazdevirt
 
 				{ "N|no-throw", "don't throw when writing a module", v => options.NoThrow = true },
 
+				// `devirtualize` options
+				{ "j|inject", "inject attributes", v => options.InjectAttributes = true },
+
 				// `generate` options
 				{ "I=|instruction-set=", "name of \"instruction sets\" to generate",
 					v => options.InstructionSet = v },

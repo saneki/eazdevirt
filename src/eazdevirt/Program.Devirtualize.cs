@@ -18,7 +18,12 @@ namespace eazdevirt
 			if (!TryLoadModule(options.AssemblyPath, logger, out module))
 				return;
 
-			Devirtualizer devirtualizer = new Devirtualizer(module, logger);
+			// Setup devirtualize options
+			var opts = DevirtualizeOptions.Nothing;
+			if (options.InjectAttributes)
+				opts |= DevirtualizeOptions.InjectAttributes;
+
+			Devirtualizer devirtualizer = new Devirtualizer(module, opts, logger);
 
 			var results = devirtualizer.Devirtualize((attempt) =>
 			{

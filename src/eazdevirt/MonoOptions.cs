@@ -29,6 +29,11 @@ namespace eazdevirt
 		public Boolean NoThrow = false;
 
 		/// <summary>
+		/// Whether or not to inject attributes upon successful devirtualization.
+		/// </summary>
+		public Boolean InjectAttributes = false;
+
+		/// <summary>
 		/// Used for: generate.
 		/// </summary>
 		public String InstructionSet = null;
