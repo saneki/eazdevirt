@@ -1,8 +1,9 @@
 eazdevirt
 =========
 
-eazdevirt is a toolkit for inspecting and devirtualizing executables that have
-been protected with [Eazfuscator.NET]'s virtualization feature.
+eazdevirt is an open source (GPLv3) toolkit for inspecting and devirtualizing
+executables that have been protected with [Eazfuscator.NET]'s virtualization
+feature.
 
 eazdevirt uses [dnlib] to read and write assemblies, which is included as a
 submodule.
