@@ -67,7 +67,6 @@
     <Compile Include="Core\VirtualMachineType.cs" />
     <Compile Include="Generator\IAssemblyGenerator.cs" />
     <Compile Include="Generator\VirtualizableAssemblyGenerator.cs" />
-    <Compile Include="IO\DnBinaryReader.cs" />
     <Compile Include="IO\Resolver.Serialized.cs" />
     <Compile Include="IO\ResourceReader.cs" />
     <Compile Include="IO\VirtualizedMethodBodyReader.cs" />

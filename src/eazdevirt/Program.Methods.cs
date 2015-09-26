@@ -32,7 +32,7 @@ namespace eazdevirt
 
 			Devirtualizer devirtualizer = new Devirtualizer(module, logger);
 
-			var results = devirtualizer.Devirtualize((attempt) =>
+			devirtualizer.Devirtualize((attempt) =>
 			{
 				var method = attempt.VirtualizedMethod;
 				var reader = attempt.Reader;

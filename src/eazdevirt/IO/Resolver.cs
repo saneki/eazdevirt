@@ -26,22 +26,11 @@ namespace eazdevirt.IO
 		/// </summary>
 		private Object _lock = new Object();
 
-		/// <summary>
-		/// AssemblyResolver.
-		/// </summary>
-		private AssemblyResolver _asmResolver;
-
 		public Resolver(EazModule module, ILogger logger)
 			: base(module)
 		{
 			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
 			this.Importer = new Importer(this.Module, ImporterOptions.TryToUseDefs);
-			this.InitializeAssemblyResolver();
-		}
-
-		private void InitializeAssemblyResolver()
-		{
-			_asmResolver = new AssemblyResolver();
 		}
 
 		/// <summary>
@@ -195,8 +184,6 @@ namespace eazdevirt.IO
 
 		IMethod ResolveMethod_NoLock(TypeSpec declaringSpec, MethodData data)
 		{
-			MethodSig methodSig = GetMethodSig(data);
-
 			// Find a method that matches the signature (factoring in possible generic vars/mvars)
 			MethodSig matchedSig = null;
 			MethodDef method = FindMethodCheckBaseType(declaringSpec, data, out matchedSig);
