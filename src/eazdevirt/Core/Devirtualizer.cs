@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using eazdevirt.Fixers;
 using eazdevirt.IO;
 
 namespace eazdevirt
@@ -108,6 +109,9 @@ namespace eazdevirt
 					method.Method.FreeMethodBody();
 					method.Method.Body = body;
 
+					// Perform fixes
+					PerformFixes(method.Method);
+
 					// Inject DevirtualizedAttribute if specified
 					if (options.HasFlag(DevirtualizeOptions.InjectAttributes))
 						this.Injector.InjectDevirtualized(method.Method);
@@ -124,6 +128,14 @@ namespace eazdevirt
 			}
 
 			return new DevirtualizeResults(attempts);
+		}
+
+		void PerformFixes(MethodDef method)
+		{
+			IList<IMethodFixer> fixers = new List<IMethodFixer>();
+			fixers.Add(new StindFixer(method));
+			foreach (var fixer in fixers)
+				fixer.Fix();
 		}
 	}
 

@@ -65,6 +65,9 @@
     <Compile Include="Core\Devirtualizer.cs" />
     <Compile Include="Core\VirtualOpCode.Helpers.cs" />
     <Compile Include="Core\VirtualMachineType.cs" />
+    <Compile Include="Fixers\MethodFixer.cs" />
+    <Compile Include="Fixers\IMethodFixer.cs" />
+    <Compile Include="Fixers\StindFixer.cs" />
     <Compile Include="Generator\IAssemblyGenerator.cs" />
     <Compile Include="Generator\VirtualizableAssemblyGenerator.cs" />
     <Compile Include="IO\Resolver.Serialized.cs" />
@@ -96,6 +99,7 @@
     <Compile Include="Util\GenericUtils.cs" />
     <Compile Include="Util\NameResolver.cs" />
     <Compile Include="Util\SigUtil.cs" />
+    <Compile Include="Util\StackTypesCalculator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
