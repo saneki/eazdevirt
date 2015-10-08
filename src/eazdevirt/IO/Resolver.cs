@@ -483,37 +483,20 @@ namespace eazdevirt.IO
 			if (this.Reader.ReadByte() != 0)
 				throw new InvalidDataException();
 
-			UnknownType8 unknown = new UnknownType8(this.Reader);
-			//WriteUnknownType8(unknown);
+			EazCallData data = new EazCallData(this.Reader);
 
-			// Unknown2 = Return type?
-			//var type2 = this.ResolveType_NoLock(unknown.Unknown2);
-			//this.Logger.Info(this, "Type2: {0}", type2.ReflectionFullName);
-
-			// Unknown3 = Declaring type?
-			// If it is a declaring type, it should always be available as a TypeDef
-			var type3 = (this.ResolveType_NoLock(unknown.Unknown3) as TypeDef);
-			if (type3 == null)
+			var delcaringType = (this.ResolveType_NoLock(data.DeclaringType) as TypeDef);
+			if (delcaringType == null)
 				throw new Exception("Unable to resolve the declaring type of the Eaz_Call method operand");
 
-			//this.Logger.Info(this, "Type3: {0} (MDToken = {1:X8})", type3.ReflectionFullName, type3.MDToken.Raw);
+			var methodSig = GetMethodSig(data);
 
-			// Find method from declaring TypeDef + method name
-			// For now be lazy and just choose the first with a matching name
-			var method = type3.FindMethods(unknown.Name).FirstOrDefault();
+			// Todo: Factor in generics?
+			var method = delcaringType.FindMethodCheckBaseType(data.Name, methodSig);
 			if (method == null)
 				throw new Exception("Unable to resolve Eaz_Call operand from declaring type + method name");
 
 			return method;
-		}
-
-		void WriteUnknownType8(UnknownType8 unknown)
-		{
-			String fixedName = String.Format("{{ {0} }}", String.Join(", ", unknown.Name.Select(c => (Byte)c)));
-			Console.WriteLine("UnknownType8 [ IsInstance: {0}, Name: {1}, Unknown2: {2}, Unknown3: {3} ]",
-				unknown.IsInstance, fixedName, unknown.Unknown2, unknown.Unknown3);
-			Console.WriteLine("--> Unknown6: {{ {0} }}",
-				String.Join(", ", unknown.Unknown6.Select(i => i.ToString())));
 		}
 
 		/// <summary>
@@ -636,6 +619,29 @@ namespace eazdevirt.IO
 			}
 
 			return signatures;
+		}
+
+		/// <summary>
+		/// Convert some EazCall data into a method signature.
+		/// </summary>
+		/// <param name="data">Data</param>
+		/// <returns>Signature</returns>
+		MethodSig GetMethodSig(EazCallData data)
+		{
+			var returnType = this.ResolveType_NoLock(data.ReturnType).ToTypeSig(true);
+			var paramTypes = data.Parameters.Select((p) => {
+				return this.ResolveType_NoLock(p.Type).ToTypeSig(true);
+			}).ToArray();
+
+			// Unsure about how EazCallData stores/handles generics
+
+			if (data.IsStatic)
+				return MethodSig.CreateStatic(returnType, paramTypes);
+			else
+			{
+				paramTypes = paramTypes.Skip(1).ToArray();
+				return MethodSig.CreateInstance(returnType, paramTypes);
+			}
 		}
 
 		/// <summary>

@@ -424,32 +424,32 @@ namespace eazdevirt.IO
 			}
 		}
 
-		public class UnknownType8
+		public class EazCallData
 		{
 			/// <summary>
-			/// Whether or not the respective method is an instance (non-static) method.
+			/// Whether or not the respective method is a static method.
 			/// </summary>
-			public Boolean IsInstance { get; private set; }
+			public Boolean IsStatic { get; private set; }
 
-			public Int32 Unknown2 { get; private set; }
-			public Int32 Unknown3 { get; private set; }
+			public Int32 ReturnType { get; private set; }
+			public Int32 DeclaringType { get; private set; }
 			public String Name { get; private set; }
-			public UnknownType9[] Unknown5 { get; private set; }
+			public ParameterData[] Parameters { get; private set; }
 			public Int32[] Unknown6 { get; private set; }
 
-			public UnknownType8(BinaryReader reader)
+			public EazCallData(BinaryReader reader)
 			{
 				this.Deserialize(reader);
 			}
 
 			protected void Deserialize(BinaryReader reader)
 			{
-				this.IsInstance = reader.ReadBoolean();
-				this.Unknown2 = reader.ReadInt32(); // Return type
-				this.Unknown3 = reader.ReadInt32(); // Declaring type
+				this.IsStatic = reader.ReadBoolean();
+				this.ReturnType = reader.ReadInt32(); // Return type
+				this.DeclaringType = reader.ReadInt32(); // Declaring type
 				this.Name = reader.ReadString();
 
-				this.Unknown5 = UnknownType9.ReadArray(reader);
+				this.Parameters = ParameterData.ReadArray(reader);
 
 				this.Unknown6 = new Int32[reader.ReadUInt16()];
 				for (Int32 i = 0; i < this.Unknown6.Length; i++)
@@ -458,29 +458,29 @@ namespace eazdevirt.IO
 		}
 
 		// Parameter?
-		public class UnknownType9
+		public class ParameterData
 		{
-			public Int32 Unknown1 { get; private set; } // Probably a Type to be resolved
+			public Int32 Type { get; private set; } // Probably a Type to be resolved
 			public Boolean Unknown2 { get; private set; } // Probably in/out
 
-			public UnknownType9(BinaryReader reader)
+			public ParameterData(BinaryReader reader)
 			{
 				this.Deserialize(reader);
 			}
 
 			protected void Deserialize(BinaryReader reader)
 			{
-				this.Unknown1 = reader.ReadInt32();
+				this.Type = reader.ReadInt32();
 				this.Unknown2 = reader.ReadBoolean();
 			}
 
-			public static UnknownType9[] ReadArray(BinaryReader reader)
+			public static ParameterData[] ReadArray(BinaryReader reader)
 			{
 				Int32 count = reader.ReadInt16();
-				UnknownType9[] arr = new UnknownType9[count];
+				ParameterData[] arr = new ParameterData[count];
 
 				for (Int32 i = 0; i < arr.Length; i++)
-					arr[i] = new UnknownType9(reader);
+					arr[i] = new ParameterData(reader);
 
 				return arr;
 			}
