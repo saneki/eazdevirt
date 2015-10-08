@@ -269,19 +269,19 @@ namespace eazdevirt.Util
 						list.Add(module.CorLibTypes.String);
 					else if (instr.OpCode.Code == Code.Ldind_Ref)
 						list.Add(state.Peek().Next);
-					break;
-				case StackBehaviour.Varpush:
-					if (instr.Operand is IMethod)
+					else if (instr.OpCode.Code == Code.Newobj)
 					{
 						var method = (instr.Operand as IMethod).ResolveMethodDefThrow();
 						if (instr.OpCode.Code == Code.Newobj)
 							list.Add(method.DeclaringType.ToTypeSig());
-						else
-						{
-							TypeSig returnType = method.ReturnType;
-							if (returnType != null && !returnType.FullName.Equals("System.Void"))
-								list.Add(returnType);
-						}
+					}
+					break;
+				case StackBehaviour.Varpush:
+					if (instr.Operand is IMethod)
+					{
+						TypeSig returnType = (instr.Operand as IMethod).ResolveMethodDefThrow().ReturnType;
+						if (returnType != null && !returnType.FullName.Equals("System.Void"))
+							list.Add(returnType);
 					}
 					break;
 			}
