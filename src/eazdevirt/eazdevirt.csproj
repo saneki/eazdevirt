@@ -65,6 +65,7 @@
     <Compile Include="Core\Devirtualizer.cs" />
     <Compile Include="Core\VirtualOpCode.Helpers.cs" />
     <Compile Include="Core\VirtualMachineType.cs" />
+    <Compile Include="Fixers\FixerAttribute.cs" />
     <Compile Include="Fixers\MethodFixer.cs" />
     <Compile Include="Fixers\IMethodFixer.cs" />
     <Compile Include="Fixers\StindFixer.cs" />

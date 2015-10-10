@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 using eazdevirt.Fixers;
@@ -34,6 +35,11 @@ namespace eazdevirt
 		/// </summary>
 		public DevirtualizeOptions Options { get; set; }
 
+		/// <summary>
+		/// Fixers by type.
+		/// </summary>
+		public IList<Type> Fixers { get; private set; }
+
 		public Devirtualizer(EazModule module)
 			: this(module, DevirtualizeOptions.Nothing)
 		{
@@ -50,10 +56,21 @@ namespace eazdevirt
 		}
 
 		public Devirtualizer(EazModule module, DevirtualizeOptions options, ILogger logger)
+			: this(module, options, null, logger)
+		{
+		}
+
+		public Devirtualizer(EazModule module, IList<Type> fixers, ILogger logger)
+			: this(module, DevirtualizeOptions.Nothing, fixers, logger)
+		{
+		}
+
+		public Devirtualizer(EazModule module, DevirtualizeOptions options, IList<Type> fixers, ILogger logger)
 		{
 			this.Parent = module;
 			this.Options = options;
 			this.Injector = new AttributeInjector(module);
+			this.Fixers = (fixers != null ? fixers : new List<Type>());
 			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
 		}
 
@@ -132,10 +149,16 @@ namespace eazdevirt
 
 		void PerformFixes(MethodDef method)
 		{
-			IList<IMethodFixer> fixers = new List<IMethodFixer>();
-			fixers.Add(new StindFixer(method));
+			var fixers = GetFixers(method);
 			foreach (var fixer in fixers)
 				fixer.Fix();
+		}
+
+		IList<IMethodFixer> GetFixers(MethodDef method)
+		{
+			return this.Fixers.Where(t => t.IsSubclassOf(typeof(MethodFixer)))
+				.Select(t => (IMethodFixer)Activator.CreateInstance(t, method))
+				.ToList();
 		}
 	}
 

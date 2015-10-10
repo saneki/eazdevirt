@@ -76,6 +76,7 @@ namespace eazdevirt
 
 				// `devirtualize` options
 				{ "j|inject", "inject attributes", v => options.InjectAttributes = true },
+				{ "F=|fixers=", "fixers to use", v => options.FixersString = v },
 
 				// `generate` options
 				{ "I=|instruction-set=", "name of \"instruction sets\" to generate",

@@ -172,7 +172,7 @@ namespace eazdevirt
 			if (options.InjectAttributes)
 				opts |= DevirtualizeOptions.InjectAttributes;
 
-			Devirtualizer devirtualizer = new Devirtualizer(module, opts, logger);
+			Devirtualizer devirtualizer = new Devirtualizer(module, opts, options.MethodFixers, logger);
 
 			var results = devirtualizer.Devirtualize((attempt) => {
 				if (attempt.Successful)

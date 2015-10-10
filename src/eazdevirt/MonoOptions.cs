@@ -1,7 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text.RegularExpressions;
 using Mono.Options;
+using eazdevirt.Fixers;
 
 namespace eazdevirt
 {
@@ -108,6 +112,52 @@ namespace eazdevirt
 				StringWriter writer = new StringWriter();
 				this.OptionSet.WriteOptionDescriptions(writer);
 				return writer.ToString();
+			}
+		}
+
+		/// <summary>
+		/// List of MethodFixer types to use.
+		/// </summary>
+		public IList<Type> MethodFixers
+		{
+			get
+			{
+				if (_methodFixers == null)
+					this.FixersString = "all";
+				return _methodFixers;
+			}
+			private set { _methodFixers = value; }
+		}
+		private IList<Type> _methodFixers = null;
+
+		/// <summary>
+		/// Set MethodFixers from a string describing the fixers to use.
+		/// </summary>
+		public String FixersString
+		{
+			set
+			{
+				var fields = value.Split(',') // Regex.Split(value, @"\s+")
+					.Select(f => { return f.Trim().ToLower(); })
+					.Where(f => f.Length > 0) // Remove empty fields
+					.Distinct();
+
+				var types = Assembly.GetExecutingAssembly().GetTypes();
+				types = types.Where(t => {
+					return (t.GetCustomAttribute(typeof(FixerAttribute))) != null;
+				}).ToArray();
+
+				if (fields.Contains("all"))
+					this.MethodFixers = types;
+				else if (fields.Contains("none"))
+					this.MethodFixers = new List<Type>();
+				else
+				{
+					this.MethodFixers = types.Where(t => {
+						var attr = (FixerAttribute)t.GetCustomAttribute(typeof(FixerAttribute));
+						return fields.Contains(attr.Name.ToLower());
+					}).ToArray();
+				}
 			}
 		}
 	}

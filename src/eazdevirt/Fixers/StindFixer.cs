@@ -9,6 +9,7 @@ namespace eazdevirt.Fixers
 	/// <summary>
 	/// Fixer for stind_* CIL instructions.
 	/// </summary>
+	[Fixer("stind")]
 	public class StindFixer : MethodFixer
 	{
 		private StackTypesCalculator _calc;
