@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
 
@@ -108,7 +109,7 @@ namespace eazdevirt.Util
 		{
 			T[] array = new T[stack.Count];
 			stack.CopyTo(array, 0);
-			return new Stack<T>(array);
+			return new Stack<T>(array.Reverse());
 		}
 
 		/// <summary>
@@ -340,6 +341,28 @@ namespace eazdevirt.Util
 			}
 		}
 
+		void WalkHandlers()
+		{
+			var body = this.Method.Body;
+
+			if (body.HasExceptionHandlers)
+			{
+				foreach (var handler in body.ExceptionHandlers)
+				{
+					switch(handler.HandlerType)
+					{
+						case ExceptionHandlerType.Catch:
+						case ExceptionHandlerType.Finally:
+							var state = States(handler.FilterStart).Item1; // State before try { ... }
+							if (handler.HandlerType == ExceptionHandlerType.Catch)
+								state.Push(handler.CatchType.ToTypeSig()); // Push the exception type being caught
+							Walk(handler.HandlerStart, state);
+							break;
+					}
+				}
+			}
+		}
+
 		void Walk(Instruction start, Stack<TypeSig> state)
 		{
 			Walk(this.Instructions.IndexOf(start), state);
@@ -378,7 +401,7 @@ namespace eazdevirt.Util
 						Walk(instr.Operand as Instruction, state);
 						return;
 					case FlowControl.Cond_Branch:
-						Walk(instr.Operand as Instruction, state);
+						Walk(instr.Operand as Instruction, CloneStack<TypeSig>(state));
 						break;
 					case FlowControl.Return:
 					case FlowControl.Throw:
@@ -394,6 +417,7 @@ namespace eazdevirt.Util
 		public void Walk()
 		{
 			Walk(0, new Stack<TypeSig>());
+			WalkHandlers();
 		}
 	}
 }

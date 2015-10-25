@@ -91,8 +91,8 @@ namespace eazdevirt.Fixers
 		{
 			var cor = this.Method.Module.CorLibTypes;
 			var state = _calc.States(instr).Item1;
-			var byref = state.Pop(); // Pop ByRef (address)
 			state.Pop(); // Pop value
+			var byref = state.Pop(); // Pop ByRef (address)
 
 			// Make sure it's a ByRef
 			if (!(byref is ByRefSig))
