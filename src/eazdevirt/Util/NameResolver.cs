@@ -116,6 +116,20 @@ namespace eazdevirt.Util
 		/// <returns>AssemblyRef</returns>
 		public AssemblyRef FindAssemblyRef(String fullName)
 		{
+			// fullName: ", mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+			// causes...
+			// System.IO.FileLoadException: The given assembly name or codebase was invalid. (Exception from HRESULT: 0x80131047)
+			//    at System.Reflection.AssemblyName.nInit(RuntimeAssembly& assembly, Boolean forIntrospection, Boolean raiseResolveEvent)
+			//    at System.Reflection.AssemblyName.nInit()
+			//    at eazdevirt.Util.NameResolver.FindAssemblyRef(String fullName)
+			//    at eazdevirt.Util.NameResolver.FindAssemblyRef(TypeName typeName)
+			//    at eazdevirt.Util.NameResolver.ResolveTypeDefOrRef(TypeName typeName)
+			//    at eazdevirt.IO.Resolver.ResolveType_NoLock(Int32 position)
+			//    at eazdevirt.IO.Resolver.ResolveType(Int32 position)
+			//    at eazdevirt.IO.VirtualizedMethodBodyReader.SetLocalsAndParameters()
+			//    at eazdevirt.IO.VirtualizedMethodBodyReader.Read()
+			//    at eazdevirt.Devirtualizer.Devirtualize(DevirtualizeOptions options, Action`1 attemptCallback)
+
 			// Try to find AssemblyRef via full name
 			var assemblyRef = _module.GetAssemblyRefs().FirstOrDefault((ar) =>
 			{
