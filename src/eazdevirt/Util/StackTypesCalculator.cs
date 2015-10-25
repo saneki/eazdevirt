@@ -239,8 +239,9 @@ namespace eazdevirt.Util
 					|| (type = this.LdlocType(instr)) != null
 					|| (type = this.MathType(instr, state)) != null)
 						list.Add(type);
-					else
-						throw new Exception(String.Format("Unknown type pushed by Push1 instruction: {0}", instr));
+					else if (instr.OpCode.Code == Code.Ldfld || instr.OpCode.Code == Code.Ldsfld)
+						list.Add((instr.Operand as IField).FieldSig.Type);
+					else throw new Exception(String.Format("Unknown type pushed by Push1 instruction: {0}", instr));
 					break;
 				case StackBehaviour.Push1_push1:
 					// Only Dup has Push1_Push1 behaviour
@@ -275,6 +276,7 @@ namespace eazdevirt.Util
 						if (instr.OpCode.Code == Code.Newobj)
 							list.Add(method.DeclaringType.ToTypeSig());
 					}
+					else list.Add(module.CorLibTypes.Object); // Object by default
 					break;
 				case StackBehaviour.Varpush:
 					if (instr.Operand is IMethod)
