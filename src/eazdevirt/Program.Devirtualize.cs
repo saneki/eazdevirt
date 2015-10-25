@@ -133,7 +133,7 @@ namespace eazdevirt
 				}
 
 				// Print instructions
-				if (instructions.Count > 0)
+				if (instructions != null && instructions.Count > 0)
 				{
 					Console.WriteLine("Instructions:");
 					Console.WriteLine("-------------");
