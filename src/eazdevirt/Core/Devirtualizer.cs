@@ -101,7 +101,7 @@ namespace eazdevirt
 			foreach (var method in methods)
 			{
 				var reader = new VirtualizedMethodBodyReader(method, this.Logger);
-				Exception exception = null;
+				Exception exception = null, fixerException = null;
 
 				try
 				{
@@ -127,13 +127,25 @@ namespace eazdevirt
 					method.Method.Body = body;
 
 					// Perform fixes
-					PerformFixes(method.Method);
+					try
+					{
+						PerformFixes(method.Method);
+					}
+					catch (Exception e)
+					{
+						fixerException = e;
+					}
 
-					// Inject DevirtualizedAttribute if specified
-					if (options.HasFlag(DevirtualizeOptions.InjectAttributes))
-						this.Injector.InjectDevirtualized(method.Method);
+					if (fixerException == null)
+					{
+						// Inject DevirtualizedAttribute if specified
+						if (options.HasFlag(DevirtualizeOptions.InjectAttributes))
+							this.Injector.InjectDevirtualized(method.Method);
 
-					attempt = new DevirtualizeAttempt(method, reader, body);
+						attempt = new DevirtualizeAttempt(method, reader, body);
+					}
+					else
+						attempt = new DevirtualizeAttempt(method, reader, fixerException);
 				}
 				else
 					attempt = new DevirtualizeAttempt(method, reader, exception);
