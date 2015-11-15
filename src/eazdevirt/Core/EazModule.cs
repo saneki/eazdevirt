@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using dnlib.DotNet;
-using System.IO;
 using dnlib.DotNet.Writer;
+using eazdevirt.Types;
 
 namespace eazdevirt
 {
@@ -34,6 +35,10 @@ namespace eazdevirt
 		/// </summary>
 		public Int32 ResourceCryptoKey { get; private set; }
 
+		/// <summary>
+		/// Position translator.
+		/// </summary>
+		public IPositionTranslator PositionTranslator { get; private set; }
 
 		public ILogger Logger { get; private set; }
 
@@ -69,6 +74,12 @@ namespace eazdevirt
 
 		private void Initialize()
 		{
+			// Initialize PositionTranslator
+			var cryptoStreamDef = this.FindCryptoStreamType();
+			if (cryptoStreamDef == null)
+				throw new Exception("Unable to find crypto stream TypeDef");
+			this.PositionTranslator = new PositionTranslator(cryptoStreamDef);
+
 			this.VType = new VirtualMachineType(this);
 			this.InitializeIdentifiedOpCodes();
 		}
@@ -93,6 +104,10 @@ namespace eazdevirt
 		/// <returns>Stream</returns>
 		public Stream GetResourceStream(Boolean rawStream = false)
 		{
+			var streamType = this.FindCryptoStreamType();
+			if (streamType == null)
+				throw new Exception("Unable to find crypto stream type");
+
 			if (this.ResourceStringId == null)
 			{
 				var vmethod = this.FindFirstVirtualizedMethod();
@@ -110,9 +125,28 @@ namespace eazdevirt
 				throw new Exception("Unable to find resource");
 
 			if (!rawStream)
-				return new CryptoStream(resource.GetResourceStream(), this.ResourceCryptoKey);
+				return streamType.CreateStream(resource.GetResourceStream(), this.ResourceCryptoKey);
 			else
 				return resource.GetResourceStream();
+		}
+
+		/// <summary>
+		/// Try and find the type used for crypto streams.
+		/// </summary>
+		/// <returns>Crypto stream TypeDef, or null if none found</returns>
+		public CryptoStreamDef FindCryptoStreamType()
+		{
+			var typeDef = this.Module.Types.FirstOrDefault(type =>
+				type.BaseType != null
+				&& type.BaseType.FullName.Equals(typeof(System.IO.Stream).FullName));
+			if (typeDef == null)
+				return null;
+
+			if (CryptoStreamDefV2.Is(typeDef))
+				return new CryptoStreamDefV2(typeDef);
+			else if (CryptoStreamDef.Is(typeDef))
+				return new CryptoStreamDef(typeDef);
+			else return null;
 		}
 
 		/// <summary>

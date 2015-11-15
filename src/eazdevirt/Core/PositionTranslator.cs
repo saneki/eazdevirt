@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using eazdevirt.Types;
 
 namespace eazdevirt
 {
@@ -21,20 +22,21 @@ namespace eazdevirt
 		};
 
 		/// <summary>
-		/// PositionTranslator instance with default integers.
-		/// </summary>
-		public static readonly PositionTranslator DefaultInstance = new PositionTranslator();
-
-		/// <summary>
 		/// Random integers used in translation.
 		/// </summary>
 		private UInt32[] _randomInts;
 
 		/// <summary>
+		/// Crypto stream type definition.
+		/// </summary>
+		private CryptoStreamDef _streamType;
+
+		/// <summary>
 		/// Construct a PositionTranslator with the default random integers.
 		/// </summary>
-		public PositionTranslator()
-			: this(DefaultPseudoRandomInts)
+		/// <param name="streamType">Crypto stream type definition</param>
+		public PositionTranslator(CryptoStreamDef streamType)
+			: this(streamType, DefaultPseudoRandomInts)
 		{
 		}
 
@@ -42,7 +44,7 @@ namespace eazdevirt
 		/// Construct a PositionTranslator.
 		/// </summary>
 		/// <param name="randomInts">Random integers used in translation</param>
-		public PositionTranslator(UInt32[] randomInts)
+		public PositionTranslator(CryptoStreamDef streamType, UInt32[] randomInts)
 		{
 			if (randomInts == null)
 				throw new ArgumentNullException();
@@ -51,21 +53,22 @@ namespace eazdevirt
 				throw new Exception("Integer array must have a length of 5");
 
 			_randomInts = randomInts;
+			_streamType = streamType;
 		}
 
 		/// <summary>
 		/// Given the crypto key, convert a position string into a position.
 		/// </summary>
-		/// <param name="s">Position string</param>
+		/// <param name="str">Position string</param>
 		/// <param name="cryptoKey">Crypto key</param>
 		/// <returns>Position</returns>
-		public Int64 ToPosition(String s, Int32 cryptoKey)
+		public virtual Int64 ToPosition(String str, Int32 cryptoKey)
 		{
-			byte[] array = this.Convert(s);
+			Byte[] array = this.Convert(str);
 			MemoryStream memoryStream = new MemoryStream(array);
-			CryptoStream stream = new CryptoStream(memoryStream, cryptoKey);
+			CryptoStreamBase stream = _streamType.CreateStream(memoryStream, cryptoKey);
 			BinaryReader binaryReader = new BinaryReader(stream);
-			long result = binaryReader.ReadInt64();
+			Int64 result = binaryReader.ReadInt64();
 			memoryStream.Dispose();
 			return result;
 		}

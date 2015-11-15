@@ -24,7 +24,7 @@ namespace eazdevirt.IO
 		/// </summary>
 		public Int64 InitialPosition
 		{
-			get { return PositionTranslator.DefaultInstance.ToPosition(this.Method.PositionString, this.Method.ResourceCryptoKey); }
+			get { return this.Parent.PositionTranslator.ToPosition(this.Method.PositionString, this.Method.ResourceCryptoKey); }
 		}
 
 		/// <summary>

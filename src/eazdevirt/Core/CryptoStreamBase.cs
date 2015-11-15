@@ -3,11 +3,7 @@ using System.IO;
 
 namespace eazdevirt
 {
-	/// <summary>
-	/// Crypto stream used to read resources containing information about
-	/// virtualized methods. Requires an integer key.
-	/// </summary>
-	public class CryptoStream : Stream
+	public abstract class CryptoStreamBase : Stream
 	{
 		/// <summary>
 		/// Key used for crypto.
@@ -41,17 +37,11 @@ namespace eazdevirt
 
 		public override Int64 Position
 		{
-			get
-			{
-				return _stream.Position;
-			}
-			set
-			{
-				_stream.Position = value;
-			}
+			get { return _stream.Position; }
+			set { _stream.Position = value; }
 		}
 
-		public CryptoStream(Stream baseStream, Int32 key)
+		public CryptoStreamBase(Stream baseStream, Int32 key)
 		{
 			_stream = baseStream;
 			this.Key = key;
@@ -62,21 +52,13 @@ namespace eazdevirt
 			_stream.Flush();
 		}
 
-		private Byte Crypt(Byte b, Int64 position)
-		{
-			Byte x = (Byte)((UInt64)this.Key | (UInt64)position);
-			return (Byte)(b ^ x);
-		}
-
 		public override void Write(Byte[] buffer, Int32 offset, Int32 count)
 		{
 			Byte[] array = new Byte[count];
 			Buffer.BlockCopy(buffer, offset, array, 0, count);
 			Int64 position = this.Position;
 			for (Int32 i = 0; i < count; i++)
-			{
 				array[i] = this.Crypt(array[i], position + (Int64)i);
-			}
 			_stream.Write(array, offset, count);
 		}
 
@@ -86,9 +68,7 @@ namespace eazdevirt
 			Byte[] array = new Byte[count];
 			Int32 num = _stream.Read(array, 0, count);
 			for (Int32 i = 0; i < num; i++)
-			{
 				buffer[i + offset] = this.Crypt(array[i], position + (Int64)i);
-			}
 			return num;
 		}
 
@@ -101,5 +81,7 @@ namespace eazdevirt
 		{
 			_stream.SetLength(value);
 		}
+
+		protected abstract Byte Crypt(Byte b, Int64 position);
 	}
 }

@@ -41,10 +41,15 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Core\AttributeInjector.cs" />
+    <Compile Include="Core\CryptoStreamBase.cs" />
     <Compile Include="Core\SpecialCode.cs" />
     <Compile Include="Core\IPositionTranslator.cs" />
     <Compile Include="Core\PositionTranslator.cs" />
     <Compile Include="Core\StackTypeHelper.cs" />
+    <Compile Include="Core\Types\BaseTypeDefProvider.cs" />
+    <Compile Include="Core\Types\CryptoStreamDef.cs" />
+    <Compile Include="Core\Types\ITypeDefProvider.cs" />
+    <Compile Include="Core\V2\CryptoStreamV2.cs" />
     <Compile Include="Detection\InstructionDetectorBase.cs" />
     <Compile Include="Detection\IInstructionDetector.cs" />
     <Compile Include="Detection\V1\Detection.Arg.cs" />
@@ -89,7 +94,7 @@
     <Compile Include="Program.Resource.cs" />
     <Compile Include="Reflection\DetectAttribute.cs" />
     <Compile Include="Util\DotNetUtils.cs" />
-    <Compile Include="Core\CryptoStream.cs" />
+    <Compile Include="Core\V1\CryptoStreamV1.cs" />
     <Compile Include="Core\EazModule.cs" />
     <Compile Include="Core\VirtualOpCode.cs" />
     <Compile Include="Core\MethodStub.cs" />
@@ -111,6 +116,7 @@
       <Name>dnlib</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

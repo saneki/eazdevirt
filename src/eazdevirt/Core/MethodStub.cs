@@ -138,7 +138,7 @@ namespace eazdevirt
 			this.ResourceCryptoKey = FindResourceCryptoKey(this.VirtualCallMethod);
 
 			// Set position from position string + crypto key
-			this.Position = PositionTranslator.DefaultInstance.ToPosition(this.PositionString, this.ResourceCryptoKey);
+			this.Position = this.Parent.PositionTranslator.ToPosition(this.PositionString, this.ResourceCryptoKey);
 		}
 
 		/// <summary>

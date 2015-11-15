@@ -10,20 +10,15 @@ namespace eazdevirt
 		/// <param name="options">Options</param>
 		static void DoPosition(MonoOptions options)
 		{
-			IPositionTranslator translator = PositionTranslator.DefaultInstance;
-
 			Int64 position = 0;
 
-			if (options.Key.HasValue)
-			{
-				// This doesn't work yet: Command line parser can't parse Nullable?
-				position = translator.ToPosition(options.PositionString, options.Key.Value);
-			}
-			else if (options.AssemblyPath != null)
+			if (options.AssemblyPath != null)
 			{
 				EazModule module;
 				if (!TryLoadModule(options.AssemblyPath, out module))
 					return;
+
+				IPositionTranslator translator = module.PositionTranslator;
 
 				MethodStub method = module.FindFirstVirtualizedMethod();
 				if (method != null)
