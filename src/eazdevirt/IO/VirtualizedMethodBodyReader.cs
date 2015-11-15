@@ -81,6 +81,11 @@ namespace eazdevirt.IO
 		public Dictionary<UInt32, UInt32> VirtualOffsets { get; private set; }
 
 		/// <summary>
+		/// Serialization version. Determines how certain things are read.
+		/// </summary>
+		public SerializationVersion Version { get; private set; }
+
+		/// <summary>
 		/// Logger.
 		/// </summary>
 		public ILogger Logger { get; private set; }
@@ -95,8 +100,10 @@ namespace eazdevirt.IO
 		/// Construct a method body reader given a method stub.
 		/// </summary>
 		/// <param name="method">Method stub</param>
-		public VirtualizedMethodBodyReader(MethodStub method)
-			: this(method, null)
+		/// <param name="version">Serialization version</param>
+		public VirtualizedMethodBodyReader(MethodStub method,
+			SerializationVersion version = SerializationVersion.V1)
+			: this(method, null, version)
 		{
 		}
 
@@ -105,7 +112,9 @@ namespace eazdevirt.IO
 		/// </summary>
 		/// <param name="method">Method stub</param>
 		/// <param name="logger">Logger</param>
-		public VirtualizedMethodBodyReader(MethodStub method, ILogger logger)
+		/// <param name="version">Serialization version</param>
+		public VirtualizedMethodBodyReader(MethodStub method, ILogger logger,
+			SerializationVersion version = SerializationVersion.V1)
 			: base((method != null ? method.Parent : null))
 		{
 			if (method == null)
@@ -113,6 +122,7 @@ namespace eazdevirt.IO
 
 			this.Method = method;
 			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
+			this.Version = version;
 
 			this.Initialize();
 		}
@@ -187,7 +197,7 @@ namespace eazdevirt.IO
 			*/
 
 			this.Stream.Position = this.InitialPosition;
-			this.Resolver = new Resolver(this.Parent, this.Logger);
+			this.Resolver = new Resolver(this.Parent, this.Logger, this.Version);
 			this.VirtualOffsets = new Dictionary<UInt32, UInt32>();
 			this.ExceptionHandlers = new ExceptionHandler[0];
 		}
@@ -196,9 +206,11 @@ namespace eazdevirt.IO
 		{
 			BinaryReader reader = this.Reader;
 
-			// VM performs this check..
-			if (reader.ReadByte() != 0)
-				throw new InvalidDataException();
+			if (this.Version == SerializationVersion.V1)
+			{
+				if (reader.ReadByte() != 0)
+					throw new InvalidDataException();
+			}
 
 			// Read virtualized method info
 			this.Info = new VirtualizedMethodInfo(reader);

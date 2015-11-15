@@ -40,6 +40,11 @@ namespace eazdevirt
 		/// </summary>
 		public IPositionTranslator PositionTranslator { get; private set; }
 
+		/// <summary>
+		/// Serialization version to use for readers/resolvers.
+		/// </summary>
+		public SerializationVersion Version { get; private set; }
+
 		public ILogger Logger { get; private set; }
 
 		/// <summary>
@@ -79,6 +84,12 @@ namespace eazdevirt
 			if (cryptoStreamDef == null)
 				throw new Exception("Unable to find crypto stream TypeDef");
 			this.PositionTranslator = new PositionTranslator(cryptoStreamDef);
+
+			// Set version
+			if (cryptoStreamDef is CryptoStreamDefV2)
+				this.Version = SerializationVersion.V2;
+			else
+				this.Version = SerializationVersion.V1;
 
 			this.VType = new VirtualMachineType(this);
 			this.InitializeIdentifiedOpCodes();

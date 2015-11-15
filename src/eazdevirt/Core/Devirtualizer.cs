@@ -100,7 +100,7 @@ namespace eazdevirt
 
 			foreach (var method in methods)
 			{
-				var reader = new VirtualizedMethodBodyReader(method, this.Logger);
+				var reader = new VirtualizedMethodBodyReader(method, this.Logger, this.Parent.Version);
 				Exception exception = null, fixerException = null;
 
 				try

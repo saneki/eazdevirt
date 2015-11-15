@@ -22,15 +22,22 @@ namespace eazdevirt.IO
 		public Importer Importer { get; private set; }
 
 		/// <summary>
+		/// Serialization version. Determines how certain things are read.
+		/// </summary>
+		public SerializationVersion Version { get; private set; }
+
+		/// <summary>
 		/// Lock used for all public resolve methods.
 		/// </summary>
 		private Object _lock = new Object();
 
-		public Resolver(EazModule module, ILogger logger)
+		public Resolver(EazModule module, ILogger logger,
+			SerializationVersion version = SerializationVersion.V1)
 			: base(module)
 		{
 			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
 			this.Importer = new Importer(this.Module, ImporterOptions.TryToUseDefs);
+			this.Version = version;
 		}
 
 		/// <summary>
@@ -479,9 +486,11 @@ namespace eazdevirt.IO
 		{
 			this.Stream.Position = value;
 
-			// The virtual machine does this check:
-			if (this.Reader.ReadByte() != 0)
-				throw new InvalidDataException();
+			if (this.Version == SerializationVersion.V1)
+			{
+				if (this.Reader.ReadByte() != 0)
+					throw new InvalidDataException();
+			}
 
 			EazCallData data = new EazCallData(this.Reader);
 

@@ -209,7 +209,8 @@ namespace eazdevirt
 
 			// Remove this check later..?
 			if (subsequences.Count != 203)
-				throw new Exception("Number of found subsequences (DictionaryAddPattern) != 203 (expected value)");
+				throw new Exception(String.Format(
+					"Number of found subsequences (DictionaryAddPattern) {0} != 203 (expected value)", subsequences.Count));
 
 			List<VirtualOpCode> vInstructions = new List<VirtualOpCode>();
 
