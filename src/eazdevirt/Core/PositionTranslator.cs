@@ -82,7 +82,7 @@ namespace eazdevirt
 		private Byte[] Convert(String str)
 		{
 			if (str == null)
-				throw new ArgumentNullException();
+				throw new FormatException("Please specify a position string using -P");
 
 			if (str.Length != 10)
 				throw new FormatException("Position string must be 10 characters in length");
