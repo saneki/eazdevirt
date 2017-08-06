@@ -25,7 +25,7 @@ namespace eazdevirt
 				{
 					try
 					{
-						position = translator.ToPosition(options.PositionString, method.ResourceCryptoKey);
+						position = translator.ToPosition(options.PositionString, method.ResourceCryptoKey2);
 					}
 					catch (FormatException e)
 					{
