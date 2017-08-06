@@ -173,8 +173,14 @@ namespace eazdevirt
 		                                && a.Operand is MethodDef
 		                                && (a.Operand as MethodDef).ReturnType.FullName.Equals("System.Int64")).Operand;
 
-		                //first method is get_XorKey2
-		                method = Helpers.GetFirstCalledMethod(mdSTP);
+
+                        //find get_XorKey2
+                        method = (MethodDef)mdSTP.Body.Instructions
+                            .First(a => a.OpCode.Code == Code.Call
+                                        && a.Operand is MethodDef
+                                        && (a.Operand as MethodDef).ReturnType.FullName.Equals("System.Int32")).Operand;
+
+		                Console.WriteLine(method);
                     }
 		            break;
 		        }
