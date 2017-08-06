@@ -73,7 +73,7 @@ namespace eazdevirt
 		public EazModule(ModuleDefMD module, ILogger logger)
 		{
 			this.Module = module;
-			this.Logger = (logger != null ? logger : DummyLogger.NoThrowInstance);
+			this.Logger = logger ?? DummyLogger.NoThrowInstance;
 			this.Initialize();
 		}
 
@@ -106,14 +106,14 @@ namespace eazdevirt
 			this.Module.Write(filepath, options);
 		}
 
-		/// <summary>
-		/// Get the resource with virtualized method data as a Stream.
-		/// </summary>
-		/// <param name="cryptoStream">
-		/// Whether or not to return a raw stream that doesn't automatically handle crypto
-		/// </param>
-		/// <returns>Stream</returns>
-		public Stream GetResourceStream(Boolean rawStream = false)
+        /// <summary>
+        /// Get the resource with virtualized method data as a Stream.
+        /// </summary>
+        /// <param name="rawStream">
+        /// Whether or not to return a raw stream that doesn't automatically handle crypto
+        /// </param>
+        /// <returns>Stream</returns>
+        public Stream GetResourceStream(Boolean rawStream = false)
 		{
 			var streamType = this.FindCryptoStreamType();
 			if (streamType == null)
@@ -283,7 +283,7 @@ namespace eazdevirt
 			this.IdentifiedOpCodes = new Dictionary<Int32, VirtualOpCode>();
 
 			this.VirtualInstructions = VirtualOpCode.FindAllInstructions(this, this.VType.Type);
-			var identified = this.VirtualInstructions.Where((instruction) => { return instruction.IsIdentified; });
+			var identified = this.VirtualInstructions.Where((instruction) => instruction.IsIdentified);
 
 			Boolean warningOccurred = false;
 
@@ -291,24 +291,19 @@ namespace eazdevirt
 			{
 				Boolean containsVirtual = this.IdentifiedOpCodes.ContainsKey(instruction.VirtualCode);
 
-				VirtualOpCode existing = this.IdentifiedOpCodes.Where((kvp, index) => {
-					return kvp.Value.IdentityEquals(instruction);
-				}).FirstOrDefault().Value;
+				VirtualOpCode existing = this.IdentifiedOpCodes.Where((kvp, index) => kvp.Value.IdentityEquals(instruction)).FirstOrDefault().Value;
 				Boolean containsActual = (existing != null);
 
 				if (containsVirtual)
 					this.Logger.Warning(this, "WARNING: Multiple instruction types with the same virtual opcode detected ({0})",
 						instruction.VirtualCode);
 
-				if (containsActual && !instruction.ExpectsMultiple)
-				{
-					String opcodeName;
+				if (containsActual && !instruction.ExpectsMultiple) {
+				    string opcodeName = instruction.HasCILOpCode 
+                        ? instruction.OpCode.ToString() 
+                        : instruction.SpecialOpCode.ToString();
 
-					if (instruction.HasCILOpCode)
-						opcodeName = instruction.OpCode.ToString();
-					else opcodeName = instruction.SpecialOpCode.ToString();
-
-					this.Logger.Warning(this, "WARNING: Multiple virtual opcodes map to the same actual opcode ({0}, {1} => {2})",
+				    this.Logger.Warning(this, "WARNING: Multiple virtual opcodes map to the same actual opcode ({0}, {1} => {2})",
 						existing.VirtualCode, instruction.VirtualCode, opcodeName);
 				}
 
