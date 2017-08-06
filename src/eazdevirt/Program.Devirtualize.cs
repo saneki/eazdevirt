@@ -26,7 +26,7 @@ namespace eazdevirt
 			else if (attempt.WasInstructionUnknown)
 			{
 				var matches = module.VirtualInstructions
-							.Where((instr) => { return instr.VirtualCode == reader.LastVirtualOpCode; })
+							.Where((instr) => instr.VirtualCode == reader.LastVirtualOpCode)
 							.ToArray();
 
 				if (matches.Length > 0)

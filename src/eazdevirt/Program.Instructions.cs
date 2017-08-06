@@ -57,18 +57,15 @@ namespace eazdevirt
 				if (options.OnlyIdentified)
 				{
 					vInstructions = new List<VirtualOpCode>(vInstructions
-						.Where((instruction) => { return instruction.IsIdentified; })
-						.OrderBy((instruction) => { return instruction.Name; }));
+						.Where((instruction) => instruction.IsIdentified)
+						.OrderBy((instruction) => instruction.Name));
 				}
 
 				// If only showing instructions with specific virtual operand types, filter
 				if (options.OperandTypeWhitelist != Int32.MinValue)
 				{
 					vInstructions = new List<VirtualOpCode>(vInstructions
-						.Where((instruction) =>
-						{
-							return options.OperandTypeWhitelist == instruction.VirtualOperandType;
-						}));
+						.Where((instruction) => options.OperandTypeWhitelist == instruction.VirtualOperandType));
 				}
 
 				foreach (var v in vInstructions)

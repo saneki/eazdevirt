@@ -14,14 +14,13 @@ namespace eazdevirt
 		{
 			var generator = new VirtualizableAssemblyGenerator();
 
-			String instructionSet = "all";
-			if (options.InstructionSet != null && options.InstructionSet.Length > 0)
-				instructionSet = options.InstructionSet.ToLower();
+			String instructionSet = string.IsNullOrEmpty(options.InstructionSet)
+                ? "all" 
+                : options.InstructionSet.ToLower();
 
-			String[] sets;
-			if (instructionSet.Contains(','))
-				sets = instructionSet.Split(',');
-			else sets = new String[] { instructionSet };
+			String[] sets = instructionSet.Contains(',') 
+                ? instructionSet.Split(',') 
+                : new String[] { instructionSet };
 
 			Boolean all = sets.Contains("all");
 			if (sets.Contains("calli") || all)
@@ -41,11 +40,9 @@ namespace eazdevirt
 
 			var assembly = generator.Generate();
 
-			String filepath = options.OutputPath;
-			if (filepath == null)
-				filepath = "eazdevirt-test.exe";
+			String filepath = options.OutputPath ?? "eazdevirt-test.exe";
 
-			Console.WriteLine("Saving test assembly {0}", filepath);
+		    Console.WriteLine("Saving test assembly {0}", filepath);
 
 			assembly.Write(filepath);
 		}
