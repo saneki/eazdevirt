@@ -707,20 +707,21 @@ namespace eazdevirt.IO
 
 			private void Deserialize(BinaryReader reader)
 			{
-				this.Unknown1 = reader.ReadBoolean();
-				this.ReturnTypeCode = reader.ReadInt32();
-				this.Unknown3 = reader.ReadInt32();
-				this.Name = reader.ReadString();
+			    Int32 count = (Int32)reader.ReadInt16();
+			    this.Locals = new SerializedLocal[count];
+			    for (Int32 i = 0; i < count; i++)
+			        this.Locals[i] = new SerializedLocal(reader);
 
-				Int32 count = (Int32)reader.ReadInt16();
-				this.Parameters = new SerializedParameter[count];
-				for (Int32 i = 0; i < count; i++)
-					this.Parameters[i] = new SerializedParameter(reader);
+			    this.ReturnTypeCode = reader.ReadInt32();
+                this.Unknown1 = reader.ReadBoolean();
+			    this.Unknown3 = reader.ReadInt32();
 
-				count = (Int32)reader.ReadInt16();
-				this.Locals = new SerializedLocal[count];
-				for (Int32 i = 0; i < count; i++)
-					this.Locals[i] = new SerializedLocal(reader);
+			    count = (Int32)reader.ReadInt16();
+			    this.Parameters = new SerializedParameter[count];
+			    for (Int32 i = 0; i < count; i++)
+			        this.Parameters[i] = new SerializedParameter(reader);
+
+			    this.Name = reader.ReadString();
 			}
 		}
 
