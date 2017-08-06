@@ -66,7 +66,7 @@ namespace eazdevirt
 		{
 			Byte[] array = this.Convert(str);
 			MemoryStream memoryStream = new MemoryStream(array);
-			CryptoStreamBase stream = _streamType.CreateStream(memoryStream, cryptoKey);
+			CryptoStreamBase stream = _streamType.CreateStream(memoryStream, cryptoKey);    //TODO: use second crypto key
 			BinaryReader binaryReader = new BinaryReader(stream);
 			Int64 result = binaryReader.ReadInt64();
 			memoryStream.Dispose();

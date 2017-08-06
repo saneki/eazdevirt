@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using dnlib.DotNet;
+using dnlib.DotNet.Emit;
 
 namespace eazdevirt
 {
@@ -57,12 +59,17 @@ namespace eazdevirt
 		/// </summary>
 		public Int32 ResourceCryptoKey { get; private set; }
 
-		/// <summary>
-		/// Construct a MethodStub from an existing method.
-		/// </summary>
-		/// <param name="module">Parent module</param>
-		/// <param name="method">Stub method</param>
-		public MethodStub(EazModule module, MethodDef method)
+	    /// <summary>
+	    /// Crypto key integer used to decrypt the TODO.
+	    /// </summary>
+	    public Int32 ResourceCryptoKey2 { get; private set; }
+
+        /// <summary>
+        /// Construct a MethodStub from an existing method.
+        /// </summary>
+        /// <param name="module">Parent module</param>
+        /// <param name="method">Stub method</param>
+        public MethodStub(EazModule module, MethodDef method)
 		{
 			this.Parent = module;
 			this.Method = method;
@@ -149,19 +156,34 @@ namespace eazdevirt
 		/// Method used in virtualized methods, following the pattern: (Stream, String, Object[]): Object
 		/// </param>
 		/// <returns>Crypto key</returns>
-		public static Int32 FindResourceCryptoKey(MethodDef method)
+		public static Int32 FindResourceCryptoKey(MethodDef method, bool second = false)
 		{
-			MethodDef origMethod = method;
+		    MethodDef origMethod = method;
+		    MethodDef prev = null;
 
-			for (int i = 0; i < 5 && method != null; i++)
-			{
-				if (method.ReturnType.FullName.Equals("System.Int32"))
-					break;
+		    for (int i = 0; i < 5 && method != null; i++)
+		    {
+		        if (method.ReturnType.FullName.Equals("System.Int32"))
+		        {
+		            if (second) {
+		                //prev is void SetStream(long, Stream, string)
+		                //find StringToPosition
+		                MethodDef mdSTP = (MethodDef)prev.Body.Instructions
+		                    .First(a => a.OpCode.Code == Code.Call
+		                                && a.Operand is MethodDef
+		                                && (a.Operand as MethodDef).ReturnType.FullName.Equals("System.Int64")).Operand;
 
-				method = Helpers.GetFirstCalledMethod(method);
-			}
+		                //first method is get_XorKey2
+		                method = Helpers.GetFirstCalledMethod(mdSTP);
+                    }
+		            break;
+		        }
 
-			if (method == null)
+		        prev = method;
+		        method = Helpers.GetFirstCalledMethod(method);
+		    }
+
+            if (method == null)
 				throw new Exception("Rabbit-Hole strategy of finding the resource crypto key failed");
 
 			var instructions = method.Body.Instructions;
@@ -183,14 +205,14 @@ namespace eazdevirt
 				"Found bad method? (token={0:X8})", origMethod.MDToken.Raw
 			));
 		}
-
-		/// <summary>
-		/// Find the resource string Id, given the method that contains it.
-		/// </summary>
-		/// <param name="method">Method</param>
-		/// <returns>Resource string Id if successful, or null if not successful</returns>
-		/// <remarks>This extraction is very simple and just gets the operand of the first `ldstr`</remarks>
-		public static String FindResourceStringId(MethodDef method)
+        
+        /// <summary>
+        /// Find the resource string Id, given the method that contains it.
+        /// </summary>
+        /// <param name="method">Method</param>
+        /// <returns>Resource string Id if successful, or null if not successful</returns>
+        /// <remarks>This extraction is very simple and just gets the operand of the first `ldstr`</remarks>
+        public static String FindResourceStringId(MethodDef method)
 		{
 			if (method == null)
 				throw new ArgumentNullException();
