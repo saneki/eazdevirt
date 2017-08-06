@@ -89,8 +89,9 @@ namespace eazdevirt
 				Console.WriteLine("--> Position string: {0}", stub.PositionString);
 				Console.WriteLine("--> Position: {0} (0x{0:X8})", stub.Position);
 				Console.WriteLine("--> Resource: {0}", stub.ResourceStringId);
-				Console.WriteLine("--> Crypto key: {0}", stub.ResourceCryptoKey);
-				Console.WriteLine("--> Actual method size: {0} (0x{0:X8})", reader.CodeSize);
+				Console.WriteLine("--> Crypto 1 key: {0}", stub.ResourceCryptoKey);
+			    Console.WriteLine("--> Crypto 2 key: {0}", stub.ResourceCryptoKey2);
+                Console.WriteLine("--> Actual method size: {0} (0x{0:X8})", reader.CodeSize);
 
 				if (options.Action == ProgramAction.Methods)
 					PrintAttemptSuccess(options, module, attempt);

@@ -162,7 +162,7 @@ namespace eazdevirt
 		    MethodDef origMethod = method;
 		    MethodDef prev = null;
 
-		    for (int i = 0; i < 5 && method != null; i++)
+		    for (int i = 0; i < 6 && method != null; i++)
 		    {
 		        if (method.ReturnType.FullName.Equals("System.Int32"))
 		        {
@@ -180,8 +180,6 @@ namespace eazdevirt
                             .First(a => a.OpCode.Code == Code.Call
                                         && a.Operand is MethodDef
                                         && (a.Operand as MethodDef).ReturnType.FullName.Equals("System.Int32")).Operand;
-
-		                Console.WriteLine(method);
                     }
 		            break;
 		        }
