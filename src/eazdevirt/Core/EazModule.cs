@@ -147,17 +147,16 @@ namespace eazdevirt
 		/// <returns>Crypto stream TypeDef, or null if none found</returns>
 		public CryptoStreamDef FindCryptoStreamType()
 		{
-			var typeDef = this.Module.Types.FirstOrDefault(type =>
-				type.BaseType != null
-				&& type.BaseType.FullName.Equals(typeof(System.IO.Stream).FullName));
-			if (typeDef == null)
-				return null;
+		    foreach (var typeDef in this.Module.Types.Where(type =>
+		            type.BaseType != null
+		            && type.BaseType.FullName.Equals(typeof(System.IO.Stream).FullName))) {
+		        if (CryptoStreamDefV2.Is(typeDef))
+		            return new CryptoStreamDefV2(typeDef);
+		        else if (CryptoStreamDef.Is(typeDef))
+		            return new CryptoStreamDef(typeDef);
+		    }
 
-			if (CryptoStreamDefV2.Is(typeDef))
-				return new CryptoStreamDefV2(typeDef);
-			else if (CryptoStreamDef.Is(typeDef))
-				return new CryptoStreamDef(typeDef);
-			else return null;
+		    return null;
 		}
 
 		/// <summary>
