@@ -121,7 +121,7 @@ namespace eazdevirt
 		/// OpCode pattern seen per dictionary add in the dictionary method.
 		/// </summary>
 		public static readonly Code[] DictionaryAddPattern = new Code[] {
-			Code.Ldloc_0,
+			Code.Dup,
 			Code.Ldarg_0,
 			Code.Ldfld,
 			Code.Ldfld,
@@ -188,7 +188,7 @@ namespace eazdevirt
 				throw new Exception("Unable to find dictionary method");
 
 			// Each dictionary addition looks like this:
-			//IL_000b: ldloc.0  // [0]
+			//IL_000b: dup  // [0]
 			//IL_000c: ldarg.0  // [0]
 			//IL_000d: ldfld class Class33 Class805::class33_0 // 0x0400092c // TypeDef of this class (Class33) is important
 			//IL_0012: ldfld class Class487 Class33::class487_162 // 0x040000da // FieldDef of this field (class487_162) is important
