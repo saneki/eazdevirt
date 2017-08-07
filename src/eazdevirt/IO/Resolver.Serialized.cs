@@ -15,12 +15,12 @@ namespace eazdevirt.IO
 			/// <summary>
 			/// The Value field holds a raw MDToken value.
 			/// </summary>
-			Token = 0,
+			Token = 1,
 
 			/// <summary>
 			/// The Value field holds a position.
 			/// </summary>
-			Position = 1
+			Position = 0
 		}
 
 		/// <summary>
@@ -113,7 +113,7 @@ namespace eazdevirt.IO
 			{
 				this.ValueType = (ValueType)reader.ReadByte();
 
-				if (this.ValueType == 0)
+				if (this.ValueType == ValueType.Token)
 					this.Value = reader.ReadInt32();
 				else
 					this.Data = InlineOperandData.Read(reader);
