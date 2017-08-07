@@ -825,6 +825,7 @@ namespace eazdevirt.IO
 
 			private void Deserialize(BinaryReader reader)
 			{
+                /*
 				this.VirtualHandlerType = reader.ReadInt32();
 				this.VirtualCatchType = reader.ReadInt32();
 				this.VirtualTryStart = reader.ReadUInt32();
@@ -832,7 +833,15 @@ namespace eazdevirt.IO
 				this.VirtualHandlerStart = reader.ReadUInt32();
 				this.VirtualHandlerLength = reader.ReadUInt32();
 				this.VirtualFilterStart = reader.ReadUInt32();
-			}
+                */
+
+			    this.VirtualHandlerType = reader.ReadByte();
+			    this.VirtualCatchType = reader.ReadInt32();
+			    reader.ReadUInt32();
+			    reader.ReadUInt32();
+			    reader.ReadUInt32();
+			    reader.ReadUInt32();
+            }
 		}
 	}
 }
