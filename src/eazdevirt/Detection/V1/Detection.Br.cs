@@ -40,7 +40,7 @@ namespace eazdevirt.Detection.V1.Ext
 		public static Boolean Is_Brfalse(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
-				Code.Ldloc_0, Code.Callvirt, Code.Ldnull, Code.Ceq, Code.Stloc_1, Code.Br_S
+				Code.Ldloc_0, Code.Callvirt, Code.Ldnull, Code.Ceq, Code.Stloc_1    //should work for both cleaned and uncleaned
 			});
 		}
 
@@ -48,9 +48,8 @@ namespace eazdevirt.Detection.V1.Ext
 		public static Boolean Is_Brtrue(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
-				Code.Ldloc_0, Code.Callvirt, Code.Ldnull, Code.Ceq, Code.Ldc_I4_0,
-				Code.Ceq, Code.Stloc_1, Code.Br_S
-			});
+			    Code.Ldloc_0, Code.Callvirt, Code.Ldnull, Code.Cgt_Un, Code.Stloc_1 //should work for both cleaned and uncleaned
+            });
 			//var sub = ins.DelegateMethod.Find(new Code[] {
 			//	Code.Ldloc_0, Code.Castclass, Code.Callvirt, Code.Ldsfld, Code.Call,
 			//	Code.Stloc_1, Code.Br_S
