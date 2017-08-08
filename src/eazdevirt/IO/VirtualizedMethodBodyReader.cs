@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using de4dot.blocks;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
+using eazdevirt.Util;
 
 namespace eazdevirt.IO
 {
@@ -379,13 +380,16 @@ namespace eazdevirt.IO
 		/// <returns>CIL instruction</returns>
 		protected Instruction ReadOneInstruction()
 		{
-			Int32 virtualOpcode = this.Reader.ReadInt32();
+			Int32 virtualOpcode = this.Reader.ReadInt32Special();
 			this.LastVirtualOpCode = virtualOpcode;
 
 			VirtualOpCode virtualInstruction;
 			if (!this.Parent.IdentifiedOpCodes.TryGetValue(virtualOpcode, out virtualInstruction))
-				//throw new Exception(String.Format("Unknown virtual opcode: {0}", virtualOpcode));
-				throw new OriginalOpcodeUnknownException(virtualInstruction);
+#if DEBUG
+                throw new Exception(String.Format("Unknown virtual opcode: {0} (0x{0:X8})", virtualOpcode));
+#else
+                throw new OriginalOpcodeUnknownException(virtualInstruction);
+#endif
 
 			this.VirtualOffsets.Add(this.CurrentILOffset, this.CurrentVirtualOffset);
 

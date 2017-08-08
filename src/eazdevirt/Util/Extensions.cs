@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using dnlib.DotNet;
 using dnlib.DotNet.Emit;
@@ -163,5 +164,16 @@ namespace eazdevirt.Util
 			var result = Helpers.FindOpCodePatterns(method.Body.Instructions, pattern);
 			return result;
 		}
+
+        /// <summary>
+        /// Reads a jumbled int, which is used for opcodes.
+        /// </summary>
+        /// <param name="reader">BinaryReader to read with</param>
+        /// <returns>A proper Int32</returns>
+	    public static Int32 ReadInt32Special(this BinaryReader reader)
+        {
+            byte[] b = reader.ReadBytes(4);
+            return b[3] << 24 | b[2] | b[1] << 8 | b[0] << 16;
+        }
 	}
 }
