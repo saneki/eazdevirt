@@ -207,8 +207,8 @@ namespace eazdevirt.Detection.V1.Ext
 		/// OpCode pattern seen in the Throw, Rethrow helper methods.
 		/// </summary>
 		public static readonly Code[] Pattern_Throw = new Code[] {
-			Code.Ldarg_0, Code.Isinst, Code.Stloc_0, Code.Ldloc_0,
-			Code.Call, Code.Ldarg_0, Code.Call, Code.Ret
+			Code.Ldarg_1, Code.Isinst, Code.Stloc_0, Code.Ldloc_0, Code.Brfalse_S, Code.Ldloc_0,
+			Code.Call, Code.Ldarg_1, Code.Call, Code.Ret
 		};
 
 		public static Boolean _Is_Throw(VirtualOpCode ins, MethodDef helper)
@@ -221,9 +221,9 @@ namespace eazdevirt.Detection.V1.Ext
 		public static Boolean Is_Throw(this VirtualOpCode ins)
 		{
 			return ins.MatchesEntire(new Code[] {
-				Code.Ldarg_0, Code.Call, Code.Stloc_0, Code.Ldloc_0,
+				Code.Ldarg_0, Code.Call, Code.Stloc_0, Code.Ldarg_0, Code.Ldloc_0,
 				Code.Callvirt, Code.Call, Code.Ret
-			}) && _Is_Throw(ins, ((MethodDef)ins.DelegateMethod.Body.Instructions[5].Operand));
+			}) && _Is_Throw(ins, ((MethodDef)ins.DelegateMethod.Body.Instructions[6].Operand));
 		}
 
 		[Detect(Code.Rethrow)]
