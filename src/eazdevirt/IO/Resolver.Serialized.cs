@@ -365,7 +365,7 @@ namespace eazdevirt.IO
 			protected override void Deserialize(BinaryReader reader)
 			{
 				this.DeclaringType = InlineOperand.ReadInternal(reader);
-				this.Unknown2 = reader.ReadBoolean();
+				//this.Unknown2 = reader.ReadBoolean();
 				this.Flags = reader.ReadBoolean();
 				this.Name = reader.ReadString();
 				this.ReturnType = InlineOperand.ReadInternal(reader);
