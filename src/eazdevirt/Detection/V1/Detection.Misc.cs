@@ -442,7 +442,7 @@ namespace eazdevirt.Detection.V1.Ext
 		public static Boolean Is_Stfld(this VirtualOpCode ins)
 		{
 			return ins.Matches(new Code[] {
-				Code.Ldarg_0, Code.Ldloc_1, Code.Ldloc_0, Code.Ldnull, Code.Call,
+				Code.Ldarg_0, Code.Ldloc_2, Code.Ldloc_3, Code.Ldnull, Code.Call,
 				Code.Call, Code.Ret
 			}) && ins.DelegateMethod.Calls().Any((called) =>
 			{
