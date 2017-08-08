@@ -614,7 +614,7 @@ namespace eazdevirt.IO
 
 		protected virtual IField ReadInlineField(Instruction instruction)
 		{
-			return this.Resolver.ResolveField(this.Reader.ReadInt32());
+			return this.Resolver.ResolveField(this.Reader.ReadInt32Special());
 		}
 
 		protected virtual MethodSig ReadInlineSig(Instruction instruction)
@@ -624,22 +624,22 @@ namespace eazdevirt.IO
 
 		protected virtual ITokenOperand ReadInlineTok(Instruction instruction)
 		{
-			return this.Resolver.ResolveToken(this.Reader.ReadInt32());
+			return this.Resolver.ResolveToken(this.Reader.ReadInt32Special());
 		}
 
 		protected virtual IMethod ReadInlineMethod(Instruction instruction)
 		{
-			return this.Resolver.ResolveMethod(this.Reader.ReadInt32());
+			return this.Resolver.ResolveMethod(this.Reader.ReadInt32Special());
 		}
 
 		protected virtual ITypeDefOrRef ReadInlineType(Instruction instruction)
 		{
-			return this.Resolver.ResolveType(this.Reader.ReadInt32());
+			return this.Resolver.ResolveType(this.Reader.ReadInt32Special());
 		}
 
 		protected virtual String ReadInlineString(Instruction instruction)
 		{
-			return this.Resolver.ResolveString(this.Reader.ReadInt32());
+			return this.Resolver.ResolveString(this.Reader.ReadInt32Special());
 		}
 
 		public IList<Parameter> Parameters = new List<Parameter>();
