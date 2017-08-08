@@ -408,8 +408,8 @@ namespace eazdevirt.IO
 		//protected Object ReadOperand(Code code, OperandType operandType)
 		protected Object ReadOperand(Instruction instr)
 		{
-			BinaryReader reader = this.Reader;
-			ModuleDefMD module = this.Module;
+			//BinaryReader reader = this.Reader;
+			//ModuleDefMD module = this.Module;
 
 			// Todo: Fix some of these to factor in current offset
 			switch(instr.OpCode.OperandType)
